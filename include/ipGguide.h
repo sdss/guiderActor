@@ -33,12 +33,6 @@
 #include <string.h>
 #include "shLegacy.h"
 
-/* use ours */
-#ifdef u_short
-#undef u_short
-#endif
-#define u_short unsigned short int
-
 #define STATIC static
 #define DOUBLE double
 
@@ -102,16 +96,8 @@ STATIC int rvalwt[60];
  * grid which we move about to find the minimum fittin error; the structures 
  * which contain the information for these nine points are are these:
  */
-/* STATIC struct gstarfit starfitarr[9]; */
-/* STATIC struct gstarfit *starfit[3] = 
-            {starfitarr, starfitarr + 3, starfitarr + 6}; */
-
 STATIC struct gstarfit istarfit ;  /* initial answer */            
 STATIC struct gstarfit fstarfit;  /* final answer */
-STATIC int pgs2derr[9];
-
-/* 2d fitting error matrix */
-STATIC int *gs2derr[3] = {pgs2derr,pgs2derr+3,pgs2derr+6};  
 
 /* print buffer */
 STATIC char pbuf[256];
@@ -235,8 +221,8 @@ void
 grot(			   /* general array rotator; puts zeros where 
                                  data are not generated */
      float theta,              /* angle in degrees */
-     u_short **p,              /* source array */
-     u_short **dp,             /* destination array */
+     short **p,              /* source array */
+     short **dp,             /* destination array */
      int xsz, int ysz);              /* sizes */
 
 void  
