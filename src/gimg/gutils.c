@@ -2,12 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-/* use ours */
-#ifdef u_short
-#undef u_short
-#endif
-#define u_short unsigned short int
-
+#include "ipGguide.h"
 
 #ifdef PI
 #undef PI
