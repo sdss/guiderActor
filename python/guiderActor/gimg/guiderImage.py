@@ -537,7 +537,7 @@ class GuiderImageAnalysis(object):
 		if os.path.exists(flatout):
 			self.inform('Reading processed flat-field from %s' % flatout)
 			try:
-				return readProcessedFlat(flatout, gprobes)
+				return GuiderImageAnalysis.readProcessedFlat(flatout, gprobes)
 			except:
 				self.warn('Failed to read processed flat-field from %s; regenerating it.' % flatout)
 
@@ -727,6 +727,6 @@ class GuiderImageAnalysis(object):
 
 		hdulist.writeto(flatout, clobber=True)
 		# Now read that file we just wrote...
-		return readProcessedFlat(flatout, gprobes)
+		return GuiderImageAnalysis.readProcessedFlat(flatout, gprobes)
 
 

@@ -240,14 +240,18 @@ def main(actor, queues):
                             guideCmd.warn("text=%s" % qstr("Guider flat is for cartridge %d but %d is loaded" % (
                                 flatcart, gState.cartridge)))
 
-                    try:
+                    #try:
+                    if True:
+                        guideCmd.inform("text=GuiderImageAnalysis()...")
                         GI = GuiderImageAnalysis(msg.filename, cmd=guideCmd)
+                        guideCmd.inform("text=GuiderImageAnalysis.findFibers()...")
                         fibers = GI.findFibers(gState.gprobes)
-                    except Exception, e:
-                        tback("GuideTest", e)
-                        guideCmd.fail("text=%s" % qstr("Error in processing guide images: %s" % e))
-                        guideCmd = None
-                        continue
+                        guideCmd.inform("text=GuiderImageAnalysis.findFibers() got %i fibers" % len(fibers))
+                    #except Exception, e:
+                    #    tback("GuideTest", e)
+                    #    guideCmd.fail("text=%s" % qstr("Error in processing guide images: %s" % e))
+                    #    guideCmd = None
+                    #    continue
 
                     # Object to gather all per-frame guiding info into.
                     frameInfo = FrameInfo()
@@ -316,8 +320,8 @@ def main(actor, queues):
                         # rotation is the anticlockwise rotation from x on the ALTA to the pin
                         #
                         theta = 90                   # allow for 90 deg rot of camera view, should be -90 
-                        theta += fiber.info.rotation # allow for intrinsic fibre rotation
-                        theta -= fiber.info.phi      # allow for orientation of alignment hole
+                        theta += probe.rotation # allow for intrinsic fibre rotation
+                        theta -= probe.phi      # allow for orientation of alignment hole
 
                         probe.rotStar2Sky = theta # Squirrel the real angle away.
                         theta = math.radians(theta)
@@ -352,15 +356,15 @@ def main(actor, queues):
                             
                             print "%d %2d  %7.2f %7.2f  %7.2f %7.2f  %6.1f %6.1f  %6.1f %6.1f  %6.1f %6.1f  %06.1f  %7.3f %4.0f" % (
                                 frameNo,
-                                star.fiberid, dRA, dDec, dx, dy, star.xs, star.ys, fiber.info.xCenter, fiber.info.yCenter,
-                                fiber.info.xFocal, fiber.info.yFocal, fiber.info.rotStar2Sky,
-                                star.fwhm/sigmaToFWHM, fiber.info.focusOffset)
+                                fiber.fiberid, dRA, dDec, fiber.dx, fiber.dy, fiber.xs, fiber.ys, fiber.xcen, fiber.ycen,
+                                probe.xFocal, probe.yFocal, probe.rotStar2Sky, fiber.fwhm/sigmaToFWHM, probe.focusOffset)
+                                
 
                         if not enabled:
                             continue
 
                         #accumulate guiding errors for good stars used in fit
-                        guideRMS += dx**2 + dy**2
+                        guideRMS += fiber.dx**2 + fiber.dy**2
                         nguideRMS += 1
 
                         b[0] += dRA
@@ -419,10 +423,12 @@ def main(actor, queues):
                         frameInfo.dRA  = dRA
                         frameInfo.dDec = dDec
                         frameInfo.dRot = dRot
+                        print 'dRA,dDec,dRot', dRA, dDec, dRot
 
                         offsetRa  = -gState.pid["raDec"].update(dRA)                    
                         offsetDec = -gState.pid["raDec"].update(dDec)
                         offsetRot = -gState.pid["rot"].update(dRot) if nStar > 1 else 0 # don't update I
+                        print 'offsetRA, offsetDec, offsetRot', offsetRa, offsetDec, offsetRot
 
                         frameInfo.filtRA  = offsetRa
                         frameInfo.filtDec = offsetDec
@@ -863,7 +869,8 @@ def main(actor, queues):
         except Exception, e:
             errMsg = "Unexpected exception %s in guider %s thread" % (e, threadName)
             actor.bcast.warn('text="%s"' % errMsg)
-            tback(errMsg, e)
+            # I (dstn) get infinite recursion from this...
+            #tback(errMsg, e)
 
             #import pdb; pdb.set_trace()
             try:
