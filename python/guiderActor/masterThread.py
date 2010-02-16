@@ -241,8 +241,8 @@ def main(actor, queues):
                                 flatcart, gState.cartridge)))
 
                     try:
-						GI = GuiderImageAnalysis(msg.filename, cmd=guideCmd)
-						fibers = GI.findFibers(gState.gprobes)
+                        GI = GuiderImageAnalysis(msg.filename, cmd=guideCmd)
+                        fibers = GI.findFibers(gState.gprobes)
                     except Exception, e:
                         tback("GuideTest", e)
                         guideCmd.fail("text=%s" % qstr("Error in processing guide images: %s" % e))
@@ -280,32 +280,32 @@ def main(actor, queues):
                     nguideRMS   = 0
                     guideFitRMS = 0.0 
 
-					for fiber in fibers:
-						# necessary?
-						if fiber.gprobe is None:
-							guideCmd.warn('text="Gprobe %d was not listed in plugmap info"' % fiber.fiberid)
-							continue
-						gp = fiber.gprobe
-						probe = gp.info
-						enabled = gp.enabled
+                    for fiber in fibers:
+                        # necessary?
+                        if fiber.gprobe is None:
+                            guideCmd.warn('text="Gprobe %d was not listed in plugmap info"' % fiber.fiberid)
+                            continue
+                        gp = fiber.gprobe
+                        probe = gp.info
+                        enabled = gp.enabled
 
                         #
                         # dx, dy are the offsets on the ALTA guider image
                         #
-						fiber.dx = guideCameraScale*(fiber.xs - fiber.xcen)
-						fiber.dy = guideCameraScale*(fiber.ys - fiber.ycen)
+                        fiber.dx = guideCameraScale*(fiber.xs - fiber.xcen)
+                        fiber.dy = guideCameraScale*(fiber.ys - fiber.ycen)
                         poserr = fiber.xyserr
 
                         isnan = numpy.isnan
-						if isnan(fiber.dx) or isnan(fiber.dy) or isnan(poserr):
-							guideCmd.warn("text=%s" %
-										  qstr("NaN in analysis for gprobe %d star=(%g, %g) fiber measured=(%g, %g), nominal=(%g,%g)" % (
-											  fiber.fiberid, fiber.xs, fiber.ys, fiber.xcen, fiber.ycen, probe.xCenter, probe.yCenter)))
+                        if isnan(fiber.dx) or isnan(fiber.dy) or isnan(poserr):
+                            guideCmd.warn("text=%s" %
+                                          qstr("NaN in analysis for gprobe %d star=(%g, %g) fiber measured=(%g, %g), nominal=(%g,%g)" % (
+                                              fiber.fiberid, fiber.xs, fiber.ys, fiber.xcen, fiber.ycen, probe.xCenter, probe.yCenter)))
                             continue
                         if poserr == 0:
-							guideCmd.warn("text=%s" %
-										  qstr("position error is 0 for gprobe %d star=(%g, %g) fiber=(%g, %g) nominal=(%g,%g)" % (
-											  fiber.fiberid, fiber.xs, fiber.ys, fiber.xcen, fiber.ycen, probe.xCenter, probe.yCenter)))
+                            guideCmd.warn("text=%s" %
+                                          qstr("position error is 0 for gprobe %d star=(%g, %g) fiber=(%g, %g) nominal=(%g,%g)" % (
+                                              fiber.fiberid, fiber.xs, fiber.ys, fiber.xcen, fiber.ycen, probe.xCenter, probe.yCenter)))
                             continue
 
                                                 
@@ -322,15 +322,15 @@ def main(actor, queues):
                         probe.rotStar2Sky = theta # Squirrel the real angle away.
                         theta = math.radians(theta)
                         ct, st = math.cos(theta), math.sin(theta)
-						# error in guide star position; n.b. still in mm here
-						dRA	  =	 fiber.dx*ct + fiber.dy*st
-						dDec  = -fiber.dx*st + fiber.dy*ct
-						dDec *= -1
+                        # error in guide star position; n.b. still in mm here
+                        dRA   =  fiber.dx*ct + fiber.dy*st
+                        dDec  = -fiber.dx*st + fiber.dy*ct
+                        dDec *= -1
 
                         fiber.dRA = dRA
-						fiber.dDec = dDec
-						raCenter  =	probe.xFocal
-						decCenter = probe.yFocal
+                        fiber.dDec = dDec
+                        raCenter  = probe.xFocal
+                        decCenter = probe.yFocal
 
                         if plot:
                             try:
@@ -344,11 +344,11 @@ def main(actor, queues):
                                 pass
 
                         if True:
-							guideCmd.inform("star=%d,%2d, %7.2f,%7.2f, %7.2f,%7.2f, %6.1f,%6.1f,  %6.1f,%6.1f, %6.1f,%6.1f,%4.1f, %7.3f,%4.0f" % (
-								frameNo, fiber.fiberid, fiber.dRA, fiber.dDec, fiber.dx, fiber.dy, fiber.xs, fiber.ys, 
-								#probe.xCenter, probe.yCenter,
-								fiber.xcen, fiber.ycen, probe.xFocal, probe.yFocal, probe.rotStar2Sky,
-								fiber.fwhm/sigmaToFWHM, probe.focusOffset))
+                            guideCmd.inform("star=%d,%2d, %7.2f,%7.2f, %7.2f,%7.2f, %6.1f,%6.1f,  %6.1f,%6.1f, %6.1f,%6.1f,%4.1f, %7.3f,%4.0f" % (
+                                frameNo, fiber.fiberid, fiber.dRA, fiber.dDec, fiber.dx, fiber.dy, fiber.xs, fiber.ys, 
+                                #probe.xCenter, probe.yCenter,
+                                fiber.xcen, fiber.ycen, probe.xFocal, probe.yFocal, probe.rotStar2Sky,
+                                fiber.fwhm/sigmaToFWHM, probe.focusOffset))
                             
                             print "%d %2d  %7.2f %7.2f  %7.2f %7.2f  %6.1f %6.1f  %6.1f %6.1f  %6.1f %6.1f  %06.1f  %7.3f %4.0f" % (
                                 frameNo,
@@ -356,7 +356,7 @@ def main(actor, queues):
                                 fiber.info.xFocal, fiber.info.yFocal, fiber.info.rotStar2Sky,
                                 star.fwhm/sigmaToFWHM, fiber.info.focusOffset)
 
-						if not enabled:
+                        if not enabled:
                             continue
 
                         #accumulate guiding errors for good stars used in fit
@@ -388,7 +388,7 @@ def main(actor, queues):
                         guideCmd.warn('text="No stars are available for guiding"')
                         guideRMS = 99.99
 
-						GI.writeFITS(actorState.models, guideCmd, frameInfo, gState.gprobes)
+                        GI.writeFITS(actorState.models, guideCmd, frameInfo, gState.gprobes)
 
                         if oneExposure:
                             queues[MASTER].put(Msg(Msg.STATUS, msg.cmd, finish=True))
@@ -588,24 +588,24 @@ def main(actor, queues):
                     A = numpy.matrix(numpy.zeros(2*2).reshape([2,2]))
                     b = numpy.matrix(numpy.zeros(2).reshape([2,1]))
 
-					for fiber in fibers:
-						# required?
-						if fiber.gprobe is None:
-							continue
-						gp = gState.gprobes[fiber.fiberid]
-						if not gp.enabled:
-							continue
-						probe = gp.info
+                    for fiber in fibers:
+                        # required?
+                        if fiber.gprobe is None:
+                            continue
+                        gp = gState.gprobes[fiber.fiberid]
+                        if not gp.enabled:
+                            continue
+                        probe = gp.info
 
-						rms = fiber.fwhm / sigmaToFWHM
-						if isnan(rms):
+                        rms = fiber.fwhm / sigmaToFWHM
+                        if isnan(rms):
                             continue
 
                         micronsPerArcsec = 1/3600.0*gState.plugPlateScale*1e3 # convert arcsec to microns
                         rms *= micronsPerArcsec # in microns
                         rmsErr = 1
 
-						d = probe.focusOffset
+                        d = probe.focusOffset
                         x = rms*rms - C*d*d
                         xErr = 2*rms*rmsErr
 
@@ -732,7 +732,7 @@ def main(actor, queues):
                 #
                 # Write output fits file for TUI
                 #
-				GI.writeFITS(actorState.models, guideCmd, frameInfo, gState.gprobes)
+                GI.writeFITS(actorState.models, guideCmd, frameInfo, gState.gprobes)
 
                 #
                 # Is there anything to indicate that we shouldn't be guiding?

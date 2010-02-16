@@ -1749,7 +1749,7 @@ gfindstar(
                  
 				if (rc >= sizeof(radprof)/2) {
 					sprintf(pbuf, "GFINDSTAR: Guider Fiber %d has radius %d, limit is %d.\n",
-							fk, rc, sizeof(radprof)/2);
+							fk, rc, (int)sizeof(radprof)/2);
 					shError(pbuf);
 					return -1;
 				}
@@ -1845,7 +1845,7 @@ gfindstar(
 			//printf("Middle was: %g\n", gs2derr[1][1]);
 		if (rc >= sizeof(radprof)/2) {
 			sprintf(pbuf, "GFINDSTAR: Guider Fiber %d has radius %d, limit is %d.\n",
-					fk, rc, sizeof(radprof)/2);
+					fk, rc, (int)sizeof(radprof)/2);
 			shError(pbuf);
 			return -1;
 		}
