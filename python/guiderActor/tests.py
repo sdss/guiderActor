@@ -142,13 +142,13 @@ if __name__ == '__main__':
 	m = Msg(Msg.SET_TIME, cmd, expTime=30)
 	mq.put(m)
 
-	m = Msg(Msg.SET_PID, cmd, what='raDec', Kp=0.6, Ti=0, Imax=-1, Td=10.)
+	m = Msg(Msg.SET_PID, cmd, what='raDec', Kp=0.6, Ti=0, Imax=-1, Td=0.)
 	mq.put(m)
-	m = Msg(Msg.SET_PID, cmd, what='rot', Kp=0.5, Ti=0, Imax=-1, Td=10.)
+	m = Msg(Msg.SET_PID, cmd, what='rot', Kp=0.5, Ti=0, Imax=-1, Td=0.)
 	mq.put(m)
-	m = Msg(Msg.SET_PID, cmd, what='focus', Kp=0.1, Ti=0, Imax=-1, Td=10.)
+	m = Msg(Msg.SET_PID, cmd, what='focus', Kp=0.1, Ti=0, Imax=-1, Td=0.)
 	mq.put(m)
-	m = Msg(Msg.SET_PID, cmd, what='scale', Kp=0.5, Ti=0, Imax=-1, Td=10.)
+	m = Msg(Msg.SET_PID, cmd, what='scale', Kp=0.5, Ti=0, Imax=-1, Td=0.)
 	mq.put(m)
 
 	m = Msg(Msg.START_GUIDING, cmd, start=True, force=False, oneExposure=False,

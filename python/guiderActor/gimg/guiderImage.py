@@ -657,10 +657,10 @@ class GuiderImageAnalysis(object):
 		fmap = {}
 		for fi,probei,dx,dy in fmatch:
 			if fi in fmap:
-				self.warn('Fiber %i wants to be match to probe %i and %i.' % (fi, fmap[fi], probei))
+				self.warn('Fiber %i wants to match to probe %i and %i.' % (fi, fmap[fi], probei))
 				continue
 			if probei in fmap.values():
-				self.warn('Fiber %i wants to be match to already-matched probe %i.' % (fi, probei))
+				self.warn('Fiber %i wants to be matched to already-matched probe %i.' % (fi, probei))
 				continue
 			fmap[fi] = probei
 		dx = mean([dx for fi,probei,dx,dy in fmatch])
