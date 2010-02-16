@@ -17,6 +17,7 @@ python/guiderActor/gimg/protoGcamFITS.py -text
 python/guiderActor/guiderActor_main.py -text
 python/guiderActor/masterThread.py -text
 python/guiderActor/myGlobals.py -text
+python/guiderActor/tests.py -text
 /setup.py -text
 src/Makefile -text
 src/gimg/Makefile -text
