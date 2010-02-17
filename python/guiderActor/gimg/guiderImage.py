@@ -42,7 +42,7 @@ class fiber(object):
 		self.xcen = numpy.nan
 
 	def is_fake(self):
-		return not isfinite(self.xcen)
+		return isnan(self.xcen)
 
 
 # The following are ctypes classes for interaction with the ipGguide.c code.
@@ -130,6 +130,24 @@ class GuiderImageAnalysis(object):
 		# That is, unbinned (flat) images are this factor bigger in
 		# each dimension.
 		self.binning = 2
+
+	def ensureLibraryLoaded(self):
+		# Load C library "ipGguide.c"
+		path = os.path.expandvars("$GUIDERACTOR_DIR/lib/libguide.so")
+		libguide = ctypes.CDLL(path)
+		if not libguide:
+			self.warn('Failed to load "libguide.so" from %s ($GUIDERACTOR_DIR/lib/libguide.so)' % path)
+		libguide.gfindstars.argtypes = [ctypes.POINTER(REGION), ctypes.POINTER(FIBERDATA), ctypes.c_int]
+		libguide.gfindstars.restype = ctypes.c_int
+		libguide.fiberdata_new.argtypes = [ctypes.c_int]
+		libguide.fiberdata_new.restype = ctypes.POINTER(FIBERDATA)
+		libguide.fiberdata_free.argtypes = [ctypes.POINTER(FIBERDATA)]
+		libguide.fiberdata_free.restype = None
+		libguide.rotate_region.argtypes = [ctypes.POINTER(REGION), ctypes.POINTER(REGION), ctypes.c_float]
+		libguide.rotate_region.restype = None
+		libguide.rotate_mask.argtypes = [ctypes.POINTER(MASK), ctypes.POINTER(MASK), ctypes.c_float]
+		libguide.rotate_mask.restype = None
+		self.libguide = libguide
 
 	# For ease of testing...
 	def warn(self, s):
@@ -225,6 +243,8 @@ class GuiderImageAnalysis(object):
 		return cards
 
 	def getStampHDUs(self, fibers, bg, image, mask):
+		self.ensureLibraryLoaded()
+
 		r = int(ceil(max([f.radius for f in fibers])))
 		stamps = []
 		maskstamps = []
@@ -397,23 +417,7 @@ class GuiderImageAnalysis(object):
 		The list of fibers contains an entry for each fiber found.
 		'''
 		assert(self.gimgfn)
-
-		# Load C library "ipGguide.c"
-		path = os.path.expandvars("$GUIDERACTOR_DIR/lib/libguide.so")
-		libguide = ctypes.CDLL(path)
-		if not libguide:
-			self.warn('Failed to load "libguide.so" from %s ($GUIDERACTOR_DIR/lib/libguide.so)' % path)
-		libguide.gfindstars.argtypes = [ctypes.POINTER(REGION), ctypes.POINTER(FIBERDATA), ctypes.c_int]
-		libguide.gfindstars.restype = ctypes.c_int
-		libguide.fiberdata_new.argtypes = [ctypes.c_int]
-		libguide.fiberdata_new.restype = ctypes.POINTER(FIBERDATA)
-		libguide.fiberdata_free.argtypes = [ctypes.POINTER(FIBERDATA)]
-		libguide.fiberdata_free.restype = None
-		libguide.rotate_region.argtypes = [ctypes.POINTER(REGION), ctypes.POINTER(REGION), ctypes.c_float]
-		libguide.rotate_region.restype = None
-		libguide.rotate_mask.argtypes = [ctypes.POINTER(MASK), ctypes.POINTER(MASK), ctypes.c_float]
-		libguide.rotate_mask.restype = None
-		self.libguide = libguide
+		self.ensureLibraryLoaded()
 
 		# Load guider-cam image.
 		self.debug('Reading guider-cam image %s' % self.gimgfn)
@@ -438,8 +442,9 @@ class GuiderImageAnalysis(object):
 		self.debug('Using flat image %s' % flatfn)
 		(flat, mask, fibers) = self.flat_analyze(flatfn, cartridgeId, gprobes)
 
+		fibers = [f for f in fibers if not f.is_fake()]
+
 		# FIXME -- presumably we want to mask pixels that were saturated?
-		
 
 		# FIXME -- we currently don't apply the flat.
 		if False:
@@ -531,6 +536,8 @@ class GuiderImageAnalysis(object):
 		return (flat, mask, fibers)
 
 	# Returns (mask, flat, fibers)
+	# NOTE, returns a list of fibers the same length as 'gprobes';
+	# some will have xcen=ycen=NaN; test with fiber.is_fake()
 	def flat_analyze(self, flatfn, cartridgeId, gprobes):
 		flatout = self.getProcessedOutputName(flatfn)
 
@@ -614,7 +621,8 @@ class GuiderImageAnalysis(object):
 		# where you expect them to be.
 		maxhits = 0
 		best = None
-		FX,FY = array([f.xcen for f in fibers]), array([f.ycen for f in fibers])
+		FX = array([f.xcen for f in fibers])
+		FY = array([f.ycen for f in fibers])
 		PX = array([p.info.xCenter for p in gprobes.values()])
 		PY = array([p.info.yCenter for p in gprobes.values()])
 		(H,W) = img.shape
