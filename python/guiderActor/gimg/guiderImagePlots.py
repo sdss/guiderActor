@@ -1,3 +1,4 @@
+from numpy import isfinite
 from pylab import *
 from matplotlib import rc
 rc('xtick', labelsize=8)
@@ -44,8 +45,10 @@ def plot_fibers(image, fibers, showaxes=False, centerxy=False, starxy=False, R=0
 			axhline(f.ycen, color='c')
 			axvline(f.xcen, color='c')
 		if starxy:
-			axhline(f.ys, color='r')
-			axvline(f.xs, color='r')
+			if isfinite(f.ys):
+				axhline(f.ys, color='r')
+			if isfinite(f.xs):
+				axvline(f.xs, color='r')
 		axis(a)
 		if not showaxes:
 			axis('off')
