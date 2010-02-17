@@ -38,6 +38,20 @@ if __name__ == '__main__':
 		(55243,  926,  786, 16, 'plPlugMapM-3774-55241-01.par'),
 		(55243,  927,  928, 11, 'plPlugMapM-3852-55242-01.par'),
 		(55243, 1193,  928, 11, 'plPlugMapM-3852-55242-01.par'),
+
+		(55244,    2,    4, 10, 'plPlugMapM-3650-55242-01.par'),
+		(55244,    3,    4, 10, 'plPlugMapM-3650-55242-01.par'),
+		(55244,  146,    4, 10, 'plPlugMapM-3650-55242-01.par'),
+		(55244,  147,  148, 13, 'plPlugMapM-3657-55244-01.par'),
+		(55244,  424,  148, 13, 'plPlugMapM-3657-55244-01.par'),
+		(55244,  425,  426, 12, 'plPlugMapM-3682-55244-01.par'),
+		(55244,  645,  426, 12, 'plPlugMapM-3682-55244-01.par'),
+		(55244,  646,  647, 17, 'plPlugMapM-3782-55242-01.par'),
+		(55244,  776,  647, 17, 'plPlugMapM-3782-55242-01.par'),
+		(55244,  777,  778, 16, 'plPlugMapM-3774-55241-01.par'),
+		(55244, 1018,  778, 16, 'plPlugMapM-3774-55241-01.par'),
+		(55244, 1019, 1020, 11, 'plPlugMapM-3879-55244-02.par'),
+		(55244, 1548, 1020, 11, 'plPlugMapM-3879-55244-02.par'),
 		]
 
 	alldx = []
@@ -45,6 +59,10 @@ if __name__ == '__main__':
 
 	figure(figsize=(6,6))
 	for (mjd, gimgnum, compnum, cart, plugmapbasefn) in testInputs:
+
+		#if mjd != 55244:
+		#	continue
+
 		fn = '../testfiles/%i/gimg-%04i.fits' % (mjd, gimgnum)
 		plugmapfn = '../testfiles/%i/' % mjd + plugmapbasefn
 
