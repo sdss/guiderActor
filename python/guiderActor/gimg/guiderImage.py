@@ -100,6 +100,7 @@ class GuiderImageAnalysis(object):
 	'''
 	def __init__(self, gimgfn, cmd=None):
 		self.gimgfn = gimgfn
+		self.outputDir = None
 		# set during findFibers():
 		self.fibers = None
 		self.guiderImage = None
@@ -179,10 +180,17 @@ class GuiderImageAnalysis(object):
 		'''
 		return (fitsheader['DARKFILE'], fitsheader['FLATFILE'])
 
+	def setOutputDir(self, dirnm):
+		self.outputDir = dirnm
+
 	def getProcessedOutputName(self, imgfn):
 		(dirname, filename) = os.path.split(imgfn)
 		outname = 'proc-%s' % (filename)
-		procpath = os.path.join(dirname, outname)
+		if self.outputDir:
+			thedir = self.outputDir
+		else:
+			thedir = dirname
+		procpath = os.path.join(thedir, outname)
 		return procpath
 
 	def addPixelWcs(self, header, wcsName=""):
