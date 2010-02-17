@@ -782,10 +782,13 @@ class GuiderImageAnalysis(object):
 		pixunit = 'binned guider-camera pixels'
 
 		# For writing fiber postage stamps, fill in rotation fields.
-		for f in fibers:
-			if f.is_fake():
-				continue
-			f.gprobe.info.rotStar2Sky = 90 + f.gprobe.info.rotation - f.gprobe.info.phi
+		#for f in fibers:
+		#	if f.is_fake():
+		#		continue
+		#	f.gprobe.info.rotStar2Sky = 90 + f.gprobe.info.rotation - f.gprobe.info.phi
+		for p in gprobes.values():
+			if not hasattr(p.info, 'rotStar2Sky'):
+				p.info.rotStar2Sky = 90 + p.info.rotation - p.info.phi
 
 		hdulist = self._getProcGimgHDUList(hdr, gprobes, fibers, flat, mask, stampImage=binimg)
 		if hdulist is None:
