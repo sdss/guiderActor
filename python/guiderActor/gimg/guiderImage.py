@@ -262,10 +262,17 @@ class GuiderImageAnalysis(object):
 			stamps.append(rstamp)
 			# Rotate the mask image...
 			stamp = mask[yc-r:yc+r+1, xc-r:xc+r+1].astype(uint8)
+			# Replace zeros by 255 so that after rotate_region (which puts
+			# zeroes in the "blank" regions) we can replace them.
+			stamp[stamp == 0] = 255
 			rstamp = zeros_like(stamp)
 			self.libguide.rotate_mask(numpy_array_to_MASK(stamp),
 									  numpy_array_to_MASK(rstamp),
 									  rot)
+			# "blank" regions become masked-out pixels.
+			rstamp[rstamp == 0] = 2
+			# Reinstate the zeroes.
+			rstamp[rstamp == 255] = 0
 			maskstamps.append(rstamp)
 
 		# Stack the stamps into one image.
@@ -275,7 +282,10 @@ class GuiderImageAnalysis(object):
 		stamps[stamps==0] = bg
 		return [pyfits.ImageHDU(stamps), pyfits.ImageHDU(maskstamps)]
 
-	def _getProcGimgHDUList(self, primhdr, gprobes, fibers, image, mask):
+	def _getProcGimgHDUList(self, primhdr, gprobes, fibers, image, mask, stampImage=None):
+		if stampImage is None:
+			stampImage = image
+
 		imageBackground = median(image)
 		imageHDU = pyfits.PrimaryHDU(image, header=primhdr)
 		imageHDU.header.update('SDSSFMT', 'GPROC 1 2', 'type major minor version for this file')
@@ -321,8 +331,8 @@ class GuiderImageAnalysis(object):
 			hdulist = pyfits.HDUList()
 			hdulist.append(imageHDU)
 			hdulist.append(pyfits.ImageHDU(mask))
-			hdulist += self.getStampHDUs(smalls, imageBackground, image, mask)
-			hdulist += self.getStampHDUs(bigs, imageBackground, image, mask)
+			hdulist += self.getStampHDUs(smalls, imageBackground, stampImage, mask)
+			hdulist += self.getStampHDUs(bigs, imageBackground, stampImage, mask)
 
 			pixunit = 'guidercam pixels (binned)'
 			gpfields = [
@@ -440,7 +450,7 @@ class GuiderImageAnalysis(object):
 		# FIXME -- filter probes here for !exists, !tritium ?
 
 		self.debug('Using flat image %s' % flatfn)
-		(flat, mask, fibers) = self.flat_analyze(flatfn, cartridgeId, gprobes)
+		(flat, mask, fibers) = self.analyzeFlat(flatfn, cartridgeId, gprobes)
 
 		fibers = [f for f in fibers if not f.is_fake()]
 
@@ -517,7 +527,20 @@ class GuiderImageAnalysis(object):
 		return fibers
 
 	@staticmethod
-	def readProcessedFlat(flatfn, gprobes):
+	def binImage(img, BIN):
+		binned = zeros((img.shape[0]/BIN, img.shape[1]/BIN), float)
+		for i in range(BIN):
+			for j in range(BIN):
+				binned += img[i::BIN,j::BIN]
+		binned /= (BIN*BIN)
+		return binned
+		
+
+	# Returns (flat, mask, fibers)
+	# NOTE, returns a list of fibers the same length as 'gprobes';
+	# some will have xcen=ycen=NaN; test with fiber.is_fake()
+	@staticmethod
+	def readProcessedFlat(flatfn, gprobes, stamps=False):
 		p = pyfits.open(flatfn)
 		flat = p[0].data
 		mask = p[1].data
@@ -533,18 +556,54 @@ class GuiderImageAnalysis(object):
 			f = fiber(fi, xi, yi, ri, 0)
 			f.gprobe = gprobes.get(fi)
 			fibers.append(f)
+
+		if stamps:
+			# add stamp,mask fields to fibers.
+			smallstamps = p[2].data
+			smallmasks  = p[3].data
+			bigstamps = p[4].data
+			bigmasks  = p[5].data
+
+			# 1=small, 2=big
+			stampsize = table.field('stampSize')
+			# 0,1,... for each of small and big stamps.
+			stampindex = table.field('stampIdx')
+
+			# Assert consistency...
+			assert(smallstamps.shape == smallmasks.shape)
+			assert(bigstamps.shape == bigmasks.shape)
+			SH,SW = smallstamps.shape
+			BH,BW = bigstamps.shape
+			assert(SW * sum(stampsize == 1) == SH)
+			assert(BW * sum(stampsize == 2) == BH)
+			assert(all(stampindex[stampsize == 1] >= 0))
+			assert(all(stampindex[stampsize == 1] < SH/SW))
+			assert(all(stampindex[stampsize == 2] >= 0))
+			assert(all(stampindex[stampsize == 2] < BH/BW))
+
+			for i,f in enumerate(fibers):
+				# Small
+				if stampsize[i] == 1:
+					si = stampindex[i]
+					f.stamp     = smallstamps[si*SW:(si+1)*SW, :]
+					f.stampmask = smallmasks [si*SW:(si+1)*SW, :]
+				elif stampsize[i] == 2:
+					si = stampindex[i]
+					f.stamp     = bigstamps[si*BW:(si+1)*BW, :]
+					f.stampmask = bigmasks [si*BW:(si+1)*BW, :]
+
 		return (flat, mask, fibers)
 
-	# Returns (mask, flat, fibers)
+	# Returns (flat, mask, fibers)
 	# NOTE, returns a list of fibers the same length as 'gprobes';
 	# some will have xcen=ycen=NaN; test with fiber.is_fake()
-	def flat_analyze(self, flatfn, cartridgeId, gprobes):
+	def analyzeFlat(self, flatfn, cartridgeId, gprobes, stamps=False):
 		flatout = self.getProcessedOutputName(flatfn)
 
 		if os.path.exists(flatout):
 			self.inform('Reading processed flat-field from %s' % flatout)
 			try:
-				return GuiderImageAnalysis.readProcessedFlat(flatout, gprobes)
+				return GuiderImageAnalysis.readProcessedFlat(flatout, gprobes, stamps)
 			except:
 				self.warn('Failed to read processed flat-field from %s; regenerating it.' % flatout)
 
@@ -705,17 +764,17 @@ class GuiderImageAnalysis(object):
 		for i in range(BIN):
 			for j in range(BIN):
 				bmask = logical_or(bmask, mask[i::BIN,j::BIN])
-		# The "gfindstars" function wants the mask to be 0=good.
-		bmask = logical_not(bmask)
-		mask = bmask
+
+		# Mask convention:
+		#   0 = good
+		#   1 = bad pixel
+		#   2 = masked pixel
+		mask = where(bmask, 0, 2)
 		mask = mask.astype(uint8)
 
-		bflat = zeros((flat.shape[0]/BIN, flat.shape[1]/BIN), float)
-		for i in range(BIN):
-			for j in range(BIN):
-				bflat += flat[i::BIN,j::BIN]
-		bflat /= (BIN*BIN)
-		flat = bflat
+		flat = GuiderImageAnalysis.binImage(flat, BIN)
+
+		binimg = GuiderImageAnalysis.binImage(img, BIN).astype(int16)
 
 		# Write output file... copy header cards from input image.
 		# DX?  DY?  Any other stats in here?
@@ -728,13 +787,13 @@ class GuiderImageAnalysis(object):
 				continue
 			f.gprobe.info.rotStar2Sky = 90 + f.gprobe.info.rotation - f.gprobe.info.phi
 
-		hdulist = self._getProcGimgHDUList(hdr, gprobes, fibers, flat, mask)
+		hdulist = self._getProcGimgHDUList(hdr, gprobes, fibers, flat, mask, stampImage=binimg)
 		if hdulist is None:
 			self.warn('Failed to create processed flat file')
 			return (flat, mask, fibers)
 
 		hdulist.writeto(flatout, clobber=True)
 		# Now read that file we just wrote...
-		return GuiderImageAnalysis.readProcessedFlat(flatout, gprobes)
+		return GuiderImageAnalysis.readProcessedFlat(flatout, gprobes, stamps)
 
 
