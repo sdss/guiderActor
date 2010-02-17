@@ -367,7 +367,8 @@ class GuiderImageAnalysis(object):
 				('fwhm',    None,     'E', 'arcsec'),
 				('poserr',  'xyserr', 'E', None),
 				]
-			
+
+			# FIXME -- rotStar2Sky -- should check with "hasattr"...
 			cols = []
 			for name,fitstype,units in gpfields:
 				cols.append(pyfits.Column(name=name, format=fitstype, unit=units,
@@ -782,10 +783,6 @@ class GuiderImageAnalysis(object):
 		pixunit = 'binned guider-camera pixels'
 
 		# For writing fiber postage stamps, fill in rotation fields.
-		#for f in fibers:
-		#	if f.is_fake():
-		#		continue
-		#	f.gprobe.info.rotStar2Sky = 90 + f.gprobe.info.rotation - f.gprobe.info.phi
 		for p in gprobes.values():
 			if not hasattr(p.info, 'rotStar2Sky'):
 				p.info.rotStar2Sky = 90 + p.info.rotation - p.info.phi
