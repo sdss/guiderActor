@@ -7,6 +7,7 @@ from scipy.ndimage.morphology import binary_closing, binary_dilation, binary_fil
 from scipy.ndimage.measurements import label, center_of_mass, find_objects
 
 import actorcore.utility.fits as actorFits
+from opscore.utility.tback import tback
 
 # A guider fiber and the star image seen through it.
 class fiber(object):
@@ -251,8 +252,10 @@ class GuiderImageAnalysis(object):
 		return cards
 
 	def getStampHDUs(self, fibers, bg, image, mask):
+		if len(fibers) == 0:
+			return [pyfits.ImageHDU(array([[]]).astype(int16)),
+					pyfits.ImageHDU(array([[]]).astype(uint8))]
 		self.ensureLibraryLoaded()
-
 		r = int(ceil(max([f.radius for f in fibers])))
 		stamps = []
 		maskstamps = []
@@ -394,6 +397,7 @@ class GuiderImageAnalysis(object):
 			hdulist.append(pyfits.new_table(cols))
 		except Exception, e:
 			self.warn("text='could not write proc- guider file: %s'" % (e,))
+			tback('Narf', e)
 			return None
 		return hdulist
 		
@@ -497,7 +501,7 @@ class GuiderImageAnalysis(object):
 		img16 = image.astype(int16)
 		self.debug('Image (i16) range: %i to %i' % (img16.min(), img16.max()))
 		c_image = numpy_array_to_REGION(img16)
-		c_fibers = libguide.fiberdata_new(len(goodfibers))
+		c_fibers = self.libguide.fiberdata_new(len(goodfibers))
 
 		for i,f in enumerate(goodfibers):
 			c_fibers[0].g_fid[i] = f.fiberid
@@ -509,7 +513,7 @@ class GuiderImageAnalysis(object):
 
 		# mode=1: data frame; 0=spot frame
 		mode = 1
-		res = libguide.gfindstars(ctypes.byref(c_image), c_fibers, mode)
+		res = self.libguide.gfindstars(ctypes.byref(c_image), c_fibers, mode)
 		# SH_SUCCESS is this following nutty number...
 		if res == int(numpy.uint32(0x8001c009)):
 			self.debug('gfindstars returned successfully.')
@@ -525,7 +529,7 @@ class GuiderImageAnalysis(object):
 			f.sky    = c_fibers[0].g_fitbkgrd[i]
 			f.mag    = c_fibers[0].g_mag[i]
 
-		libguide.fiberdata_free(c_fibers)
+		self.libguide.fiberdata_free(c_fibers)
 
 		if doplots:
 			plot_fibers(image, fibers, axes=True, centerxy=True, starxy=True, R=11)

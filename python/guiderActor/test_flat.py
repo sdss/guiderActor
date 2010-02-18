@@ -1,9 +1,14 @@
 import os
 import os.path
 import re
+import sys
 
 import matplotlib
 matplotlib.use('Agg')
+
+from numpy import *
+
+import pyfits
 
 from gimg.guiderImage import *
 from gimg.guiderImagePlots import *
@@ -14,13 +19,82 @@ from tests import getGprobes, ducky
 #class TestGuiderImageAnalysis(GuiderImageAnalysis):
 #pass
 
+def testPixelConventions():
+	bg = 1500
+	W,H = 100,100
+	# fiber:
+	fx,fy = 49.5,49.5
+	fr = 8.5 * 2
+	fflux = 500
+	flatflux = 10000
+	# star:
+	sx,sy = 49.5,49.5
+	ssig = 2.0 * 2
+	sflux = 10000
+
+	flatfn = 'test1-flat.fits'
+	imgfn  = 'test1-img.fits'
+
+	X,Y = meshgrid(arange(W),arange(H))
+	flat = zeros((H,W), int16)
+	flat += bg
+	flat += flatflux * (((X-fx)**2 + (Y-fy)**2) < fr**2)
+
+	pyfits.PrimaryHDU(flat).writeto(flatfn, clobber=True)
+
+	img = zeros((H,W), int16)
+	img += bg
+	img += fflux * (((X-fx)**2 + (Y-fy)**2) < fr**2)
+	img += sflux * 1./(2.*pi*ssig**2) * exp(-((X-sx)**2 + (Y-sy)**2)/(2.*ssig**2))
+
+	binimg = GuiderImageAnalysis.binImage(img, 2)
+
+	imhdu = pyfits.PrimaryHDU(binimg)
+	h = imhdu.header
+	h.update('FLATFILE', flatfn)
+	h.update('DARKFILE', '')
+	h.update('FLATCART', 1000)
+	imhdu.writeto(imgfn, clobber=True)
+
+	GI = GuiderImageAnalysis(imgfn)
+	GI.setOutputDir('test-outputs')
+	gprobes = {}
+	gp = ducky()
+	gp.enabled = True
+	gp.flags = 0
+	gp.info = ducky()
+	gp.info.exists = True
+	gp.info.fiber_type = 'GUIDE'
+	gp.info.xCenter = 25
+	gp.info.yCenter = 25
+	gp.info.radius = fr/2.
+	gp.info.xFerruleOffset = 0
+	gp.info.yFerruleOffset = 0
+	gp.info.rotation = 0
+	gp.info.phi = 0
+	gp.info.rotStar2Sky = 0
+	gp.info.focusOffset = 0
+	gp.info.ra = 0
+	gp.info.dec = 0
+	gp.info.xFocal = 0
+	gp.info.yFocal = 0
+	gprobes[1] = gp
+	fibers = GI.findFibers(gprobes)
+	assert(len(fibers) == 1)
+	print 'fiber:', fibers[0]
+
+	
+
 if __name__ == '__main__':
 	os.environ['GUIDERACTOR_DIR'] = '..'
+	fiberinfofn = '../etc/gcamFiberInfo.par'
+
+	testPixelConventions()
+	sys.exit(0)
 	
 	GI = GuiderImageAnalysis(None)
 	GI.setOutputDir('test-outputs')
 
-	fiberinfofn = '../etc/gcamFiberInfo.par'
 
 	testInputs = [
 		(55243,    1,    7, 10, 'plPlugMapM-3650-55242-01.par'),
