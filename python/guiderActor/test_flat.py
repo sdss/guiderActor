@@ -30,7 +30,7 @@ def testPixelConventions():
 	# star:
 	sx,sy = 49.5,49.5
 	ssig = 2.0 * 2
-	sflux = 10000
+	sflux = 100000
 
 	flatfn = 'test1-flat.fits'
 	imgfn  = 'test1-img.fits'
@@ -42,22 +42,6 @@ def testPixelConventions():
 
 	pyfits.PrimaryHDU(flat).writeto(flatfn, clobber=True)
 
-	img = zeros((H,W), int16)
-	img += bg
-	img += fflux * (((X-fx)**2 + (Y-fy)**2) < fr**2)
-	img += sflux * 1./(2.*pi*ssig**2) * exp(-((X-sx)**2 + (Y-sy)**2)/(2.*ssig**2))
-
-	binimg = GuiderImageAnalysis.binImage(img, 2)
-
-	imhdu = pyfits.PrimaryHDU(binimg)
-	h = imhdu.header
-	h.update('FLATFILE', flatfn)
-	h.update('DARKFILE', '')
-	h.update('FLATCART', 1000)
-	imhdu.writeto(imgfn, clobber=True)
-
-	GI = GuiderImageAnalysis(imgfn)
-	GI.setOutputDir('test-outputs')
 	gprobes = {}
 	gp = ducky()
 	gp.enabled = True
@@ -79,11 +63,57 @@ def testPixelConventions():
 	gp.info.xFocal = 0
 	gp.info.yFocal = 0
 	gprobes[1] = gp
-	fibers = GI.findFibers(gprobes)
-	assert(len(fibers) == 1)
-	print 'fiber:', fibers[0]
 
+
+	#SXs = arange(46.0, 52.05, 0.05)
+	SXs = arange(47.0, 51.05, 0.05)
+	allsx = []
+	allsy = []
 	
+	for sx in SXs:
+		imgfn = 'test1-img-%.2f.fits' % sx
+
+		img = zeros((H,W))
+		img += bg
+		img += fflux * (((X-fx)**2 + (Y-fy)**2) < fr**2)
+		S = sflux * 1./(2.*pi*ssig**2) * exp(-((X-sx)**2 + (Y-sy)**2)/(2.*ssig**2))
+		#print 'star flux', S.min(), S.max(), S.sum()
+		img += sflux * 1./(2.*pi*ssig**2) * exp(-((X-sx)**2 + (Y-sy)**2)/(2.*ssig**2))
+		binimg = GuiderImageAnalysis.binImage(img, 2)
+		#print 'binimg:', binimg.min(), binimg.max()
+		binimg = binimg.astype(int16)
+		#print 'binimg:', binimg.min(), binimg.max()
+		imhdu = pyfits.PrimaryHDU(binimg)
+		h = imhdu.header
+		h.update('FLATFILE', flatfn)
+		h.update('DARKFILE', '')
+		h.update('FLATCART', 1000)
+		imhdu.writeto(imgfn, clobber=True)
+		#os.system('an-fitstopnm -i %s -r -v | pnmtopng > %s' % (imgfn, imgfn.replace('.fits','.png')))
+
+		GI = GuiderImageAnalysis(imgfn)
+		GI.setOutputDir('test-outputs')
+		fibers = GI.findFibers(gprobes)
+		assert(len(fibers) == 1)
+		print 'fiber:', fibers[0]
+		allsx.append(fibers[0].xs)
+		allsy.append(fibers[0].ys)
+
+	allsx = array(allsx)
+	allsy = array(allsy)
+
+	clf()
+	plot(SXs, allsx, 'r.')
+	plot(SXs, allsy, 'b.')
+	for sx in [49.0,49.5,50.0]:
+		axvline(sx, color='0.5')
+		I = argmin(abs(SXs - sx))
+		axhline(allsx[I], color='0.5')
+		
+	xlabel('True star x')
+	ylabel('Found star x')
+	savefig('sx.png')
+
 
 if __name__ == '__main__':
 	os.environ['GUIDERACTOR_DIR'] = '..'

@@ -448,8 +448,12 @@ class GuiderImageAnalysis(object):
 		image = p[0].data
 		hdr = p[0].header
 
+		#print 'image', image.min(), image.max()
+		#print 'sat', self.saturationLevel
+		#print image >= self.saturationLevel
+
 		# We can't cope with bright pixels. Hack a fix.
-		sat = (image >= self.saturationLevel)
+		sat = (image.astype(int) >= self.saturationLevel)
 		if any(sat):
 			self.warn('the exposure has %i saturated pixels' % sum(sat))
 		image[sat] = self.saturationReplacement
