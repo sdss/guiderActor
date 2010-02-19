@@ -302,7 +302,9 @@ class GuiderImageAnalysis(object):
 		# Replace zeroes by bg
 		stamps[stamps==0] = bg
 		# Also replace masked regions by bg.
-		stamps[maskstamps > 0] = maximum(bg - 500, 0)
+		# HACKery....
+		#stamps[maskstamps > 0] = maximum(bg - 500, 0)
+		stamps[maskstamps > 0] = bg
 		print 'bg=', bg
 		return [pyfits.ImageHDU(stamps), pyfits.ImageHDU(maskstamps)]
 
@@ -310,11 +312,13 @@ class GuiderImageAnalysis(object):
 		if stampImage is None:
 			stampImage = image
 
-		#imageBackground = median(image)
-		imageBackground = median(image[mask == 0])
+		bg = median(image)
+		#bg = median(image[mask == 0])
+		#bg = self.imageBias
+		
 		imageHDU = pyfits.PrimaryHDU(image, header=primhdr)
 		imageHDU.header.update('SDSSFMT', 'GPROC 1 2', 'type major minor version for this file')
-		imageHDU.header.update('IMGBACK', imageBackground, 'crude background for entire image. For displays.')
+		imageHDU.header.update('IMGBACK', bg, 'crude background for entire image. For displays.')
 
 		try:
 			# List the fibers by fiber id.
@@ -356,8 +360,8 @@ class GuiderImageAnalysis(object):
 			hdulist = pyfits.HDUList()
 			hdulist.append(imageHDU)
 			hdulist.append(pyfits.ImageHDU(mask))
-			hdulist += self.getStampHDUs(smalls, imageBackground, stampImage, mask)
-			hdulist += self.getStampHDUs(bigs, imageBackground, stampImage, mask)
+			hdulist += self.getStampHDUs(smalls, bg, stampImage, mask)
+			hdulist += self.getStampHDUs(bigs, bg, stampImage, mask)
 
 			pixunit = 'guidercam pixels (binned)'
 			gpfields = [
@@ -426,6 +430,8 @@ class GuiderImageAnalysis(object):
 
 		procpath = self.getProcessedOutputName(self.gimgfn)
 		objectname = os.path.splitext(self.gimgfn)[0]
+
+		#bg = median(gimg)#image[mask == 0])
 
 		hdulist = self._getProcGimgHDUList(hdr, gprobes, fibers, gimg, self.maskImage)
 		imageHDU = hdulist[0]
@@ -498,9 +504,11 @@ class GuiderImageAnalysis(object):
 			image /= (flat + (flat == 0)*1)
 			self.debug('After flattening: image range: %g to %g' % (image.min(), image.max()))
 
+		#self.imageBias = median(image[mask > 0].ravel())
+
 		# Zero out parts of the image that are masked out.
 		# In this mask convention, 0 = good, >0 is bad.
-		image[mask>0] = 0
+		#image[mask>0] = 0
 
 		self.guiderImage = image
 		self.guiderHeader = hdr
