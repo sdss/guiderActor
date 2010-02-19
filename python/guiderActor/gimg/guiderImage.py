@@ -160,15 +160,19 @@ class GuiderImageAnalysis(object):
 		self.libguide = libguide
 
 	# For ease of testing...
-	def warn(self, s):
+	def warn(self, s, hasKey=False):
 		if self.warnFunc is None:
 			print 'warning:', s
 		else:
+			if not hasKey:
+				s = 'text="%s"' % (s)
 			self.warnFunc(s)
-	def inform(self, s):
+	def inform(self, s, hasKey=False):
 		if self.informFunc is None:
 			print 'info:', s
 		else:
+			if not hasKey:
+				s = 'text="%s"' % (s)
 			self.informFunc(s)
 
 	def debug(self, s):
@@ -415,7 +419,7 @@ class GuiderImageAnalysis(object):
 
 			hdulist.append(pyfits.new_table(cols))
 		except Exception, e:
-			self.warn("text='could not write proc- guider file: %s'" % (e,))
+			self.warn('could not write proc- guider file: %s' % (e,))
 			tback('Narf', e)
 			return None
 		return hdulist
@@ -441,7 +445,7 @@ class GuiderImageAnalysis(object):
 		hdulist.writeto(procpath, clobber=True)
 
                 dirname, filename = os.path.split(procpath)
-		self.inform('file=%s/,%s' % (dirname, filename))
+		self.inform('file=%s/,%s' % (dirname, filename), hasKey=True)
 
 	def findFibers(self, gprobes):
 		''' findFibers(gprobes)
@@ -526,14 +530,14 @@ class GuiderImageAnalysis(object):
 		
 		img = image - bias
 		# Mark negative pixels
-		mask[img < 0] |= GuiderImageAnalysis.mask_badpixels
+		mask[(img < 0) & (mask == 0)] |= GuiderImageAnalysis.mask_badpixels
 		# Clamp negative pixels
 		img[img < 0] = 0
 		# Blank out masked pixels.
 		img[mask > 0] = 0
 		# Convert data types for "gfindstars"...
 		# The "img16" object must live until after gfindstars() !
-		img16 = (img).astype(int16)
+		img16 = img.astype(int16)
 		#self.inform('Image (i16) range: %i to %i' % (img16.min(), img16.max()))
 		c_image = numpy_array_to_REGION(img16)
 		c_fibers = self.libguide.fiberdata_new(len(goodfibers))
@@ -553,7 +557,7 @@ class GuiderImageAnalysis(object):
 		if res == int(numpy.uint32(0x8001c009)):
 			self.debug('gfindstars returned successfully.')
 		else:
-			self.warn('gfindstars() returned an error code: %i' % res)
+			self.warn('gfindstars() returned an error code: %08x' % res)
 
 		# pull star positions out of c_fibers, stuff outputs...
 		for i,f in enumerate(goodfibers):
