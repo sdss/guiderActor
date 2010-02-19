@@ -603,6 +603,8 @@ def main(actor, queues):
                             continue
                         probe = gp.info
 
+						# FIXME -- do we want to include ACQUISITION fibers?
+
                         rms = fiber.fwhm / sigmaToFWHM
                         if isnan(rms):
                             continue

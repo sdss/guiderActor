@@ -7,6 +7,9 @@ import matplotlib
 matplotlib.use('Agg')
 
 from numpy import *
+from numpy.random import *
+
+from scipy.ndimage.measurements import *
 
 import pyfits
 
@@ -21,6 +24,8 @@ from tests import getGprobes, ducky
 
 def testPixelConventions():
 	bg = 1500
+	bgsig = sqrt(bg)
+
 	W,H = 100,100
 	# fiber:
 	fx,fy = 49.5,49.5
@@ -31,6 +36,10 @@ def testPixelConventions():
 	sx,sy = 49.5,49.5
 	ssig = 2.0 * 2
 	sflux = 100000
+
+	# 100x100: 0.937
+
+	# 100x100: 0.401
 
 	flatfn = 'test1-flat.fits'
 	imgfn  = 'test1-img.fits'
@@ -64,24 +73,37 @@ def testPixelConventions():
 	gp.info.yFocal = 0
 	gprobes[1] = gp
 
+	clf()
 
-	#SXs = arange(46.0, 52.05, 0.05)
-	SXs = arange(47.0, 51.05, 0.05)
+	#sxstep = 0.05
+	#sxstep = 0.25
+	sxstep = 1.
+	SXs = arange(34.0, 66.05, sxstep)
+	#SXs = arange(20.0, 70.05, sxstep)
+	#SXs = arange(45.0, 53.05, sxstep)
+	#SXs = arange(47.0, 51.05, 0.05)
+	#SXs = arange(47.0, 51.05, 0.25)
 	allsx = []
 	allsy = []
-	
-	for sx in SXs:
+
+	allims = []
+	allimxs = []
+
+	for i,sx in enumerate(SXs):
 		imgfn = 'test1-img-%.2f.fits' % sx
 
 		img = zeros((H,W))
-		img += bg
+		img += bg + bgsig * standard_normal(img.shape)
 		img += fflux * (((X-fx)**2 + (Y-fy)**2) < fr**2)
-		S = sflux * 1./(2.*pi*ssig**2) * exp(-((X-sx)**2 + (Y-sy)**2)/(2.*ssig**2))
-		#print 'star flux', S.min(), S.max(), S.sum()
 		img += sflux * 1./(2.*pi*ssig**2) * exp(-((X-sx)**2 + (Y-sy)**2)/(2.*ssig**2))
+
+		S = sflux * 1./(2.*pi*ssig**2) * exp(-((X-sx)**2 + (Y-sy)**2)/(2.*ssig**2))
+		#print 'star flux cm', center_of_mass(S)
+		#print 'star flux', S.min(), S.max(), S.sum()
 		binimg = GuiderImageAnalysis.binImage(img, 2)
 		#print 'binimg:', binimg.min(), binimg.max()
 		binimg = binimg.astype(int16)
+		#print 'binned cm', center_of_mass(binimg)
 		#print 'binimg:', binimg.min(), binimg.max()
 		imhdu = pyfits.PrimaryHDU(binimg)
 		h = imhdu.header
@@ -90,6 +112,12 @@ def testPixelConventions():
 		h.update('FLATCART', 1000)
 		imhdu.writeto(imgfn, clobber=True)
 		#os.system('an-fitstopnm -i %s -r -v | pnmtopng > %s' % (imgfn, imgfn.replace('.fits','.png')))
+
+		if i % 3 == 0:
+			#imshow(binimg, origin='lower', interpolation='nearest',
+			#	   extent=[SXs[i]
+			allims.append(binimg)
+			allimxs.append(SXs[i])
 
 		GI = GuiderImageAnalysis(imgfn)
 		GI.setOutputDir('test-outputs')
@@ -102,16 +130,37 @@ def testPixelConventions():
 	allsx = array(allsx)
 	allsy = array(allsy)
 
-	clf()
+	SXs /= 2.
+	allimxs = array(allimxs)
+	allimxs /= 2.
+
+	#plot(SXs, SXs/2-0.25, '-', color='0.5')
+	plot(SXs, SXs-0.25, '-', color='0.5')
 	plot(SXs, allsx, 'r.')
-	plot(SXs, allsy, 'b.')
-	for sx in [49.0,49.5,50.0]:
-		axvline(sx, color='0.5')
-		I = argmin(abs(SXs - sx))
-		axhline(allsx[I], color='0.5')
-		
+	#plot(SXs, allsy, 'b.')
+	#for sx in [48,49,49.5,50]:
+	#	axvline(sx, color='0.5')
+	#	I = argmin(abs(SXs - sx))
+	#	axhline(allsx[I], color='0.5')
+
+	a = axis()
+	imw = (a[1]-a[0]) * 0.05 * 1.3
+	imh = (a[3]-a[2]) * 0.05 * 1.3 # adjust for plot aspect ratio
+	#imw = 1./(len(allims))
+	#imh = 1./(len(allims))
+	for i,(x,im) in enumerate(zip(allimxs, allims)):
+		imshow(im[15:35,15:35], origin='lower', interpolation='nearest',
+			   #transform=gca().transAxes,
+			   transform=gcf().transFigure,
+			   #extent=[i*imw, (i+1)*imw, 0, imh])
+			   extent=[x, x+imw, a[2], a[2]+imh])
+		gray()
+	axis(a)
+
 	xlabel('True star x')
 	ylabel('Found star x')
+
+	title('slope %.3f' % ((allsx[-1]-allsx[0])/(SXs[-1]-SXs[0])))
 	savefig('sx.png')
 
 

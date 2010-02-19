@@ -99,6 +99,13 @@ class GuiderImageAnalysis(object):
 	GI.writeFITS(actorState.models, guideCmd, frameInfo, gState.gprobes)
 
 	'''
+
+	# According to
+	#  http://sdss3.apo.nmsu.edu/opssoft/guider/ProcessedGuiderImages.html
+	mask_saturated = 1
+	mask_badpixels = 2
+	mask_masked    = 4 # ie, outside the guide fiber
+
 	def __init__(self, gimgfn, cmd=None):
 		self.gimgfn = gimgfn
 		self.outputDir = None
@@ -481,9 +488,11 @@ class GuiderImageAnalysis(object):
 			image /= (flat + (flat == 0)*1)
 			self.debug('After flattening: image range: %g to %g' % (image.min(), image.max()))
 
+		#unmaskedimage = image.copy()
+
 		# Zero out parts of the image that are masked out.
-		# In this mask convention, 0 = good, 1 = bad.
-		image[mask] = 0
+		# In this mask convention, 0 = good, >0 is bad.
+		image[mask>0] = 0
 
 		doplots = False
 		if doplots:
@@ -500,10 +509,19 @@ class GuiderImageAnalysis(object):
 		goodfibers = [f for f in fibers if not f.is_fake()]
 		#print '%i fibers; %i good.' % (len(fibers), len(goodfibers))
 
+		# FIXME -- do we need to be removing the *bias* or *sky-seen-through-fiber* here?
+		# find bias = BIAS_PERCENTILE (ipGguide.h) = (100 - 70%)
+		ir = image.ravel()
+		I = argsort(ir)
+		bias = ir[int(0.3 * len(ir))]
+		self.inform('subtracting bias(sky) level: %g' % bias)
+		
 		# Convert data types for "gfindstars"...
 		# This object must live until after gfindstars() !
-		img16 = image.astype(int16)
-		self.debug('Image (i16) range: %i to %i' % (img16.min(), img16.max()))
+		img = image - bias
+		img[mask > 0] = 0
+		img16 = (img).astype(int16)
+		#self.inform('Image (i16) range: %i to %i' % (img16.min(), img16.max()))
 		c_image = numpy_array_to_REGION(img16)
 		c_fibers = self.libguide.fiberdata_new(len(goodfibers))
 
