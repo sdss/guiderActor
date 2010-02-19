@@ -167,8 +167,8 @@ if __name__ == '__main__':
 	os.environ['GUIDERACTOR_DIR'] = '..'
 	fiberinfofn = '../etc/gcamFiberInfo.par'
 
-	testPixelConventions()
-	sys.exit(0)
+	#testPixelConventions()
+	#sys.exit(0)
 	
 	GI = GuiderImageAnalysis(None)
 	GI.setOutputDir('test-outputs')

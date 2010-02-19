@@ -281,6 +281,7 @@ class GuiderImageAnalysis(object):
 			stamps.append(rstamp)
 			# Rotate the mask image...
 			stamp = mask[yc-r:yc+r+1, xc-r:xc+r+1].astype(uint8)
+			print 'stamp values:', unique(stamp.ravel())
 			# Replace zeros by 255 so that after rotate_region (which puts
 			# zeroes in the "blank" regions) we can replace them.
 			stamp[stamp == 0] = 255
@@ -292,6 +293,7 @@ class GuiderImageAnalysis(object):
 			rstamp[rstamp == 0] = GuiderImageAnalysis.mask_masked
 			# Reinstate the zeroes.
 			rstamp[rstamp == 255] = 0
+			print 'rotated stamp values:', unique(rstamp.ravel())
 			maskstamps.append(rstamp)
 
 		# Stack the stamps into one image.
@@ -299,13 +301,17 @@ class GuiderImageAnalysis(object):
 		maskstamps = vstack(maskstamps)
 		# Replace zeroes by bg
 		stamps[stamps==0] = bg
+		# Also replace masked regions by bg.
+		stamps[maskstamps > 0] = maximum(bg - 500, 0)
+		print 'bg=', bg
 		return [pyfits.ImageHDU(stamps), pyfits.ImageHDU(maskstamps)]
 
 	def _getProcGimgHDUList(self, primhdr, gprobes, fibers, image, mask, stampImage=None):
 		if stampImage is None:
 			stampImage = image
 
-		imageBackground = median(image)
+		#imageBackground = median(image)
+		imageBackground = median(image[mask == 0])
 		imageHDU = pyfits.PrimaryHDU(image, header=primhdr)
 		imageHDU.header.update('SDSSFMT', 'GPROC 1 2', 'type major minor version for this file')
 		imageHDU.header.update('IMGBACK', imageBackground, 'crude background for entire image. For displays.')
@@ -496,14 +502,6 @@ class GuiderImageAnalysis(object):
 		# In this mask convention, 0 = good, >0 is bad.
 		image[mask>0] = 0
 
-		doplots = False
-		if doplots:
-			plot_fibers(flat, fibers, axes=True, centerxy=True)
-			savefig('flat.png')
-			figure(figsize=(6,6))
-			plot_fibers(image, fibers, axes=True, centerxy=True)
-			savefig('flattened.png')
-
 		self.guiderImage = image
 		self.guiderHeader = hdr
 		self.maskImage = mask
@@ -519,8 +517,12 @@ class GuiderImageAnalysis(object):
 		self.inform('subtracting bias(sky) level: %g' % bias)
 		
 		img = image - bias
+		# Mark negative pixels
+		mask[img < 0] |= GuiderImageAnalysis.mask_badpixels
+		# Clamp negative pixels
+		img[img < 0] = 0
+		# Blank out masked pixels.
 		img[mask > 0] = 0
-
 		# Convert data types for "gfindstars"...
 		# The "img16" object must live until after gfindstars() !
 		img16 = (img).astype(int16)
@@ -555,11 +557,6 @@ class GuiderImageAnalysis(object):
 			f.mag    = c_fibers[0].g_mag[i]
 
 		self.libguide.fiberdata_free(c_fibers)
-
-		if doplots:
-			plot_fibers(image, fibers, axes=True, centerxy=True, starxy=True, R=11)
-			print 'Writing stars.png'
-			savefig('stars.png')
 
 		self.fibers = fibers
 		return fibers
@@ -800,7 +797,7 @@ class GuiderImageAnalysis(object):
 		bmask = zeros((mask.shape[0]/BIN, mask.shape[1]/BIN), bool)
 		for i in range(BIN):
 			for j in range(BIN):
-				bmask = logical_or(bmask, mask[i::BIN,j::BIN])
+				bmask = logical_or(bmask, mask[i::BIN,j::BIN] > 0)
 
 		# Use the mask conventions of ipGguide.c...
 		mask = where(bmask, 0, GuiderImageAnalysis.mask_masked)
