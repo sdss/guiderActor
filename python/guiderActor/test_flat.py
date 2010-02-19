@@ -28,12 +28,12 @@ def testPixelConventions():
 
 	W,H = 100,100
 	# fiber:
-	fx,fy = 49.5,49.5
+	fx,fy = 49.5,52
 	fr = 8.5 * 2
 	fflux = 500
 	flatflux = 10000
 	# star:
-	sx,sy = 49.5,49.5
+	sx,sy = 49.5,fy
 	ssig = 2.0 * 2
 	sflux = 100000
 
@@ -78,11 +78,14 @@ def testPixelConventions():
 	#sxstep = 0.05
 	#sxstep = 0.25
 	sxstep = 1.
-	SXs = arange(34.0, 66.05, sxstep)
+	#SXs = arange(34.0, 66.05, sxstep)
 	#SXs = arange(20.0, 70.05, sxstep)
 	#SXs = arange(45.0, 53.05, sxstep)
 	#SXs = arange(47.0, 51.05, 0.05)
 	#SXs = arange(47.0, 51.05, 0.25)
+	SXs = array([fx])
+	bgsig = 0.
+
 	allsx = []
 	allsy = []
 

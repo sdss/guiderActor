@@ -685,14 +685,13 @@ class GuiderImageAnalysis(object):
 			# ri,ci = nonzero(obji)
 			# print 'fiber', i, 'extent', ci.min(), ci.max(), ri.min(), ri.max()
 			npix = sum(obji)
-			cm = center_of_mass(obji)
 			# center_of_mass returns row,column... swap to x,y
-			xc = cm[1]
-			yc = cm[0]
+			(yc,xc) = center_of_mass(obji)
 			# x,y,radius / BIN because the flat is unbinned pixels, but we want
 			# to report in binned pixels.
-			# FIXME -- pixel coordinate conventions here?
-			fibers.append(fiber(-1, xc/BIN, yc/BIN, sqrt(npix/pi)/BIN, -1))
+			# The 0.25 pixel offset makes these centroids agree with gfindstar's
+			# pixel coordinate convention.
+			fibers.append(fiber(-1, xc/BIN - 0.25, yc/BIN - 0.25, sqrt(npix/pi)/BIN, -1))
 
 		# Match up the fibers with the known probes.
 
