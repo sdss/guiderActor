@@ -37,10 +37,6 @@ def testPixelConventions():
 	ssig = 2.0 * 2
 	sflux = 100000
 
-	# 100x100: 0.937
-
-	# 100x100: 0.401
-
 	flatfn = 'test1-flat.fits'
 	imgfn  = 'test1-img.fits'
 

@@ -102,6 +102,7 @@ class GuiderImageAnalysis(object):
 
 	# According to
 	#  http://sdss3.apo.nmsu.edu/opssoft/guider/ProcessedGuiderImages.html
+	#   0 = good
 	mask_saturated = 1
 	mask_badpixels = 2
 	mask_masked    = 4 # ie, outside the guide fiber
@@ -288,7 +289,7 @@ class GuiderImageAnalysis(object):
 									  numpy_array_to_MASK(rstamp),
 									  rot)
 			# "blank" regions become masked-out pixels.
-			rstamp[rstamp == 0] = 2
+			rstamp[rstamp == 0] = GuiderImageAnalysis.mask_masked
 			# Reinstate the zeroes.
 			rstamp[rstamp == 255] = 0
 			maskstamps.append(rstamp)
@@ -478,7 +479,7 @@ class GuiderImageAnalysis(object):
 
 		fibers = [f for f in fibers if not f.is_fake()]
 
-		# FIXME -- presumably we want to mask pixels that were saturated?
+		# FIXME -- presumably we want to mask pixels that are saturated?
 
 		# FIXME -- we currently don't apply the flat.
 		if False:
@@ -487,8 +488,6 @@ class GuiderImageAnalysis(object):
 			# Divide by the flat (avoiding NaN where the flat is zero)
 			image /= (flat + (flat == 0)*1)
 			self.debug('After flattening: image range: %g to %g' % (image.min(), image.max()))
-
-		#unmaskedimage = image.copy()
 
 		# Zero out parts of the image that are masked out.
 		# In this mask convention, 0 = good, >0 is bad.
@@ -516,10 +515,10 @@ class GuiderImageAnalysis(object):
 		bias = ir[int(0.3 * len(ir))]
 		self.inform('subtracting bias(sky) level: %g' % bias)
 		
-		# Convert data types for "gfindstars"...
-		# This object must live until after gfindstars() !
 		img = image - bias
 		img[mask > 0] = 0
+		# Convert data types for "gfindstars"...
+		# The "img16" object must live until after gfindstars() !
 		img16 = (img).astype(int16)
 		#self.inform('Image (i16) range: %i to %i' % (img16.min(), img16.max()))
 		c_image = numpy_array_to_REGION(img16)
@@ -799,11 +798,8 @@ class GuiderImageAnalysis(object):
 			for j in range(BIN):
 				bmask = logical_or(bmask, mask[i::BIN,j::BIN])
 
-		# Mask convention:
-		#   0 = good
-		#   1 = bad pixel
-		#   2 = masked pixel
-		mask = where(bmask, 0, 2)
+		# Use the mask conventions of ipGguide.c...
+		mask = where(bmask, 0, GuiderImageAnalysis.mask_masked)
 		mask = mask.astype(uint8)
 
 		flat = GuiderImageAnalysis.binImage(flat, BIN)
