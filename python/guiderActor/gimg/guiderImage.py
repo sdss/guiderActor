@@ -164,12 +164,12 @@ class GuiderImageAnalysis(object):
 		if self.warnFunc is None:
 			print 'warning:', s
 		else:
-			self.warnFunc('text="' + s + '"')
+			self.warnFunc(s)
 	def inform(self, s):
 		if self.informFunc is None:
 			print 'info:', s
 		else:
-			self.informFunc('text="' + s + '"')
+			self.informFunc(s)
 
 	def debug(self, s):
 		#print s
@@ -393,8 +393,9 @@ class GuiderImageAnalysis(object):
 				cols.append(pyfits.Column(name=name, format=fitstype, unit=units,
 										  array=numpy.array([getattr(f.gprobe, name) for f in fibers])))
 			for name,fitstype,units in gpinfofields:
+				# Tritium stars have no {xy}Focal...
 				cols.append(pyfits.Column(name=name, format=fitstype, unit=units,
-										  array=numpy.array([getattr(f.gprobe.info, name) for f in fibers])))
+										  array=numpy.array([getattr(f.gprobe.info, name, numpy.nan) for f in fibers])))
 			for name,atname,fitstype,units in ffields:
 				cols.append(pyfits.Column(name=name, format=fitstype, unit=units,
 										  array=numpy.array([getattr(f, atname or name) for f in fibers])))
@@ -426,7 +427,9 @@ class GuiderImageAnalysis(object):
 							   'Estimate of current seeing, arcsec fwhm')
 		self.fillPrimaryHDU(cmd, models, imageHDU, frameInfo, objectname)
 		hdulist.writeto(procpath, clobber=True)
-		self.inform('file=%s' % procpath)
+
+                dirname, filename = os.path.split(procpath)
+		self.inform('file=%s/,%s' % (dirname, filename))
 
 	def findFibers(self, gprobes):
 		''' findFibers(gprobes)
@@ -517,6 +520,7 @@ class GuiderImageAnalysis(object):
 		
 		img = image - bias
 		img[mask > 0] = 0
+
 		# Convert data types for "gfindstars"...
 		# The "img16" object must live until after gfindstars() !
 		img16 = (img).astype(int16)
@@ -823,6 +827,7 @@ class GuiderImageAnalysis(object):
 
 		hdulist.writeto(flatout, clobber=True)
 		# Now read that file we just wrote...
+
 		return GuiderImageAnalysis.readProcessedFlat(flatout, gprobes, stamps)
 
 
