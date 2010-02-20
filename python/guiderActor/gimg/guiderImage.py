@@ -321,7 +321,7 @@ class GuiderImageAnalysis(object):
 		#bg = self.imageBias
 		
 		imageHDU = pyfits.PrimaryHDU(image, header=primhdr)
-		imageHDU.header.update('SDSSFMT', 'GPROC 1 2', 'type major minor version for this file')
+		imageHDU.header.update('SDSSFMT', 'GPROC 1 3', 'type major minor version for this file')
 		imageHDU.header.update('IMGBACK', bg, 'crude background for entire image. For displays.')
 
 		try:
