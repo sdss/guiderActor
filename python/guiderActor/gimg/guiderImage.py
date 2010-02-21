@@ -494,8 +494,10 @@ class GuiderImageAnalysis(object):
 		# FIXME -- filter probes here for !exists, !tritium ?
 
 		self.debug('Using flat image %s' % flatfn)
-		(flat, mask, fibers) = self.analyzeFlat(flatfn, cartridgeId, gprobes)
-
+		X = self.analyzeFlat(flatfn, cartridgeId, gprobes)
+		if X is None:
+			return None
+		(flat, mask, fibers) = X
 		fibers = [f for f in fibers if not f.is_fake()]
 
 		# FIXME -- presumably we want to mask pixels that are saturated?
@@ -658,6 +660,8 @@ class GuiderImageAnalysis(object):
 
 		# FIXME -- we KNOW the area (ie, the number of pixels) of the
 		# fibers -- we could choose the threshold appropriately.
+		# NOTE, that's not always true, we sometimes lose fibers, even
+		# acquisition fibers which are pretty big.
 
 		# HACK -- find threshold level inefficiently.
 		# This is the threshold level that was used in "gfindfibers".
@@ -720,6 +724,10 @@ class GuiderImageAnalysis(object):
 				self.inform('Rejecting fiber at (%i,%i) in unbinned pixel coords, with radius %g: too far from expected radii %s' %
 						  (f.xcen, f.ycen, f.radius, '{' + ', '.join(['%g'%r for r in proberads]) + '}'))
 		fibers = keepfibers
+
+		if len(fibers) == 0:
+			self.warn('Failed to find any fibers in guider flat!')
+			return None
 
 		# Find a single x,y offset by testing possibly corresponding
 		# pairs of fibers/probes and checking how many fibers are

@@ -19,6 +19,8 @@ from YPF import *
 
 from tests import getGprobes, ducky
 
+from astrometry.util.file import *
+
 #class TestGuiderImageAnalysis(GuiderImageAnalysis):
 #pass
 
@@ -173,8 +175,32 @@ if __name__ == '__main__':
 	GI = GuiderImageAnalysis(None)
 	GI.setOutputDir('test-outputs')
 
-
 	testInputs = [
+		#(55247,    2, None, None, 'plPlugMapM-3651-55245-01.par'),
+		#(55247,    7, None, None, 'plPlugMapM-3651-55245-01.par'),
+		#(55247,   69, None, None, 'plPlugMapM-3651-55245-01.par'),
+		#(55247,  175, None, None, 'plPlugMapM-3665-55246-01.par'),
+		#(55247,  176, None, None, 'plPlugMapM-3665-55246-01.par'),
+		#(55247,  423, None, None, 'plPlugMapM-3685-55247-01.par'),
+		(55247,  835, None, None, 'plPlugMapM-3768-55247-01.par'),
+		#(55247, 1028, None, None, 'plPlugMapM-3854-55247-01.par'),
+		]
+	for i,t in enumerate(testInputs):
+		(mjd, gimgnum, compnum, cart, fn) = t
+		pathnm = '../testfiles/%i/' % mjd + fn
+		txt = read_file(pathnm)
+		cart = int(re.search(r'cartridgeId (\d*)', txt).group(1))
+		testInputs[i] = (mjd, gimgnum, compnum, cart, fn)
+		print fn, cart
+		
+		
+	#mjd = 55247
+	#dirnm = '../testfiles/%i' % mjd
+	#fns = os.listdir(dirnm)
+	
+
+
+	XtestInputs = [
 		(55243,    1,    7, 10, 'plPlugMapM-3650-55242-01.par'),
 		(55243,    2,    7, 10, 'plPlugMapM-3650-55242-01.par'),
 		(55243,    5,    7, 10, 'plPlugMapM-3650-55242-01.par'),
@@ -220,7 +246,9 @@ if __name__ == '__main__':
 
 		plate = int(re.match(r'plPlugMapM-(\d*)-', plugmapbasefn).group(1))
 
-		comparefn = '../testfiles/%i/proc-gimg-%04i.fits' % (mjd, compnum)
+		comparefn = None
+		if compnum is not None:
+			comparefn = '../testfiles/%i/proc-gimg-%04i.fits' % (mjd, compnum)
 
 		print
 		print 'MJD %i  --  Gimg %04i  --  cart %i  --  plugmap %s  --  plate %i' % (mjd, gimgnum, cart, plugmapbasefn, plate)
@@ -234,7 +262,11 @@ if __name__ == '__main__':
 			d.flags = 0
 			gprobes[k] = d
 	
-		(flat, mask, fibers) = GI.analyzeFlat(fn, cart, gprobes, stamps=True)
+		X = GI.analyzeFlat(fn, cart, gprobes, stamps=True)
+		if X is None:
+			print 'FAILED!'
+			continue
+		(flat, mask, fibers) = X
 		fibers = [f for f in fibers if not f.is_fake()]
 
 		print 'Got %i fibers' % len(fibers)
@@ -256,9 +288,12 @@ if __name__ == '__main__':
 			alldx += [f.xs - f.xcen for f in fibers]
 			alldy += [f.ys - f.ycen for f in fibers]
 
+		origflat = pyfits.getdata(fn)
+		halfflat = GuiderImageAnalysis.binImage(origflat, 2)
+
 		clf()
-		plot_fibers(flat, fibers, centerxy=True, showaxes=True,
-					starxy=compare)
+		plot_fibers(halfflat, fibers, centerxy=True, showaxes=True,
+					starxy=compare, circles=True)
 		subplots_adjust(left=0.05, right=0.99, bottom=0.03, top=0.95,
 						wspace=0.25, hspace=0.25)
 
@@ -268,6 +303,112 @@ if __name__ == '__main__':
 			 horizontalalignment='center', verticalalignment='top')
 
 		savefig(outbase + '.png')
+
+
+		### Test...
+		acqs = [f for f in fibers if f.radius > 10]
+		f = acqs[0]
+		r = int(f.radius * 2) + 5
+		y = int(f.ycen * 2)
+		x = int(f.xcen * 2)
+		img = origflat[y-r:y+r+1, x-r:x+r+1]
+		a = [x-r-0.5, x+r+0.5, y-r-0.5, y+r+0.5]
+		clf()
+		imshow(img,  origin='lower', interpolation='nearest', extent=a)
+		axhline(f.ycen*2+0.5, color='r')
+		axvline(f.xcen*2+0.5, color='r')
+		gca().add_artist(Circle([f.xcen*2+0.5,f.ycen*2+0.5], radius=f.radius*2, fc='none', ec='r'))
+		savefig('tst.png')
+
+		i2 = origflat.copy().ravel()
+		I = argsort(i2)
+		med = i2[I[len(I)/2]]
+		pk = i2[I[int(len(I)*0.99)]]
+		thresh = (med + pk)/2.
+
+		clf()
+		imshow(img>thresh,  origin='lower', interpolation='nearest', extent=a)
+		axhline(f.ycen*2+0.5, color='r')
+		axvline(f.xcen*2+0.5, color='r')
+		gca().add_artist(Circle([f.xcen*2+0.5,f.ycen*2+0.5], radius=f.radius*2, fc='none', ec='r'))
+		savefig('tst2.png')
+
+		from scipy.ndimage.filters import gaussian_laplace, gaussian_gradient_magnitude
+		#L = gaussian_laplace(img, 2.0)
+		L = gaussian_gradient_magnitude(img, 1.0)
+		clf()
+		imshow(L,  origin='lower', interpolation='nearest', extent=a)
+		axhline(f.ycen*2+0.5, color='r')
+		axvline(f.xcen*2+0.5, color='r')
+		gca().add_artist(Circle([f.xcen*2+0.5,f.ycen*2+0.5], radius=f.radius*2, fc='none', ec='r'))
+		savefig('tst3.png')
+
+		#C = zeros_like(img)
+		X,Y = meshgrid(arange(x-r, x+r+1), arange(y-r, y+r+1))
+		xc,yc = f.xcen*2+0.5, f.ycen*2+0.5
+		rad = f.radius * 2
+		sig = 1.5
+
+		C = exp(-0.5 * (sqrt((X-xc)**2 + (Y-yc)**2) - rad)**2 / sig**2)
+		clf()
+		imshow(C,  origin='lower', interpolation='nearest', extent=a)
+		axhline(f.ycen*2+0.5, color='r')
+		axvline(f.xcen*2+0.5, color='r')
+		gca().add_artist(Circle([f.xcen*2+0.5,f.ycen*2+0.5], radius=f.radius*2, fc='none', ec='r'))
+		savefig('tst4.png')
+
+		allxyr = []
+		for i in range(10):
+			rstep = 1./(2.**i)
+			xstep = ystep = rstep
+
+			for k in range(10):
+				for dr,dx,dy in [ (rstep,0,0), (0,xstep,0), (0,0,ystep) ]:
+					for j in range(10):
+						C0 = exp(-0.5 * (sqrt((X-(xc   ))**2 + (Y-(yc   ))**2) - (rad      ))**2 / sig**2)
+						Cp = exp(-0.5 * (sqrt((X-(xc+dx))**2 + (Y-(yc+dy))**2) - (rad+dr))**2 / sig**2)
+						Cm = exp(-0.5 * (sqrt((X-(xc-dx))**2 + (Y-(yc-dy))**2) - (rad-dr))**2 / sig**2)
+						s0 = (C0 * L).sum()
+						sp = (Cp * L).sum()
+						sm = (Cm * L).sum()
+						print
+						print 'x,y', xc,yc, 'radius:', rad
+						print 'dx,dy', dx,dy, 'dradius:', dr
+						print '  -:', sm
+						print '  0:', s0
+						print '  p:', sp
+
+						if s0 > sp and s0 > sm:
+							break
+						if sp > sm:
+							rad += dr
+							xc += dx
+							yc += dy
+						else:
+							rad -= dr
+							xc -= dx
+							yc -= dy
+						allxyr.append((xc,yc,rad))
+
+		C = exp(-0.5 * (sqrt((X-xc)**2 + (Y-yc)**2) - rad)**2 / sig**2)
+		clf()
+		imshow(C,  origin='lower', interpolation='nearest', extent=a)
+		axhline(f.ycen*2+0.5, color='r')
+		axvline(f.xcen*2+0.5, color='r')
+		gca().add_artist(Circle([f.xcen*2+0.5,f.ycen*2+0.5], radius=f.radius*2, fc='none', ec='r'))
+		#for x,y,r in allxyr:
+		#	gca().add_artist(Circle([x,y], radius=r, fc='none', ec='r'))
+		savefig('tst5.png')
+
+		clf()
+		imshow(img,  origin='lower', interpolation='nearest', extent=a)
+		axhline(yc, color='r')
+		axvline(xc, color='r')
+		gca().add_artist(Circle([xc,yc], radius=rad, fc='none', ec='r'))
+		savefig('tst6.png')
+
+
+
 
 		#clf()
 		#plot_fiber_stamps(fibers)
@@ -281,24 +422,25 @@ if __name__ == '__main__':
 		#gray()
 		#savefig('55243-0001-flat.png')
 	
-	clf()
-	subplot(2,1,1)
-	title('(Dustin - As-Run) fiber centroids')
-	hist(array(alldx).ravel(), 20)
-	xlabel('dx (pixels)')
-	subplot(2,1,2)
-	hist(array(alldy).ravel(), 20)
-	xlabel('dy (pixels)')
-	subplots_adjust(left=0.1, right=0.95, bottom=0.1, top=0.9,
-					wspace=0.2, hspace=0.2)
-	savefig('dxdy-hist.png')
+	if len(alldx):
+		clf()
+		subplot(2,1,1)
+		title('(Dustin - As-Run) fiber centroids')
+		hist(array(alldx).ravel(), 20)
+		xlabel('dx (pixels)')
+		subplot(2,1,2)
+		hist(array(alldy).ravel(), 20)
+		xlabel('dy (pixels)')
+		subplots_adjust(left=0.1, right=0.95, bottom=0.1, top=0.9,
+						wspace=0.2, hspace=0.2)
+		savefig('dxdy-hist.png')
 
-	clf()
-	subplot(111)
-	title('(Dustin - As-Run) fiber centroids')
-	plot(array(alldx).ravel(), array(alldy).ravel(), 'b.')
-	xlabel('dx (pixels)')
-	ylabel('dy (pixels)')
-	subplots_adjust(left=0.2, right=0.95, bottom=0.1, top=0.9,
-					wspace=0.2, hspace=0.2)
-	savefig('dxdy.png')
+		clf()
+		subplot(111)
+		title('(Dustin - As-Run) fiber centroids')
+		plot(array(alldx).ravel(), array(alldy).ravel(), 'b.')
+		xlabel('dx (pixels)')
+		ylabel('dy (pixels)')
+		subplots_adjust(left=0.2, right=0.95, bottom=0.1, top=0.9,
+						wspace=0.2, hspace=0.2)
+		savefig('dxdy.png')

@@ -3,6 +3,7 @@ from pylab import *
 from matplotlib import rc
 rc('xtick', labelsize=8)
 rc('ytick', labelsize=8)
+from matplotlib.patches import Circle
 
 def plot_fiber_stamps(fibers, showaxes=False):
 	clf()
@@ -22,7 +23,7 @@ def plot_fiber_stamps(fibers, showaxes=False):
 						wspace=0.25, hspace=0.25)
 	
 
-def plot_fibers(image, fibers, showaxes=False, centerxy=False, starxy=False, R=0):
+def plot_fibers(image, fibers, showaxes=False, centerxy=False, starxy=False, R=0, circles=False):
 	clf()
 	for i,f in enumerate(fibers):
 		subplot(4,4,i+1)
@@ -49,6 +50,9 @@ def plot_fibers(image, fibers, showaxes=False, centerxy=False, starxy=False, R=0
 				axhline(f.ys, color='r')
 			if isfinite(f.xs):
 				axvline(f.xs, color='r')
+		if circles:
+			gca().add_artist(Circle([f.xcen,f.ycen], radius=f.radius,
+									fc='none', ec='r'))
 		axis(a)
 		if not showaxes:
 			axis('off')
