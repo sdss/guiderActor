@@ -1896,9 +1896,10 @@ gfindstar(
 	        
 	     	
             /* in some units--want mags?*/            
+			//printf("gsampl %g, fwhm %g\n", fstarfit.gsampl, fwhm);
             sigp = fwhm/sigp2FwhmAs; 
             flux = fstarfit.gsampl * 6.28 * sigp * sigp ; /*in ADU, gaussaprx*/
-            ptr->g_mag[fk] = -2.5*log10(fstarfit.gsampl*1.3*flux) + 20.;  
+            ptr->g_mag[fk] = -2.5*log10(1.3*flux) + 20.;
 
             ptr->g_fwhm[fk]  = fwhm;         /* fwhm in arcsec */
 

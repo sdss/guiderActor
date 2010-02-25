@@ -32,6 +32,31 @@ def makeTestImage(bg, bgsig, fx, fy, fr, fflux, sx, sy, ssig, sflux,
 	img += sflux * 1./(2.*pi*ssig**2) * exp(-((X-sx)**2 + (Y-sy)**2)/(2.*ssig**2)) * infiber
 	return img
 
+def measureFiber(bg, bgsig, fx, fy, fr, fflux,
+				 sx, sy, ssig, sflux, W, H,
+				 imgfn, flatfn, gprobes):
+	img = makeTestImage(bg, bgsig, fx, fy, fr, fflux, sx, sy, ssig, sflux, W, H)
+	binimg = GuiderImageAnalysis.binImage(img, 2)
+	binimg = binimg.astype(int16)
+	imhdu = pyfits.PrimaryHDU(binimg)
+	h = imhdu.header
+	h.update('FLATFILE', flatfn)
+	h.update('DARKFILE', '')
+	h.update('FLATCART', 1000)
+	imhdu.writeto(imgfn, clobber=True)
+	#os.system('an-fitstopnm -i %s -r -v | pnmtopng > %s' % (imgfn, imgfn.replace('.fits','.png')))
+
+	#if i % 3 == 0:
+	#	#imshow(binimg, origin='lower', interpolation='nearest',
+	#	#	   extent=[SXs[i]
+	#	allims.append(binimg)
+	#	allimxs.append(SXs[i])
+
+	GI = GuiderImageAnalysis(imgfn)
+	GI.setOutputDir('test-outputs')
+	fibers = GI.findFibers(gprobes)
+	assert(len(fibers) == 1)
+	return fibers[0]
 
 def testPixelConventions():
 	bg = 1500
@@ -46,7 +71,7 @@ def testPixelConventions():
 	# star:
 	sx,sy = 49.5,fy
 	ssig = 2.0 * 2
-	sflux = 100000
+	sflux = 100000.
 
 	flatfn = 'test1-flat.fits'
 	imgfn  = 'test1-img.fits'
@@ -79,26 +104,12 @@ def testPixelConventions():
 
 	clf()
 
-	#sxstep = 0.05
-	#sxstep = 0.25
 	sxstep = 1.
 	#SXs = arange(34.0, 66.05, sxstep)
-	#SXs = arange(20.0, 70.05, sxstep)
-	#SXs = arange(45.0, 53.05, sxstep)
-	#SXs = arange(47.0, 51.05, 0.05)
-	#SXs = arange(47.0, 51.05, 0.25)
 	SXs = array([fx])
-	bgsig = 0.
 
-	allsx = []
-	allsy = []
-
-	allfwhm = []
-	allsky = []
-	allmag = []
-
-	allims = []
-	allimxs = []
+	#allims = []
+	#allimxs = []
 
 	truefwhm = arange(0.4, 3.0, 0.03)
 
@@ -108,64 +119,63 @@ def testPixelConventions():
 	starsigmas = 2. * truefwhm / pixelscale / 2.35
 
 	#for i,sx in enumerate(SXs):
-	for i,ssig in enumerate(starsigmas):
 		#imgfn = 'test1-img-%.2f.fits' % sx
+
+	if True:
+		fibers = []
+		for i,ssig in enumerate(starsigmas):
+			imgfn = 'test1-img-%i.fits' % i
+			fiber = measureFiber(bg, bgsig, fx, fy, fr, fflux,
+								 sx, sy, ssig, sflux, W, H,
+								 imgfn, flatfn, gprobes)
+			fibers.append(fiber)
+			print 'sigma:', ssig, ', measured fwhm', fiber.fwhm
+
+		allfwhm = array([f.fwhm for f in fibers])
+		allmag = array([f.mag for f in fibers])
+
+		clf()
+		plot(truefwhm, allfwhm, 'r.')
+		plot([0.8,2.2],[0.8,2.2], 'b.-')
+		print 'slope:', allfwhm[-1] / truefwhm[-1]
+		axis([0, 3, 0, 3])
+		xlabel('True FWHM (arcsec)')
+		ylabel('fwhm')
+		savefig('fwhm.png')
+
+		clf()
+		plot(truefwhm, allmag, 'r.')
+		xlabel('True FWHM (arcsec)')
+		ylabel('mag')
+		savefig('mag.png')
+
+
+
+	# arcsec
+	fwhm = 1.0
+	ssig = 2. * fwhm / pixelscale / 2.35
+
+	truepeakflux = exp(linspace(log(1000), log(32000), 32))
+	# bin?
+	trueflux = truepeakflux * 2.*pi*ssig**2
+
+	fibers = []
+	for i,sflux in enumerate(trueflux):
 		imgfn = 'test1-img-%i.fits' % i
+		fiber = measureFiber(bg, bgsig, fx, fy, fr, fflux,
+							 sx, sy, ssig, sflux, W, H,
+							 imgfn, flatfn, gprobes)
+		fibers.append(fiber)
+		print 'sigma:', ssig, ', measured mag', fiber.mag
 
-		bg = bgsig = 0
-		fflux = 0
-
-		img = makeTestImage(bg, bgsig, fx, fy, fr, fflux, sx, sy, ssig, sflux, W, H)
-
-		binimg = GuiderImageAnalysis.binImage(img, 2)
-		#print 'binimg:', binimg.min(), binimg.max()
-		binimg = binimg.astype(int16)
-		#print 'binned cm', center_of_mass(binimg)
-		#print 'binimg:', binimg.min(), binimg.max()
-		imhdu = pyfits.PrimaryHDU(binimg)
-		h = imhdu.header
-		h.update('FLATFILE', flatfn)
-		h.update('DARKFILE', '')
-		h.update('FLATCART', 1000)
-		imhdu.writeto(imgfn, clobber=True)
-		#os.system('an-fitstopnm -i %s -r -v | pnmtopng > %s' % (imgfn, imgfn.replace('.fits','.png')))
-
-		#if i % 3 == 0:
-		#	#imshow(binimg, origin='lower', interpolation='nearest',
-		#	#	   extent=[SXs[i]
-		#	allims.append(binimg)
-		#	allimxs.append(SXs[i])
-
-		GI = GuiderImageAnalysis(imgfn)
-		GI.setOutputDir('test-outputs')
-		fibers = GI.findFibers(gprobes)
-		assert(len(fibers) == 1)
-		#print 'fiber:', fibers[0]
-		allsx.append(fibers[0].xs)
-		allsy.append(fibers[0].ys)
-
-		print 'sigma:', ssig, ', measured fwhm', fibers[0].fwhm
-
-		allfwhm.append(fibers[0].fwhm)
-		allsky.append(fibers[0].sky)
-		allmag.append(fibers[0].mag)
-
-	allsx = array(allsx)
-	allsy = array(allsy)
-
-	allfwhm = array(allfwhm)
-	allsky = array(allsky)
-	allmag = array(allmag)
-
+	allmag = array([f.mag for f in fibers])
 	clf()
+	#plot(truepeakflux, allmag, 'r.')
+	semilogx(truepeakflux, allmag, 'r.')
+	xlabel('True peak flux')
+	ylabel('mag')
+	savefig('mag2.png')
 
-	plot(truefwhm, allfwhm, 'r.')
-	plot([0.8,2.2],[0.8,2.2], 'b.-')
-	print 'slope:', allfwhm[-1] / truefwhm[-1]
-	axis([0, 3, 0, 3])
-	xlabel('True FWHM (arcsec)')
-	ylabel('fwhm')
-	savefig('fwhm.png')
 
 	return
 
