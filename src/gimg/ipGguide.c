@@ -1455,6 +1455,7 @@ wpg[NCELL] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,24,28,32,36,40,45,50,
 
     do{
         sumf = sump = sumw = sumf2 = sumfp = sumerr = 0;
+		// wp == "width parameter"
         /* for current guess at wp, do linear least squares to solve for
          * amplitude, background, and evalutate rms error */
         wp = wpg[wpdex]; 
@@ -1607,6 +1608,7 @@ gprofext(
     for(k=0;k<=radmax;k++){
         if(radcnt[k] != 0){
         	
+			// compute sample variance... ish
             r2prof[k] = r2prof[k] - 
 				(double)radprof[k]*(double)radprof[k]/(double)radcnt[k];
             
@@ -1745,6 +1747,9 @@ gfindstar(
             ii = maxi + i;
             for(j=-1;j<=1;j++){
                 jj = maxj + j;
+				// Make sure we look at all pixels within the fiber, and hardly any more.
+				// CPU time is expensive, dammit.
+				// This could just be 2 * fiber radius.  Just sayin'.
                 npt = sqrt((double)((jj-xc)*(jj-xc)+(ii-yc)*(ii-yc))) + rc + 2;
                  
 				if (rc >= sizeof(radprof)/2) {

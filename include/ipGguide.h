@@ -65,7 +65,14 @@
 
 #define CCDGAIN 1.4
 
-# define sigp2FwhmAs 1.0 /* conversion from sigma in pixels to fwhm in arcsec */
+/* conversion from sigma in pixels to fwhm in arcsec.
+
+ Note here the convenient coincidence that the guide camera pixels,
+ when binned by 2, are 0.428"/pixel, and that number is remarkably close
+ to 1/2.35 (sigma-to-fwhm conversion factor).  This number should be
+ something slightly different than 1.0
+*/
+# define sigp2FwhmAs 1.0
 
    
 /********* VARIABLES ***********/
@@ -155,9 +162,17 @@ ph maintain the bin size rather than the number of bins for Alta camera.
 /* values of 100/sigma^2 used in width fitting, from sigma=10 pix to sigma=1 pix
  * Alta camera, needed 6 bins to get below sigma=1.41 which was set by max wpg=50 */
 
-#define NCELL 31
+/*
+ #define NCELL 31
+ STATIC short int wpg[NCELL] = 
+ {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,24,28,32,36,40,45,50,55,60,70,80,90,100};
+ */
+
+#define NCELL 41
 STATIC short int wpg[NCELL] = 
-    {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,24,28,32,36,40,45,50,55,60,70,80,90,100};
+	{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,24,28,32,36,40,45,50,55,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200};
+
+
 
 /********* STRUCTURES **********/
 
