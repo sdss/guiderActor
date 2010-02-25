@@ -21,8 +21,17 @@ from tests import getGprobes, ducky
 
 from astrometry.util.file import *
 
-#class TestGuiderImageAnalysis(GuiderImageAnalysis):
-#pass
+
+def makeTestImage(bg, bgsig, fx, fy, fr, fflux, sx, sy, ssig, sflux,
+				  W, H):
+	X,Y = meshgrid(arange(W),arange(H))
+	img = zeros((H,W))
+	img += bg + bgsig * standard_normal(img.shape)
+	infiber = (((X-fx)**2 + (Y-fy)**2) < fr**2)
+	img += fflux * infiber
+	img += sflux * 1./(2.*pi*ssig**2) * exp(-((X-sx)**2 + (Y-sy)**2)/(2.*ssig**2)) * infiber
+	return img
+
 
 def testPixelConventions():
 	bg = 1500
@@ -42,10 +51,7 @@ def testPixelConventions():
 	flatfn = 'test1-flat.fits'
 	imgfn  = 'test1-img.fits'
 
-	X,Y = meshgrid(arange(W),arange(H))
-	flat = zeros((H,W), int16)
-	flat += bg
-	flat += flatflux * (((X-fx)**2 + (Y-fy)**2) < fr**2)
+	flat = makeTestImage(bg, bgsig, fx, fy, fr, flatflux, 0, 0, 1, 0, W, H)
 
 	pyfits.PrimaryHDU(flat).writeto(flatfn, clobber=True)
 
@@ -87,20 +93,30 @@ def testPixelConventions():
 	allsx = []
 	allsy = []
 
+	allfwhm = []
+	allsky = []
+	allmag = []
+
 	allims = []
 	allimxs = []
 
-	for i,sx in enumerate(SXs):
-		imgfn = 'test1-img-%.2f.fits' % sx
+	truefwhm = arange(0.4, 3.0, 0.03)
 
-		img = zeros((H,W))
-		img += bg + bgsig * standard_normal(img.shape)
-		img += fflux * (((X-fx)**2 + (Y-fy)**2) < fr**2)
-		img += sflux * 1./(2.*pi*ssig**2) * exp(-((X-sx)**2 + (Y-sy)**2)/(2.*ssig**2))
+	# arcsec/(binned)pix
+	pixelscale = 0.428
+	# magic 2 because we bin by 2 below.
+	starsigmas = 2. * truefwhm / pixelscale / 2.35
 
-		S = sflux * 1./(2.*pi*ssig**2) * exp(-((X-sx)**2 + (Y-sy)**2)/(2.*ssig**2))
-		#print 'star flux cm', center_of_mass(S)
-		#print 'star flux', S.min(), S.max(), S.sum()
+	#for i,sx in enumerate(SXs):
+	for i,ssig in enumerate(starsigmas):
+		#imgfn = 'test1-img-%.2f.fits' % sx
+		imgfn = 'test1-img-%i.fits' % i
+
+		bg = bgsig = 0
+		fflux = 0
+
+		img = makeTestImage(bg, bgsig, fx, fy, fr, fflux, sx, sy, ssig, sflux, W, H)
+
 		binimg = GuiderImageAnalysis.binImage(img, 2)
 		#print 'binimg:', binimg.min(), binimg.max()
 		binimg = binimg.astype(int16)
@@ -114,22 +130,44 @@ def testPixelConventions():
 		imhdu.writeto(imgfn, clobber=True)
 		#os.system('an-fitstopnm -i %s -r -v | pnmtopng > %s' % (imgfn, imgfn.replace('.fits','.png')))
 
-		if i % 3 == 0:
-			#imshow(binimg, origin='lower', interpolation='nearest',
-			#	   extent=[SXs[i]
-			allims.append(binimg)
-			allimxs.append(SXs[i])
+		#if i % 3 == 0:
+		#	#imshow(binimg, origin='lower', interpolation='nearest',
+		#	#	   extent=[SXs[i]
+		#	allims.append(binimg)
+		#	allimxs.append(SXs[i])
 
 		GI = GuiderImageAnalysis(imgfn)
 		GI.setOutputDir('test-outputs')
 		fibers = GI.findFibers(gprobes)
 		assert(len(fibers) == 1)
-		print 'fiber:', fibers[0]
+		#print 'fiber:', fibers[0]
 		allsx.append(fibers[0].xs)
 		allsy.append(fibers[0].ys)
 
+		print 'sigma:', ssig, ', measured fwhm', fibers[0].fwhm
+
+		allfwhm.append(fibers[0].fwhm)
+		allsky.append(fibers[0].sky)
+		allmag.append(fibers[0].mag)
+
 	allsx = array(allsx)
 	allsy = array(allsy)
+
+	allfwhm = array(allfwhm)
+	allsky = array(allsky)
+	allmag = array(allmag)
+
+	clf()
+
+	plot(truefwhm, allfwhm, 'r.')
+	plot([0.8,2.2],[0.8,2.2], 'b.-')
+	print 'slope:', allfwhm[-1] / truefwhm[-1]
+	axis([0, 3, 0, 3])
+	xlabel('True FWHM (arcsec)')
+	ylabel('fwhm')
+	savefig('fwhm.png')
+
+	return
 
 	SXs /= 2.
 	allimxs = array(allimxs)
@@ -165,12 +203,32 @@ def testPixelConventions():
 	savefig('sx.png')
 
 
+
+def test_fwhm_flux():
+	bg = 1500
+	bgsig = sqrt(bg)
+	W,H = 100,100
+	# fiber:
+	fx,fy = 49.5,52
+	fr = 8.5 * 2
+	fflux = 500
+	# star:
+	sx,sy = 49.5,fy
+	ssig = 2.0 * 2
+	sflux = 100000
+	img = makeTestImage(bg, bgsig, fx, fy, fr, fflux, sx, sy, ssig, sflux, W, H)
+
+
+
+
+
+
 if __name__ == '__main__':
 	os.environ['GUIDERACTOR_DIR'] = '..'
 	fiberinfofn = '../etc/gcamFiberInfo.par'
 
-	#testPixelConventions()
-	#sys.exit(0)
+	testPixelConventions()
+	sys.exit(0)
 	
 	GI = GuiderImageAnalysis(None)
 	GI.setOutputDir('test-outputs')
