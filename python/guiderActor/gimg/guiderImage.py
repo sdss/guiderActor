@@ -394,18 +394,20 @@ class GuiderImageAnalysis(object):
 				('flags',          'L',   None),
 						]
 			gpinfofields = [
-				# FITScol,      FITStype, unit
-				('exists',         'L',   None),
-				('xFocal',         'E',   'plate mm'),
-				('yFocal',         'E',   'plate mm'),
-				('radius',         'E',   pixunit),
-				('xFerruleOffset', 'E',   None),
-				('yFerruleOffset', 'E',   None),
-				('rotation',       'E',   None),
-				('rotStar2Sky',    'E',   None),
-				('focusOffset',    'E',   'micrometers'),
-				('fiber_type',     'A20', None),
+				# python attr, FITScol (if diff), FITStype, NIL val, unit
+				('exists',         None,    'L',   numpy.nan,     None),
+				('xFocal',         None,    'E',   numpy.nan,     'plate mm'),
+				('yFocal',         None,    'E',   numpy.nan,     'plate mm'),
+				('radius',         None,    'E',   numpy.nan,     pixunit),
+				('xFerruleOffset', None,    'E',   numpy.nan,     None),
+				('yFerruleOffset', None,    'E',   numpy.nan,     None),
+				('rotation',       None,    'E',   numpy.nan,     None),
+				('rotStar2Sky',    None,    'E',   numpy.nan,     None),
+				('focusOffset',    None,    'E',   numpy.nan,     'micrometers'),
+				('fiber_type',     None,    'A20', numpy.nan,     None),
+				('mag',            'ugriz', '5E',  [numpy.nan]*5, 'mag'),
 				]
+
 			ffields = [
 				# FITScol,  variable, FITStype, unit
 				('fiberid', None,     'I', None),
@@ -430,10 +432,11 @@ class GuiderImageAnalysis(object):
 			for name,fitstype,units in gpfields:
 				cols.append(pyfits.Column(name=name, format=fitstype, unit=units,
 										  array=numpy.array([getattr(f.gprobe, name) for f in fibers])))
-			for name,fitstype,units in gpinfofields:
-				# Tritium stars have no {xy}Focal...
-				cols.append(pyfits.Column(name=name, format=fitstype, unit=units,
-										  array=numpy.array([getattr(f.gprobe.info, name, numpy.nan) for f in fibers])))
+			for name,fitsname,fitstype,nilval,units in gpinfofields:
+				if fitsname is None:
+					fitsname = name
+				cols.append(pyfits.Column(name=fitsname, format=fitstype, unit=units,
+										  array=numpy.array([getattr(f.gprobe.info, name, nilval) for f in fibers])))
 			for name,atname,fitstype,units in ffields:
 				cols.append(pyfits.Column(name=name, format=fitstype, unit=units,
 										  array=numpy.array([getattr(f, atname or name) for f in fibers])))
