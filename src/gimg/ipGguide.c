@@ -177,12 +177,7 @@
 
 /******************** DATA DECLARATIONS AND DEFINITIONS ******************/
 
-/* flags for existence of flattener, mask, template dark frame */
-/*ph,ps: deal with this in the python routines */
-STATIC int havemask = 0;
-STATIC int havedark = 0;
 STATIC int havehist = 0;
-STATIC int haveflatdata = 0;
 
 /* sum of squares of values for masked dark frame */
 #if 0
@@ -194,9 +189,11 @@ static double sigma2fwhm(double sig) {
 	return sig * 2.*sqrt(2.*log(2.));
 }
 
-static double fwhm2sigma(double fwhm) {
-	return fwhm / (2.*sqrt(2.*log(2.)));
-}
+/*
+ static double fwhm2sigma(double fwhm) {
+ return fwhm / (2.*sqrt(2.*log(2.)));
+ }
+ */
 
 void rotate_region(const REGION* regin, REGION* regout, float theta) {
 	grot(theta, regin->rows_s16, regout->rows_s16, regin->ncol, regin->nrow);
@@ -415,7 +412,6 @@ gmakeflat(
             }
         }
     }
-    havemask = 1;
     return(SH_SUCCESS);
 }
 
@@ -464,9 +460,6 @@ gextendmask(
 	
         }
     }
-    //havemask = 1;
-    //if(havemask == 0) shError("GEXTENDMASK: no mask");
-        
     /* make arrays for circumference */
     xbase = (int *)malloc((8 * fringe + 8)*sizeof(int));
     ybase = (int *)malloc((8 * fringe + 8)*sizeof(int));
@@ -556,7 +549,6 @@ gextendmask(
 
     free(xbase);
     free(ybase); 
-    havemask = 2;
     return(SH_SUCCESS);
 }
 
@@ -593,20 +585,6 @@ void fiberdata_free(FIBERDATA* f) {
 }
 
 
-
-/************************ GINITSEQ() *************************************
- * This routine sets the flags haveflatdata and havedark and needs to 
- * be executed when the flat data, fiberdata struc, darks ( norm and masked)
- * are read in from disk after a restart
- */
-int
-ginitseq(void)    
-{
-    haveflatdata = 1;
-    havedark = 1;
-    return(SH_SUCCESS) ;
-}
- 
 
 /*********************** FITTING ROUTINES *******************************
  *ph
@@ -656,7 +634,11 @@ ginitseq(void)
  *     30       1.8             1.8	  1.3    
  *     50       1.4             1.4	  1.0    
  *    100       1.0             1.0	  0.7
- *     
+ *
+ *
+ * dstn says: I moved all arcsec and mag units into the python: this C
+ * now works only in pixels and fluxes in Data Numbers.
+ *
  * 
  * Note for alta camera the conversion from sigma in pixels to fwhm in arcsec is
  *   0.428(arcec/pix) * 2.354*(sigma/fwhm) = 1.0 = sigp2FwhmAs (0.69 for the photometrics)
@@ -886,7 +868,7 @@ gproffit(
     double disc; 
     int dir = 1;
     int iter;
-    double amin, a, b, minerr;
+    double amin, a, b, minerr = HUGE_VAL;
     double wpmin = HUGE_VAL;
     int wp;
     
@@ -1123,8 +1105,7 @@ gfindstar(
     double dx,dy;
     float xoff;
     float yoff;
-    float fwhm;
-    float fwhm0;   /* fwhm corrected for calc on integer pixels */
+    //float fwhm0;   /* fwhm corrected for calc on integer pixels */
     float pixnoise;
     float flux;
     float sigma;
@@ -1376,10 +1357,7 @@ gfindstar(
 						 1.0 * fstarfit.gsampl/CCDGAIN );
             pixnoise = pixnoise > 0. ? sqrt(pixnoise) : 99.;
 
-            /* 5.01 is 2sqrt(2pi), 0.428 is arcsec/pix; the error estimate is
-             * in arcseconds
-             */
-            sigmax = pixnoise * sigma * 2.*sqrt(2.0*M_PI) / flux ;
+            sigmax = pixnoise * sigma * 2.*sqrt(2.0*M_PI) / flux;
 
             /* the error estimate is quintupled at the center and mpy'd
              * by 25 at the edge, and varies like r^6, which may be too slow.
@@ -1476,108 +1454,6 @@ gfindstars(
         }
      */
     return (SH_SUCCESS);
-}
-
-/**************Depreciated routines below ****************************************/
-
-
-
-
-/******************* HOTLIST() *****************************************/
-/* 
- * this routine finds all pixels above some threshold, and makes a list
- * of their positions. It returns the number of pixels. It does NOT
- * malloc any storage; the lists are declared static above and the
- * max size is defined as MAXBADPIX. It returns the number of bad pixels
- * found, -1 for an error.
- */
-
-/* ph,ps:only needs to be used on hot dark pixals that dont subtract or very bright ones*/
-
-int
-hotlist(int xs,             /* x size (pixels) */
-        int ys,             /* y size (pixels) */
-        S16 **pic,          /* pointer to line pointer array */
-        int thresh          /* threshold */
-        )
-{
-    int i, j, n;
-    
-    n = 0;
-    for(i=1; i < ys - 1; i++){
-        for(j=1; j < xs - 1; j++){
-            if(pic[i][j] > thresh){
-                badcolval[n] = j;
-                badrowval[n] = i;
-                n++;
-                if(n >= MAXBADPIX){
-		  return(-1);
-                }
-            }
-        }
-    }
-    return(n);
-}
-
-/* helper for hotlist */
-/***************** SSHINSORT() *****************************************/
-/* sort a short array in place using straight insertion.
- * From Numerical recipes.
- */
- 
-static void
-sshinsort(S16 *arr,int n)
-{
-    int i,j;
-    S16 a;
-    
-    for(j=1;j<n;j++){
-        a = arr[j];
-        i = j-1;
-        while(i>=0 && arr[i] > a){
-            arr[i+1] = arr[i];
-            i--;
-        }
-        arr[i+1] = a;
-    }
-}        
-
-
-/******************** HOTFIX() ******************************************/
-/* 
- * This routine replaces a list of hot pixels by the medians of the 
- * surrounding pixels.  the row,col coordinates of the bad pixels are
- * stored in the static arrays badrowval, badcolval, and there are 
- * nbadpix<MAXBADPIX of them. 
- */
-  
-void
-hotfix( int xs,              /* x size */
-        int ys,              /* y size */
-        S16 **pic     /* pointer to line pointer array */
-        )
-{
-    int i, j, n;
-    S16 nbrlist[8];   
-    int med;
-   
-    for(n=0; n<nbadpix; n++){
-        i = badrowval[n];
-        j = badcolval[n];
-        if(i > 0 && i < ys - 1 && j > 0 && j < xs - 1){
-            nbrlist[0] = pic[i][j-1];
-            nbrlist[1] = pic[i][j+1];
-            nbrlist[2] = pic[i+1][j-1];
-            nbrlist[3] = pic[i+1][j];
-            nbrlist[4] = pic[i+1][j+1];
-            nbrlist[5] = pic[i-1][j-1];
-            nbrlist[6] = pic[i-1][j];
-            nbrlist[7] = pic[i-1][j+1];
-            sshinsort(nbrlist,8);
-            med = (nbrlist[3] + nbrlist[4])/2;
-            pic[i][j] = med;
-        }
-    }
 }
 
 /********************** END MODULE, GUIDER.C *******************************/

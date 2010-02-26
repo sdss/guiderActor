@@ -1,5 +1,91 @@
 /** Old, unused code that might be useful for reference purposes. */
 
+/* conversion from sigma in pixels to fwhm in arcsec.
+ Note here the convenient coincidence that the guide camera pixels,
+ when binned by 2, are 0.428"/pixel, and that number is remarkably close
+ to 1/2.35 (sigma-to-fwhm conversion factor).  This number should be
+ something slightly different than 1.0
+*/
+# define sigp2FwhmAs 1.0
+
+STATIC S16 badrowval[MAXBADPIX];
+STATIC S16 badcolval[MAXBADPIX];
+STATIC int nbadpix = 0;
+
+/*jeg set bin size on photometrics to break image into 16 bins
+ph maintain the bin size rather than the number of bins for Alta camera.
+*/ 
+
+#define BINSIZE	16		/*BINSIZE remains constant*/
+
+#define BINTHRESH 200	/* can probably be increased to 500, assuming flat will have values of ~10000 at least*/
+
+
+
+#define NBINS CCD_SIZE/BINSIZE		/* should be an integer */
+
+#define MAXPEAKS 50
+
+#define MAXFIB (17 + 1)                 /* Fibre IDs are sometimes 1-indexed */
+
+#define SPOTID (MAXFIB-2)		/*fiber alignment spot lives in, zero indexed */
+
+/* arrays for holding x,y vals of bad pixels we want to mask.  
+ * limited to 2000 entries as we have bigger problems if more than 2%
+ * of the pixels are above our threshold for badness 
+ */
+#define MAXBADPIX 2000
+
+//GHIST *ipGhistNew(void);
+//RET_CODE ipGhistDel(GHIST *obj);
+
+//FIBERDATA *ipFiberdataNew(void);
+//RET_CODE ipFiberdataDel(FIBERDATA *obj);
+
+//GSTARFIT *ipGstarfitNew(void);
+//RET_CODE ipGstarfitDel(GSTARFIT *obj);
+
+
+int ginitseq(void);                      
+                        /* sets flats upon a restart after flat processing
+                         * data have been reread from disk
+                         */
+    
+#if 0
+int gfitparams(
+    double dx,              /* x position of min in square: -.5 < dx < .5 */
+    double dy,              /* y  "                "         "    dy   "  */
+    struct gstarfit *ptr    /* output interpolated structure */ 
+    );
+#endif
+
+int gtranspose(
+     REGION *inputReg,       /* the input region */
+     REGION *outputReg       /* the output region */
+    );
+
+int hotthresh(int xs,       /* x size (pixels) */
+	      int ys,       /* y size (pixels) */
+	      S16 **pic,    /* pointer to line pointer array */
+	      int thresh   /* threshold */
+	      );
+void
+hotfix( int xs,              /* x size */
+        int ys,              /* y size */
+        S16 **pic     /* pointer to line pointer array */
+        );
+    
+int gfindfibers(
+    REGION *flatReg,           /* the flat region */
+    MASK *maskPtr,             /* pointer to the mask structure */
+    struct g_fiberdata *ptr,   /* pointer to output struct */
+    struct ghist_t *gptr,       /* histogram struct pointer */
+    struct platedata *plptr
+    );
+
+   
+
+
 /*********************** GMFLATTEN()  ***************************************/
 /* This routine applies the masked flat to a data frame; the data frame
  * MUST have been dedarked and dezeroed by gsubdark, because it is ASSUMED
@@ -640,4 +726,108 @@ printf("i,j,xi,xj,yi,yj,npt= %d %d %d %d %d %d %d\n",i,j,xpk[i],xpk[j],ypk[i],
     free(binarray);
     return(SH_SUCCESS);
 }
+
+
+/**************Depreciated routines below ****************************************/
+
+
+
+
+/******************* HOTLIST() *****************************************/
+/* 
+ * this routine finds all pixels above some threshold, and makes a list
+ * of their positions. It returns the number of pixels. It does NOT
+ * malloc any storage; the lists are declared static above and the
+ * max size is defined as MAXBADPIX. It returns the number of bad pixels
+ * found, -1 for an error.
+ */
+
+/* ph,ps:only needs to be used on hot dark pixals that dont subtract or very bright ones*/
+
+int
+hotlist(int xs,             /* x size (pixels) */
+        int ys,             /* y size (pixels) */
+        S16 **pic,          /* pointer to line pointer array */
+        int thresh          /* threshold */
+        )
+{
+    int i, j, n;
+    
+    n = 0;
+    for(i=1; i < ys - 1; i++){
+        for(j=1; j < xs - 1; j++){
+            if(pic[i][j] > thresh){
+                badcolval[n] = j;
+                badrowval[n] = i;
+                n++;
+                if(n >= MAXBADPIX){
+		  return(-1);
+                }
+            }
+        }
+    }
+    return(n);
+}
+
+/* helper for hotlist */
+/***************** SSHINSORT() *****************************************/
+/* sort a short array in place using straight insertion.
+ * From Numerical recipes.
+ */
+ 
+static void
+sshinsort(S16 *arr,int n)
+{
+    int i,j;
+    S16 a;
+    
+    for(j=1;j<n;j++){
+        a = arr[j];
+        i = j-1;
+        while(i>=0 && arr[i] > a){
+            arr[i+1] = arr[i];
+            i--;
+        }
+        arr[i+1] = a;
+    }
+}        
+
+
+/******************** HOTFIX() ******************************************/
+/* 
+ * This routine replaces a list of hot pixels by the medians of the 
+ * surrounding pixels.  the row,col coordinates of the bad pixels are
+ * stored in the static arrays badrowval, badcolval, and there are 
+ * nbadpix<MAXBADPIX of them. 
+ */
+  
+void
+hotfix( int xs,              /* x size */
+        int ys,              /* y size */
+        S16 **pic     /* pointer to line pointer array */
+        )
+{
+    int i, j, n;
+    S16 nbrlist[8];   
+    int med;
+   
+    for(n=0; n<nbadpix; n++){
+        i = badrowval[n];
+        j = badcolval[n];
+        if(i > 0 && i < ys - 1 && j > 0 && j < xs - 1){
+            nbrlist[0] = pic[i][j-1];
+            nbrlist[1] = pic[i][j+1];
+            nbrlist[2] = pic[i+1][j-1];
+            nbrlist[3] = pic[i+1][j];
+            nbrlist[4] = pic[i+1][j+1];
+            nbrlist[5] = pic[i-1][j-1];
+            nbrlist[6] = pic[i-1][j];
+            nbrlist[7] = pic[i-1][j+1];
+            sshinsort(nbrlist,8);
+            med = (nbrlist[3] + nbrlist[4])/2;
+            pic[i][j] = med;
+        }
+    }
+}
+
 

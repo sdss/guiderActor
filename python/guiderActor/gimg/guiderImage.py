@@ -152,6 +152,7 @@ class GuiderImageAnalysis(object):
 		self.pixelscale = 0.428
 
 		# The photometric zero-point for (g + r)/2 band
+		# This was calibrated vs MJD 55246, with AZ~=73 deg, airmass~=1.046
 		self.zeropoint = 25.34
 		
 	def pixels2arcsec(self, pix):
@@ -582,6 +583,8 @@ class GuiderImageAnalysis(object):
 			c_fibers[0].g_fibrad[i] = f.radius
 			# FIXME ??
 			c_fibers[0].g_illrad[i] = f.radius
+		# FIXME --
+		#c_fibers.readnoise = ...
 
 		# mode=1: data frame; 0=spot frame
 		mode = 1
