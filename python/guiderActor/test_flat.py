@@ -17,7 +17,7 @@ from gimg.guiderImage import *
 from gimg.guiderImagePlots import *
 from YPF import *
 
-from tests import getGprobes, ducky
+from tests import getGprobes, getModels, getCommand, ducky
 
 from astrometry.util.file import *
 
@@ -100,6 +100,8 @@ def testPixelConventions():
 	gp.info.dec = 0
 	gp.info.xFocal = 0
 	gp.info.yFocal = 0
+	for gp in gprobes.values():
+		gp.info.rotStar2Sky = 90 + gp.info.rotation - gp.info.phi
 	gprobes[1] = gp
 
 	clf()
@@ -299,10 +301,19 @@ if __name__ == '__main__':
 			d.enabled = True
 			d.flags = 0
 			gprobes[k] = d
+		for gp in gprobes.values():
+			gp.info.rotStar2Sky = 90 + gp.info.rotation - gp.info.phi
 
 		GI.gimgfn = fn
 		fibers = GI.findFibers(gprobes)
 		#print 'Found fibers:', fibers
+
+		frameInfo = ducky()
+		frameInfo.seeing = 1.0
+		frameInfo.guideCameraScale = 1.0 #GI.pixelscale
+		frameInfo.plugPlateScale = 1.0
+
+		GI.writeFITS(getModels(), getCommand(), frameInfo, gprobes)
 
 		#for f in fibers:
 		#	print 'Fiber ID', f.fiberid, 'mag', f.mag, 'fwhm', f.fwhm, 'center (%i,%i)' % (int(f.xcen), int(f.ycen)), 'type', f.gprobe.info.fiber_type
@@ -330,25 +341,28 @@ if __name__ == '__main__':
 	clf()
 	plot(gmag, mag, 'g.')
 	plot(rmag, mag, 'r.')
-	plot((gmag+rmag)/2., mag, 'k.')
+	grmag = (gmag+rmag)/2.
+	plot(grmag, mag, 'k.')
 
 	print 'Mean offset (g band):', mean(mag - gmag)
 	print 'Mean offset (r band):', mean(mag - rmag)
-	print 'Mean offset ((g+r)/2 band):', mean(mag - (gmag+rmag)/2.)
+	print 'Mean offset ((g+r)/2 band):', mean(mag - grmag)
 	print 'Median offset (g band):', median(mag - gmag)
 	print 'Median offset (r band):', median(mag - rmag)
-	print 'Median offset ((g+r)/2 band):', median(mag - (gmag+rmag)/2.)
+	print 'Median offset ((g+r)/2 band):', median(mag - grmag)
 
 	xlabel('g / r mag')
 	ylabel('measured mag')
+	maglo,maghi = min(grmag)-0.25, max(grmag)+0.25
+	plot([maglo,maghi], [maglo,maghi],'-', color='0.5')
+	axis([maglo,maghi,maglo,maghi])
 	savefig('rockout.png')
 
-	clf()
-	plot((gmag+rmag)/2., mag, 'k.')
-	xlabel('(g+r)/2 mag')
-	ylabel('measured mag')
-	savefig('gr.png')
-
+	#clf()
+	#plot(grmag, mag, 'k.')
+	#xlabel('(g+r)/2 mag')
+	#ylabel('measured mag')
+	#savefig('gr.png')
 	clf()
 	xlabel('g-mag')
 	ylabel('r-mag')

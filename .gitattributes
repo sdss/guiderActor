@@ -23,6 +23,7 @@ python/guiderActor/tests.py -text
 /setup.py -text
 src/Makefile -text
 src/gimg/Makefile -text
+src/gimg/attic.c -text
 src/gimg/gutils.c -text
 src/gimg/ipGguide.c -text
 src/gimg/shUtils.c -text

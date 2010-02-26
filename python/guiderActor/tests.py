@@ -89,6 +89,24 @@ def getGprobes(fiberinfofn, plugmapfn, cartridge):
 	return gprobes
 
 
+def getModels():
+	models = {}
+	tcc = ducky()
+	tcc.keyVarDict = {}
+	models['tcc'] = tcc
+	mcp = ducky()
+	mcp.keyVarDict = {'ffsStatus':[[8,0]]}
+	models['mcp'] = mcp
+	return models
+
+
+def getCommand():
+	cmd = ducky()
+	cmd.inform = myinform
+	cmd.warn = mywarn
+	cmd.fail = myfail
+	cmd.respond = myrespond
+	return cmd
 
 if __name__ == '__main__':
 	os.environ['GUIDERACTOR_DIR'] = '..'
@@ -107,22 +125,12 @@ if __name__ == '__main__':
 
 	myGlobals.actorState = ducky()
 	myGlobals.actorState.timeout = 0
-	myGlobals.actorState.models = {}
-	tcc = ducky()
-	tcc.keyVarDict = {}
-	myGlobals.actorState.models['tcc'] = tcc
-	mcp = ducky()
-	mcp.keyVarDict = {'ffsStatus':[[8,0]]}
-	myGlobals.actorState.models['mcp'] = mcp
+	myGlobals.actorState.models = getModels()
 	myGlobals.actorState.tccState = ducky()
 	myGlobals.actorState.tccState.halted = False
 	myGlobals.actorState.tccState.goToNewField = False
 
-	cmd = ducky()
-	cmd.inform = myinform
-	cmd.warn = mywarn
-	cmd.fail = myfail
-	cmd.respond = myrespond
+	cmd = getCommand()
 
 	# Simple test
 	#m = Msg(Msg.EXIT, cmd)

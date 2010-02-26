@@ -36,6 +36,9 @@
 #define STATIC static
 #define DOUBLE double
 
+// Error code; must match guiderImage.py:FWHM_BAD
+#define FWHM_BAD 99.99
+
 /*the Alta guider is 16 bit, but bitshifted in GCAM */
 /* max value of guider data*/
 #define DMAX 32767
@@ -159,16 +162,9 @@ ph maintain the bin size rather than the number of bins for Alta camera.
 
 #define MAXGFSITER 40
 
-/* values of 100/sigma^2 used in width fitting, from sigma=10 pix to sigma=1 pix
- * Alta camera, needed 6 bins to get below sigma=1.41 which was set by max wpg=50 */
-
-/*
- #define NCELL 31
- STATIC short int wpg[NCELL] = 
- {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,24,28,32,36,40,45,50,55,60,70,80,90,100};
- */
-
+// values of 100/sigma^2 used in width fitting, from sigma=10 pix to sigma~=0.707 pix
 #define NCELL 41
+#define WPG_NUMERATOR 100
 STATIC short int wpg[NCELL] = 
 	{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,24,28,32,36,40,45,50,55,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200};
 
@@ -204,13 +200,16 @@ typedef struct g_fiberdata{
     double *g_illrad;    /* radii of illuminated portion of fiber */
     double *g_xs;        /* from psf fit, x offset of star from center */
     double *g_ys;        /* from psf fit, y offset of star from center */
-    double *g_mag;       /* from psf fit, mag of star */
-    double *g_fwhm;      /* from psf fit, fwhm(fullwidth at half maximum) of star */
-    double *g_poserr;    /* from psf fit, estimated position error (2d) */
-    double *g_fitbkgrd;  /* from psf fit  estimated background */ 
-    double *g_fibercts;  /* flux through 2 arc fiber */
-    double *g_skycts;    /* direct sky background measure*/   
-    double *g_rmswidth;  /* rms radius of star */
+	// from PSF fit:
+	// total star flux, in DN
+	double *flux;
+	// total sky flux, in DN ?
+	double *sky;
+	// full-width at half-max of the star, in (binned guidecam) pixels.
+	double *fwhm;
+	// error in g_xs and g_ys, in (binned guidecam) pixels.
+	double *poserr;
+	
     double  g_readnoise; /* readnoise in ADU */
     int     g_npixmask;  /* number of pixels in current mask */
 } FIBERDATA;
@@ -225,7 +224,7 @@ typedef struct gfiberstat{
 typedef struct gstarfit{
     float gsampl;       /* profile amplitude; template has ampl DMAX at org */
     float gsbkgnd;      /* mean background level */
-    float gswparam;     /* width parameter--100/sigmasq */
+    float sigma;        // width (sigma) in pixels
     float gserror;      /* 1d fitting error to profile */
 } GSTARFIT;
 
