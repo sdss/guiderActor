@@ -123,6 +123,9 @@ class GuiderImageAnalysis(object):
 			self.informFunc = None
 			self.warnFunc = None
 
+		# Print debugging?
+		self.printDebug = False
+
 		# "Big" (acquisition) fibers are bigger than this pixel
 		# radius.  The older SDSS cartridges don't declare (in the
 		# gcamFiberInfo.par file) the larger fibers to be ACQUIRE,
@@ -176,8 +179,8 @@ class GuiderImageAnalysis(object):
 			self.informFunc(s)
 
 	def debug(self, s):
-		#print s
-		pass
+		if self.debug:
+			print s
 
 	def findDarkAndFlat(self, gimgfn, fitsheader):
 		''' findDarkAndFlat(...)
@@ -500,6 +503,10 @@ class GuiderImageAnalysis(object):
 		(flat, mask, fibers) = X
 		fibers = [f for f in fibers if not f.is_fake()]
 
+		exptime = hdr.get('EXPTIME', 0)
+
+		print 'Exposure time', exptime
+
 		# FIXME -- presumably we want to mask pixels that are saturated?
 
 		# FIXME -- we currently don't apply the flat.
@@ -571,6 +578,10 @@ class GuiderImageAnalysis(object):
 			f.mag    = c_fibers[0].g_mag[i]
 
 		self.libguide.fiberdata_free(c_fibers)
+
+		## TEMPORARY HACKERY
+		for f in goodfibers:
+			f.mag = 6 + -log(exp(-f.mag) / exptime)
 
 		self.fibers = fibers
 		return fibers

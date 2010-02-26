@@ -230,27 +230,36 @@ def test_fwhm_flux():
 
 
 
-
-
+class TestGI(GuiderImageAnalysis):
+	def findDarkAndFlat(self, gimgfn, fitsheader):
+		flat = fitsheader['FLATFILE']
+		flat = os.path.basename(flat)
+		return (None, os.path.join(self.basedir, flat))
 
 if __name__ == '__main__':
 	os.environ['GUIDERACTOR_DIR'] = '..'
 	fiberinfofn = '../etc/gcamFiberInfo.par'
 
-	testPixelConventions()
-	sys.exit(0)
+	#testPixelConventions()
+	#sys.exit(0)
 	
-	GI = GuiderImageAnalysis(None)
+	#GI = GuiderImageAnalysis(None)
+	GI = TestGI(None)
 	GI.setOutputDir('test-outputs')
+	#GI.printDebug = True
+
+	# get plPlugMap files from speclog.
 
 	testInputs = [
+		(55246,  None, None, None, 'plPlugMapM-3684-55246-01.par'),
+		#(55246,  1370, None, None, 'plPlugMapM-3684-55246-01.par'),
 		#(55247,    2, None, None, 'plPlugMapM-3651-55245-01.par'),
 		#(55247,    7, None, None, 'plPlugMapM-3651-55245-01.par'),
 		#(55247,   69, None, None, 'plPlugMapM-3651-55245-01.par'),
 		#(55247,  175, None, None, 'plPlugMapM-3665-55246-01.par'),
 		#(55247,  176, None, None, 'plPlugMapM-3665-55246-01.par'),
 		#(55247,  423, None, None, 'plPlugMapM-3685-55247-01.par'),
-		(55247,  835, None, None, 'plPlugMapM-3768-55247-01.par'),
+		#(55247,  835, None, None, 'plPlugMapM-3768-55247-01.par'),
 		#(55247, 1028, None, None, 'plPlugMapM-3854-55247-01.par'),
 		]
 	for i,t in enumerate(testInputs):
@@ -260,12 +269,93 @@ if __name__ == '__main__':
 		cart = int(re.search(r'cartridgeId (\d*)', txt).group(1))
 		testInputs[i] = (mjd, gimgnum, compnum, cart, fn)
 		print fn, cart
+
+	TI = testInputs[0]
+	testInputs = [(TI[0],gimgnum,TI[2],TI[3],TI[4]) for gimgnum in range(533,600,10)]
+	#testInputs = [(TI[0],gimgnum,TI[2],TI[3],TI[4]) for gimgnum in range(533,534,10)]
+
+	figure(figsize=(6,6))
+
+	allmags = []
+	allg = []
+	allr = []
+
+	for (mjd, gimgnum, compnum, cart, plugmapbasefn) in testInputs:
+		dirnm = '../testfiles/%i/' % mjd
+		fn = dirnm + 'gimg-%04i.fits' % gimgnum
+		GI.basedir = dirnm
+		#print 'Reading file', fn
+		plugmapfn = dirnm + plugmapbasefn
+		plate = int(re.match(r'plPlugMapM-(\d*)-', plugmapbasefn).group(1))
+
+		print
+		print 'MJD %i  --  Gimg %04i  --  cart %i  --  plugmap %s  --  plate %i' % (mjd, gimgnum, cart, plugmapbasefn, plate)
+		print
+
+		gprobes = getGprobes(fiberinfofn, plugmapfn, cart)
+		for k,v in gprobes.items():
+			d = ducky()
+			d.info = v
+			d.enabled = True
+			d.flags = 0
+			gprobes[k] = d
+
+		GI.gimgfn = fn
+		fibers = GI.findFibers(gprobes)
+		#print 'Found fibers:', fibers
+
+		#for f in fibers:
+		#	print 'Fiber ID', f.fiberid, 'mag', f.mag, 'fwhm', f.fwhm, 'center (%i,%i)' % (int(f.xcen), int(f.ycen)), 'type', f.gprobe.info.fiber_type
+
+		if False:
+			clf()
+			plot([f.xcen for f in fibers], [f.ycen for f in fibers], 'ro')
+			for f in fibers:
+				text(f.xcen, f.ycen, 'mag %.1f, fwhm %.2f' %(f.mag, f.fwhm), ha='center', fontsize=8)
+			savefig('where.png')
+			clf()
+
+		mag = array([f.mag for f in fibers])
+		gmag = array([f.gprobe.info.mag[1] for f in fibers])
+		rmag = array([f.gprobe.info.mag[2] for f in fibers])
+
+		allmags += list(mag)
+		allg += list(gmag)
+		allr += list(rmag)
 		
-		
-	#mjd = 55247
-	#dirnm = '../testfiles/%i' % mjd
-	#fns = os.listdir(dirnm)
-	
+	mag = array(allmags)
+	gmag = array(allg)
+	rmag = array(allr)
+
+	clf()
+	plot(gmag, mag, 'g.')
+	plot(rmag, mag, 'r.')
+	plot((gmag+rmag)/2., mag, 'k.')
+
+	print 'Mean offset (g band):', mean(mag - gmag)
+	print 'Mean offset (r band):', mean(mag - rmag)
+	print 'Mean offset ((g+r)/2 band):', mean(mag - (gmag+rmag)/2.)
+	print 'Median offset (g band):', median(mag - gmag)
+	print 'Median offset (r band):', median(mag - rmag)
+	print 'Median offset ((g+r)/2 band):', median(mag - (gmag+rmag)/2.)
+
+	xlabel('g / r mag')
+	ylabel('measured mag')
+	savefig('rockout.png')
+
+	clf()
+	plot((gmag+rmag)/2., mag, 'k.')
+	xlabel('(g+r)/2 mag')
+	ylabel('measured mag')
+	savefig('gr.png')
+
+	clf()
+	xlabel('g-mag')
+	ylabel('r-mag')
+	plot(gmag-mag, rmag-mag, 'k.')
+	savefig('resids.png')
+
+	sys.exit(0)
 
 
 	XtestInputs = [
@@ -306,12 +396,11 @@ if __name__ == '__main__':
 	figure(figsize=(6,6))
 	for (mjd, gimgnum, compnum, cart, plugmapbasefn) in testInputs:
 
-		#if mjd != 55244:
-		#	continue
-
-		fn = '../testfiles/%i/gimg-%04i.fits' % (mjd, gimgnum)
-		plugmapfn = '../testfiles/%i/' % mjd + plugmapbasefn
-
+		dirnm = '../testfiles/%i/' % mjd
+		fn = dirnm + 'gimg-%04i.fits' % gimgnum
+		GI.basedir = dirnm
+		print 'Reading file', fn
+		plugmapfn = dirnm + plugmapbasefn
 		plate = int(re.match(r'plPlugMapM-(\d*)-', plugmapbasefn).group(1))
 
 		comparefn = None

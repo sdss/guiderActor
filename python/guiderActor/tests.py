@@ -74,6 +74,8 @@ def getGprobes(fiberinfofn, plugmapfn, cartridge):
 			info.yFocal = ghole.yFocal
 			info.phi = 90 - math.atan2(ahole.yFocal - ghole.yFocal,
 									   ahole.xFocal - ghole.xFocal) * 180/math.pi
+			info.mag = ghole.mag
+
 		else:
 			info.ra = 0
 			info.dec = 0
@@ -81,6 +83,7 @@ def getGprobes(fiberinfofn, plugmapfn, cartridge):
 			info.yFocal = 0
 			info.phi = 0
 			info.rotStar2Sky = numpy.nan
+
 
 		gprobes[p.gProbeId] = info
 	return gprobes
