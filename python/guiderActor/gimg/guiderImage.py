@@ -282,7 +282,7 @@ class GuiderImageAnalysis(object):
 			self.libguide.rotate_region(numpy_array_to_REGION(stamp),
 										numpy_array_to_REGION(rstamp),
 										rot)
-			stamps.append(rstamp)
+			stamps.append(numpy.flipud(rstamp))
 			# Rotate the mask image...
 			stamp = mask[yc-r:yc+r+1, xc-r:xc+r+1].astype(uint8)
 			print 'stamp values:', unique(stamp.ravel())
@@ -298,7 +298,7 @@ class GuiderImageAnalysis(object):
 			# Reinstate the zeroes.
 			rstamp[rstamp == 255] = 0
 			print 'rotated stamp values:', unique(rstamp.ravel())
-			maskstamps.append(rstamp)
+			maskstamps.append(numpy.flipud(rstamp))
 
 		# Stack the stamps into one image.
 		stamps = vstack(stamps)
