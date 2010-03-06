@@ -316,7 +316,7 @@ class GuiderImageAnalysis(object):
 		if stampImage is None:
 			stampImage = image
 
-		bg = median(image)
+		bg = median(image[numpy.isfinite(image)])
 		#bg = median(image[mask == 0])
 		#bg = self.imageBias
 		
@@ -423,7 +423,7 @@ class GuiderImageAnalysis(object):
 			tback('Narf', e)
 			return None
 		return hdulist
-		
+
 
 	def writeFITS(self, models, cmd, frameInfo, gprobes):
 		if not self.fibers:
@@ -435,17 +435,17 @@ class GuiderImageAnalysis(object):
 		procpath = self.getProcessedOutputName(self.gimgfn)
 		objectname = os.path.splitext(self.gimgfn)[0]
 
-		#bg = median(gimg)#image[mask == 0])
-
-		hdulist = self._getProcGimgHDUList(hdr, gprobes, fibers, gimg, self.maskImage)
-		imageHDU = hdulist[0]
-		imageHDU.header.update('SEEING', frameInfo.seeing if frameInfo.seeing is not numpy.nan else 0.0,
-							   'Estimate of current seeing, arcsec fwhm')
-		self.fillPrimaryHDU(cmd, models, imageHDU, frameInfo, objectname)
-		hdulist.writeto(procpath, clobber=True)
-
-                dirname, filename = os.path.split(procpath)
-		self.inform('file=%s/,%s' % (dirname, filename), hasKey=True)
+		try:
+			hdulist = self._getProcGimgHDUList(hdr, gprobes, fibers, gimg, self.maskImage)
+			imageHDU = hdulist[0]
+			imageHDU.header.update('SEEING', frameInfo.seeing if numpy.isfinite(frameInfo.seeing) else 0.0,
+					       'Estimate of current seeing, arcsec fwhm')
+			self.fillPrimaryHDU(cmd, models, imageHDU, frameInfo, objectname)
+			hdulist.writeto(procpath, clobber=True)
+			dirname, filename = os.path.split(procpath)
+			self.inform('file=%s/,%s' % (dirname, filename), hasKey=True)
+		except Exception, e:
+			cmd.warn('text="failed to write FITS file %s: %r"' % (procpath, e))
 
 	def findFibers(self, gprobes):
 		''' findFibers(gprobes)
