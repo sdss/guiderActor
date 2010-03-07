@@ -333,7 +333,8 @@ def flux_calibration():
 		print fn, cart
 
 	TI = testInputs[0]
-	testInputs = [(TI[0],gimgnum,TI[2],TI[3],TI[4]) for gimgnum in range(533,600,10)]
+	testInputs = [(TI[0],gimgnum,TI[2],TI[3],TI[4]) for gimgnum in range(533,600,2)]
+	#testInputs = [(TI[0],gimgnum,TI[2],TI[3],TI[4]) for gimgnum in range(533,600,10)]
 	#testInputs = [(TI[0],gimgnum,TI[2],TI[3],TI[4]) for gimgnum in range(533,534,10)]
 
 	figure(figsize=(6,6))
@@ -399,10 +400,19 @@ def flux_calibration():
 	rmag = array(allr)
 
 	clf()
-	plot(gmag, mag, 'g.')
-	plot(rmag, mag, 'r.')
+	#plot(gmag, mag, 'g.')
+	#plot(rmag, mag, 'r.')
 	grmag = (gmag+rmag)/2.
-	plot(grmag, mag, 'k.')
+	#plot(grmag, mag, 'k.')
+	#plot(grmag + 0.02*numpy.random.normal(size=grmag.shape), mag, 'k.')
+	plot(grmag + 0.01*numpy.random.normal(size=grmag.shape), mag, 'b.', alpha=0.5)
+	u = unique(grmag)
+	meanmag,stdmag = [],[]
+	for m in u:
+		I = (grmag == m)
+		meanmag.append(mean(mag[I]))
+		stdmag.append(std(mag[I]))
+	errorbar(u, meanmag, yerr=stdmag, fmt=None)
 
 	print 'Mean offset (g band):', mean(mag - gmag)
 	print 'Mean offset (r band):', mean(mag - rmag)
@@ -411,8 +421,11 @@ def flux_calibration():
 	print 'Median offset (r band):', median(mag - rmag)
 	print 'Median offset ((g+r)/2 band):', median(mag - grmag)
 
-	xlabel('g / r mag')
-	ylabel('measured mag')
+	#xlabel('g / r mag')
+	#ylabel('measured mag')
+	title('Guide camera zero-point calibration')
+	xlabel('Guide star magnitude, (g+r)/2 (mag)')
+	ylabel('Calibrated mag (mag)')
 	maglo,maghi = min(grmag)-0.25, max(grmag)+0.25
 	plot([maglo,maghi], [maglo,maghi],'-', color='0.5')
 	axis([maglo,maghi,maglo,maghi])
@@ -655,7 +668,8 @@ if __name__ == '__main__':
 	os.environ['GUIDERACTOR_DIR'] = '..'
 	fiberinfofn = '../etc/gcamFiberInfo.par'
 
-	testPixelConventions()
+	flux_calibration()
+	#testPixelConventions()
 	sys.exit(0)
 	#summarize(range(63, 123), '3666-1.pickle')
 
@@ -665,7 +679,6 @@ if __name__ == '__main__':
 	GI.setOutputDir('test-outputs')
 
 
-	#flux_calibration()
 	
 	#sys.exit(0)
 
