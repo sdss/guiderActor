@@ -159,6 +159,8 @@ class GuiderImageAnalysis(object):
 		return pix * self.pixelscale
 
 	def flux2mag(self, flux, exptime, fiber):
+		if exptime == 0:
+			return -99
 		return -2.5 * log10(flux / exptime) + self.zeropoint
 
 	def ensureLibraryLoaded(self):

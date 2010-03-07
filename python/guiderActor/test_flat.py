@@ -118,17 +118,61 @@ def testPixelConventions():
 	#allims = []
 	#allimxs = []
 
-	truefwhm = arange(0.4, 3.0, 0.03)
-
 	# arcsec/(binned)pix
 	pixelscale = 0.428
-	# magic 2 because we bin by 2 below.
-	starsigmas = 2. * truefwhm / pixelscale / 2.35
 
-	#for i,sx in enumerate(SXs):
-		#imgfn = 'test1-img-%.2f.fits' % sx
+	if False:
+		truefwhm = 1.5
+		# magic 2 because we bin by 2 below.
+		ssig = 2. * truefwhm / pixelscale / 2.35
+		sxstep = 1.
+		#SXs = arange(34.0, 66.05, sxstep)
+		SXs = arange(30.0, 69.05, sxstep)
+
+		fibers = []
+		for i,sx in enumerate(SXs):
+			imgfn = 'test1-img-%i.fits' % i
+			fiber = measureFiber(bg, bgsig, fx, fy, fr, fflux,
+								 sx, sy, ssig, sflux, W, H,
+								 imgfn, flatfn, gprobes)
+			fibers.append(fiber)
+			print 'sx:', sx, 'measured:', fiber.xs
+		allsx = array([f.xs for f in fibers])
+
+		clf()
+		lo,hi = 14*pixelscale, 35*pixelscale
+		plot([lo,hi],[lo,hi], 'b-')
+		plot(SXs/2. * pixelscale, (allsx+0.25) * pixelscale, 'r.')
+		#axvline((fx - fr)/2.*pixelscale, color='0.5')
+		#axvline((fx + fr)/2.*pixelscale, color='0.5')
+		#axvline(2.2, color='0.5')
+		title('Synthetic image test: position')
+		xlabel('True star position (arcsec)')
+		ylabel('Star position measured by guider (arcsec)')
+		axis([lo,hi,lo,hi])
+		a=axis()
+		imw = (a[1]-a[0]) * 0.1 * 1.3
+		imh = (a[3]-a[2]) * 0.1 * 1.3
+		for i in [3, 13, 27, 35]:
+			ix = SXs[i]/2*pixelscale
+			im = pyfits.open('test1-img-%i.fits' % i)[0].data
+			dirn = 1 if (ix > 11) else -1
+			plot([ix,ix],[11+dirn*imh/2,ix],'b--')
+			imshow(im[16:36,15:35], origin='lower', interpolation='nearest',
+				   extent=[ix-imw/2, ix+imw/2, 11-imh/2, 11+imh/2])
+				#transform=gcf().transFigure,
+				#extent=[i*imw, (i+1)*imw, 0, imh])
+				#extent=[x, x+imw, a[2], a[2]+imh])
+		axis(a)
+		savefig('sx.png')
+
 
 	if True:
+		sx = fx
+		truefwhm = arange(0.03, 3.0, 0.03)
+		# magic 2 because we bin by 2 below.
+		starsigmas = 2. * truefwhm / pixelscale / 2.35
+
 		fibers = []
 		for i,ssig in enumerate(starsigmas):
 			imgfn = 'test1-img-%i.fits' % i
@@ -143,19 +187,36 @@ def testPixelConventions():
 
 		clf()
 		plot(truefwhm, allfwhm, 'r.')
-		plot([0.8,2.2],[0.8,2.2], 'b.-')
+		#plot([0.8,2.2],[0.8,2.2], 'b.-')
+		plot([0,3],[0,3], 'b.-')
+		axvline(0.8, color='0.5')
+		axvline(2.2, color='0.5')
 		print 'slope:', allfwhm[-1] / truefwhm[-1]
 		axis([0, 3, 0, 3])
+		title('Synthetic image test: FWHM')
 		xlabel('True FWHM (arcsec)')
-		ylabel('fwhm')
+		ylabel('FWHM measured by guider (arcsec)')
+
+		a=axis()
+		imw = (a[1]-a[0]) * 0.1 * 1.3
+		imh = (a[3]-a[2]) * 0.1 * 1.3
+		vmin,vmax = None,None
+		for i in [25, 50, 75]:
+			ix = truefwhm[i]
+			im = pyfits.open('test1-img-%i.fits' % i)[0].data
+			if vmin is None:
+				vmin,vmax = im.min(), im.max()
+				vmax = vmin + (vmax - vmin)*0.5
+			y = 0.5
+			dirn = 1 if (ix > y) else -1
+			plot([ix,ix],[y+dirn*imh/2,ix],'b--')
+			imshow(im[16:36,15:35], origin='lower', interpolation='nearest',
+				   extent=[ix-imw/2, ix+imw/2, y-imh/2, y+imh/2],
+				   vmin=vmin, vmax=vmax)
+		axis(a)
 		savefig('fwhm.png')
 
-		clf()
-		plot(truefwhm, allmag, 'r.')
-		xlabel('True FWHM (arcsec)')
-		ylabel('mag')
-		savefig('mag.png')
-
+	return
 
 
 	# arcsec
@@ -472,30 +533,137 @@ def acq_fiber_centers():
 	gca().add_artist(Circle([xc,yc], radius=rad, fc='none', ec='r'))
 	savefig('tst6.png')
 
+def resids(pfn):
+	X = unpickle_from_file(pfn)
+
+	# for (xf,yf,dra,ddec,en,gdra,gddec,gdrot,gdscale,gdfocus) in X:
+
+	gras    = array([x[5] for x in X])
+	gdecs   = array([x[6] for x in X])
+	grots   = array([x[7] for x in X])
+	gscales = array([x[8] for x in X])
+	gfoci   = array([x[9] for x in X])
+	
+	gresids = []
+
+	arcsec_per_mm = 3600./217.7
+
+	for (xf,yf,dra,ddec,en,gdra,gddec,gdrot,gdscale,gdfocus) in X:
+		# corrections at guide fibers, in arcsec
+		rf = sqrt(xf**2 + yf**2)
+		cx = gdra *3600. + -yf*deg2rad(gdrot)*arcsec_per_mm + xf*gdscale*.01*arcsec_per_mm
+		cy = gddec*3600. +  xf*deg2rad(gdrot)*arcsec_per_mm + yf*gdscale*.01*arcsec_per_mm
+
+		I = logical_and(isfinite(dra), isfinite(ddec), en)
+
+		dra_as = arcsec_per_mm * dra[I]
+		ddec_as = arcsec_per_mm * ddec[I]
+		cx = cx[I]
+		cy = cy[I]
+
+		print
+		print 'before correction:', sqrt(mean(dra_as**2)), sqrt(mean(ddec_as**2))
+		#print 'after correction:', sqrt(mean((dra_as - cx)**2)), sqrt(mean((ddec_as - cy)**2))
+
+		print 'after correction pos: (%g,%g)' % (gdra,gddec), sqrt(mean((dra_as - gdra*3600.)**2)), sqrt(mean((ddec_as - gddec*3600.)**2))
+		print 'after correction rot: (%g)' % gdrot, sqrt(mean((dra_as - -yf[I]*deg2rad(gdrot)*arcsec_per_mm)**2)), sqrt(mean((ddec_as - xf[I]*deg2rad(gdrot)*arcsec_per_mm)**2))
+		print 'after correction scale (%g):' % gdscale, sqrt(mean((dra_as - xf[I]*gdscale*0.01*arcsec_per_mm)**2)), sqrt(mean((ddec_as - yf[I]*gdscale*0.01*arcsec_per_mm)**2))
+
+		print 'before correction:', sqrt(mean(dra_as**2 + ddec_as**2))
+		print 'after correction pos: (%g,%g)' % (gdra,gddec), sqrt(mean((dra_as - gdra*3600.)**2 + (ddec_as - gddec*3600.)**2))
+		print 'after correction rot: (%g)' % gdrot, sqrt(mean((dra_as - -yf[I]*deg2rad(gdrot)*arcsec_per_mm)**2 + (ddec_as - xf[I]*deg2rad(gdrot)*arcsec_per_mm)**2))
+		print 'after correction scale (%g):' % gdscale, sqrt(mean((dra_as - xf[I]*gdscale*0.01*arcsec_per_mm)**2 + (ddec_as - yf[I]*gdscale*0.01*arcsec_per_mm)**2))
+		print 'after correction all:', sqrt(mean((dra_as - cx)**2 + (ddec_as - cy)**2))
+
+		if False:
+			clf()
+			plot(xf[I], yf[I], 'r.')
+			axhline(0, color='0.5')
+			axvline(0, color='0.5')
+			sc = 100
+			for x,y,dx,dy in zip(xf[I], yf[I], dra_as, ddec_as):
+				arrow(x,y,sc*dx,sc*dy)
+			arrow(0,0,sc*gdra*3600.,sc*gddec*3600.)
+			for x,y,dx,dy in zip(xf[I], yf[I], dra_as, ddec_as):
+				arrow(x,y,sc*(dx-gdra*3600),sc*(dy-gddec*3600.), ec='b')
+			axis('scaled')
+			savefig('err-radec.png')
+
+			clf()
+			plot(xf[I], yf[I], 'r.')
+			axhline(0, color='0.5')
+			axvline(0, color='0.5')
+			for x,y,dx,dy in zip(xf[I], yf[I], dra_as, ddec_as):
+				arrow(x,y,sc*dx,sc*dy)
+			for x,y,dx,dy in zip(xf[I], yf[I], dra_as - yf[I]*deg2rad(gdrot)*arcsec_per_mm, ddec_as - -xf[I]*deg2rad(gdrot)*arcsec_per_mm):
+				arrow(x,y,sc*dx, sc*dy, ec='b')
+			axis('scaled')
+			savefig('err-rot.png')
+
+
+		gresids.append(sqrt(dra_as**2 + ddec_as**2))
+
+	clf()
+	(meanr,stdr) = ([mean(x) for x in gresids],
+					[std(x) for x in gresids])
+	#for i,x in enumerate(gresids):
+	#	#plot(i*ones_like(x), x*arcsec_per_mm, 'r.')
+	errorbar(range(len(meanr)), meanr, yerr=stdr)
+	ylabel('Residuals at guide stars (arcsec)')
+	savefig('resids.png')
+	
+	clf()
+	plot(gras*3600., gdecs*3600., 'r.')
+	axhline(0, color='0.5')
+	axvline(0, color='0.5')
+	xlabel('RA guiding correction (arcsec)')
+	ylabel('Dec guiding correction (arcsec)')
+	savefig('radec.png')
+
+	clf()
+	plot(grots*3600., 'r.')
+	ylabel('Guider rotation correction (arcsec)')
+	axhline(0, color='0.5')
+	savefig('rot.png')
+
+	clf()
+	plot(gscales * 1e4, 'r.')
+	ylabel('Guider scale correction (ppm)')
+	axhline(0, color='0.5')
+	savefig('scale.png')
+
+	#clf()
+	#plot(gras, gdecs, 'r.')
+	#savefig('g.png')
+
 
 def summarize(nums, pfn):
 	X = []
 	for n in nums:
 		fn = 'proc-gimg-%04i.fits' % n
+		if not os.path.exists(fn):
+			continue
 		hdr = pyfits.getheader(fn)
 		tab = table_fields(pyfits.getdata(fn, 6))
 		xf,yf = tab.xfocal, tab.yfocal
 		dra,ddec = tab.dra, tab.ddec
 		# DRA, DDEC, DROT, DFOCUS, DSCALE
-		X.append(xf,yf,dra,ddec,(hdr['DRA'], hdr['DDEC'], hdr['DROT'], hdr['DSCALE'], hdr['DFOCUS']))
+		X.append((xf,yf,dra,ddec,hdr['DRA'], hdr['DDEC'], hdr['DROT'], hdr['DSCALE'], hdr['DFOCUS']))
 	pickle_to_file(X, pfn)
 
 if __name__ == '__main__':
 	os.environ['GUIDERACTOR_DIR'] = '..'
 	fiberinfofn = '../etc/gcamFiberInfo.par'
 
-	summarize(range(63, 123), '3666-1.pickle')
+	testPixelConventions()
 	sys.exit(0)
+	#summarize(range(63, 123), '3666-1.pickle')
+
+	resids('3666-2.pickle')
 
 	GI = TestGI(None)
 	GI.setOutputDir('test-outputs')
 
-	#testPixelConventions()
 
 	#flux_calibration()
 	
