@@ -546,7 +546,7 @@ def acq_fiber_centers():
 	gca().add_artist(Circle([xc,yc], radius=rad, fc='none', ec='r'))
 	savefig('tst6.png')
 
-def resids(pfn):
+def resids(pfn, tt):
 	X = unpickle_from_file(pfn)
 
 	# for (xf,yf,dra,ddec,en,gdra,gddec,gdrot,gdscale,gdfocus) in X:
@@ -558,6 +558,11 @@ def resids(pfn):
 	gfoci   = array([x[9] for x in X])
 	
 	gresids = []
+	resids2 = []
+	residsra = []
+	residsdec = []
+	residsra2 = []
+	residsdec2 = []
 
 	arcsec_per_mm = 3600./217.7
 
@@ -616,6 +621,32 @@ def resids(pfn):
 
 		gresids.append(sqrt(dra_as**2 + ddec_as**2))
 
+		print 'dra[I]*arcsec_per_mm:', dra[I]*arcsec_per_mm
+		print 'mean(dra[I]*arcsec_per_mm):', mean(dra[I]*arcsec_per_mm)
+		print 'mean(gras)*3600:', mean(gras)*3600.
+		print 'ddec[I]*arcsec_per_mm:', ddec[I]*arcsec_per_mm
+		print 'mean(ddec[I]*arcsec_per_mm):', mean(ddec[I]*arcsec_per_mm)
+		print 'mean(gdecs)*3600.:', mean(gdecs)*3600.
+		
+		resids2.append(sqrt((dra[I]*arcsec_per_mm - mean(gras)*3600.)**2 + (ddec[I]*arcsec_per_mm - mean(gdecs)*3600.)**2))
+		residsra2.append(dra[I]*arcsec_per_mm - mean(gras)*3600.)
+		residsdec2.append(ddec[I]*arcsec_per_mm - mean(gdecs)*3600.)
+		residsra.append(dra[I]*arcsec_per_mm)
+		residsdec.append(ddec[I]*arcsec_per_mm)
+
+
+	clf()
+	for x,y in zip(residsra,residsra2):
+		X = arange(len(x))
+		plot(X, x, 'r.')
+		plot(X+0.5, y, 'b.')
+	savefig('resids-ra.png')
+	clf()
+	for x,y in zip(residsdec,residsdec2):
+		plot(x, 'r.')
+		plot(y, 'b.')
+	savefig('resids-dec.png')
+
 	clf()
 	(meanr,stdr) = ([mean(x) for x in gresids],
 					[std(x) for x in gresids])
@@ -623,9 +654,46 @@ def resids(pfn):
 	#	#plot(i*ones_like(x), x*arcsec_per_mm, 'r.')
 	errorbar(range(len(meanr)), meanr, yerr=stdr)
 	ylabel('Residuals at guide stars (arcsec)')
+	xlabel('Guider frame #')
+	title(tt)
+	ylim(ymax=1)
+	xlim(xmax=84)
 	savefig('resids.png')
+
+	clf()
+	for i,x in enumerate(gresids):
+		plot(i*ones_like(x), x, 'r.', alpha=0.5)
+	ylabel('Residuals at guide stars (arcsec)')
+	xlabel('Guider frame #')
+	ylim(ymax=1)
+	xlim(xmax=84)
+	title(tt)
+	savefig('all-resids.png')
+
+	errorbar(range(len(meanr)), meanr, yerr=stdr)
+	ylim(ymax=1)
+	savefig('all-resids2.png')
+
+	
+
+	clf()
+	(meanr,stdr) = ([mean(x) for x in resids2],
+					[std(x) for x in resids2])
+	errorbar(range(len(meanr)), meanr, yerr=stdr)
+	ylabel('Detrended residuals at guide stars (arcsec)')
+	ylim(ymax=1)
+	savefig('detrend-resids.png')
+
+	clf()
+	for i,x in enumerate(resids2):
+		plot(i*ones_like(x), x, 'r.', alpha=0.5)
+	ylabel('Detrended residuals at guide stars (arcsec)')
+	savefig('detrend-all-resids.png')
+
 	
 	clf()
+	#plot(gras*3600., gdecs*3600., 'r.')
+	ymn,ymx,xmx = -0.3,0.3,0.4
 	plot(gras*3600., gdecs*3600., 'r.')
 	axhline(0, color='0.5')
 	axvline(0, color='0.5')
@@ -668,12 +736,13 @@ if __name__ == '__main__':
 	os.environ['GUIDERACTOR_DIR'] = '..'
 	fiberinfofn = '../etc/gcamFiberInfo.par'
 
-	flux_calibration()
+	resids('3666-2.pickle', 'MJD 55259 -- Plate 3666')
+	#resids('55247-3854-1.pickle')
+	#flux_calibration()
 	#testPixelConventions()
 	sys.exit(0)
+	#summarize(range(1029,1463), '55247-3854-1.pickle')
 	#summarize(range(63, 123), '3666-1.pickle')
-
-	resids('3666-2.pickle')
 
 	GI = TestGI(None)
 	GI.setOutputDir('test-outputs')
