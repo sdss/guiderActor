@@ -907,6 +907,22 @@ def guidingIsOK(cmd, actorState, force=False):
         cmd.warn('text="FF petals aren\'t open; aborting guiding"')
         return False
 
+#   should we allow guiding with lamps on if axes are disabled
+#   check if lamps are actually ON
+    ffLamp = actorState.models["mcp"].keyVarDict["ffLamp"]
+    hgCdLamp = actorState.models["mcp"].keyVarDict["hgCdLamp"]
+    neLamp = actorState.models["mcp"].keyVarDict["neLamp"]
+    if ffLamp or hgCdLamp or neLamp:
+        cmd.warn('text="Calibration lamp on; aborting guiding"')
+        return False
+   
+#   check if non sensed lamps are commanded ON
+    uvLamp = actorState.models["mcp"].keyVarDict["uvLampCommandedOn"]
+    whtLamp = actorState.models["mcp"].keyVarDict["whtLampCommandedOn"]
+    if ffLamp or uvLamp or whtLamp:
+        cmd.warn('text="Calibration lamp comanded on; aborting guiding"')
+        return False
+    
     tccState = actorState.tccState
     if tccState.halted or tccState.goToNewField:
         cmd.warn('text="TCC motion aborted guiding"')
