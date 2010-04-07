@@ -592,10 +592,10 @@ class GuiderImageAnalysis(object):
 		mode = 1
 		res = self.libguide.gfindstars(ctypes.byref(c_image), c_fibers, mode)
 		# SH_SUCCESS is this following nutty number...
-		if res == int(numpy.uint32(0x8001c009)):
+		if numpy.uint32(res) == numpy.uint32(0x8001c009):
 			self.debug('gfindstars returned successfully.')
 		else:
-			self.warn('gfindstars() returned an error code: %08x' % res)
+			self.warn('gfindstars() returned an error code: %08x (%08x; success=%08x)' % (res, numpy.uint32(res), numpy.uint32(0x8001c009)))
 
 		# pull star positions out of c_fibers, stuff outputs...
 		for i,f in enumerate(goodfibers):
