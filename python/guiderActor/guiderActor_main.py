@@ -32,12 +32,11 @@ class State(object):
     def __init__(self, actor):
         self.actor = actor
         self.dispatcher = self.actor.cmdr.dispatcher
-        self.reactor = self.dispatcher.reactor
         self.models = {}
         self.restartCmd = None
 
     def __str__(self):
-        msg = "%s %s %s" % (self.actor, self.actor.cmdr.dispatcher, self.dispatcher.reactor)
+        msg = "%s %s" % (self.actor, self.actor.cmdr.dispatcher)
 
         return msg
 
