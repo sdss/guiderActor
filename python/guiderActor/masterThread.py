@@ -833,6 +833,7 @@ def main(actor, queues):
                 except AttributeError:
                     pass
 
+                msg.cmd.respond("guideState=%s" % ("on" if guideCmd else "off"))
                 msg.cmd.inform('text="The guider is %s"' % ("running" if guideCmd else "off"))
 
                 fiberState = []
@@ -893,6 +894,12 @@ def guidingIsOK(cmd, actorState, force=False):
         return True
 
     ffsStatus = actorState.models["mcp"].keyVarDict["ffsStatus"]
+    bypassed = actorState.models["sop"].keyVarDict["bypassed"]
+ 
+    bypassSubsystem = {}
+    for k in ("ffs", "tcc"):
+        bypass = [b[1] for b in bypassed if b[0] == k]
+        bypassSubsystem[k] = bypass[0] if len(bypass) > 0 else False
 
     open, closed = 0, 0
     for s in ffsStatus:
@@ -904,13 +911,20 @@ def guidingIsOK(cmd, actorState, force=False):
         closed += int(s[1])
 
     if open != 8:
-        cmd.warn('text="FF petals aren\'t open; aborting guiding"')
-        return False
+        msg = "FF petals aren\'t open"
+        if bypassSubsystem["ffs"]:
+            cmd.warn('text="%s; guidingIsOk failed, but ffs is bypassed in sop"' % msg)
+        else:
+            cmd.warn('text="%s; aborting guiding"' % msg)
+            return False
 
     tccState = actorState.tccState
     if tccState.halted or tccState.goToNewField:
-        cmd.warn('text="TCC motion aborted guiding"')
         print "TCC aborting", tccState.halted, tccState.slewing, tccState.goToNewField
-        return False
+        if bypassSubsystem["tcc"]:
+            cmd.warn('text="TCC motion failed, but tcc is bypassed in sop"')
+        else:
+            cmd.warn('text="TCC motion aborted guiding"')
+            return False
 
     return True

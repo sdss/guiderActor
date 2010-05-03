@@ -70,7 +70,7 @@ class Guider(actorcore.Actor.Actor):
         # Load other actor's models so we can send it commands
         # And ours: we use the models to generate the FITS cards.
         #
-        for actor in ["gcamera", "mcp", "platedb", "tcc", "guider"]:
+        for actor in ["gcamera", "mcp", "platedb", "sop", "tcc", "guider"]:
             actorState.models[actor] = opscore.actor.model.Model(actor)
         #
         # spawn off the threads that sequence actions (e.g. take an exposure; move telescope)
