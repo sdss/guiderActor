@@ -121,8 +121,13 @@ class Guider(actorcore.Actor.Actor):
         self.run()
 
     def connectionMade(self):
-        self.bcast.warn("Guider is connected.")
-        
+        self.bcast.warn('sop is connected.')
+        #
+        # Request that tron connect to us.
+        #
+        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar
+                                        (actor='hub', cmdStr='startNubs %s' % (self.name), timeLim=5.0))
+                
     @staticmethod
     def startThreads(actorState, cmd=None, restartQueues=False, restart=False):
         """Start or restart the worker threads and queues"""

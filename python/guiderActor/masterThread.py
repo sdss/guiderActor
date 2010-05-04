@@ -538,6 +538,8 @@ def main(actor, queues):
                         guideCmd.warn("text=%s" % qstr("Unable to solve for axis offsets"))
 
                     if nStar <= 1:      # don't bother with focus/scale!
+                        GI.writeFITS(actorState.models, guideCmd, frameInfo, gState.gprobes)
+
                         if oneExposure:
                             queues[MASTER].put(Msg(Msg.STATUS, msg.cmd, finish=True))
                             guideCmd = None
