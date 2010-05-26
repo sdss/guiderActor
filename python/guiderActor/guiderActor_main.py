@@ -8,7 +8,6 @@ import opscore.actor.model
 import opscore.actor.keyvar
 
 import actorcore.Actor
-import actorcore.CmdrConnection
 
 import actorkeys
 
@@ -59,10 +58,6 @@ class Guider(actorcore.Actor.Actor):
         self.logger.setLevel(debugLevel)
         #self.logger.propagate = True
 
-        self.cmdr = actorcore.CmdrConnection.Cmdr(name, self)
-        self.cmdr.connectionMade = self.connectionMade
-        self.cmdr.connect()
-
         guiderActor.myGlobals.actorState = State(self)
         actorState = guiderActor.myGlobals.actorState
         #
@@ -86,8 +81,6 @@ class Guider(actorcore.Actor.Actor):
         #
         # Handle the hated ini file
         #
-        import ConfigParser
-        
         try:
             expTime = float(self.config.get('gcamera', "exposureTime"))
         except ConfigParser.NoOptionError:
@@ -120,14 +113,6 @@ class Guider(actorcore.Actor.Actor):
         #
         self.run()
 
-    def connectionMade(self):
-        self.bcast.warn('sop is connected.')
-        #
-        # Request that tron connect to us.
-        #
-        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar
-                                        (actor='hub', cmdStr='startNubs %s' % (self.name), timeLim=5.0))
-                
     @staticmethod
     def startThreads(actorState, cmd=None, restartQueues=False, restart=False):
         """Start or restart the worker threads and queues"""
