@@ -894,7 +894,7 @@ def guidingIsOK(cmd, actorState, force=False):
     """Is it OK to be guiding?"""
 
     #quick hack to skip all the bypass suff for tonight May 28 UT
-    if True
+    if True:
         return True
 
     if force:
