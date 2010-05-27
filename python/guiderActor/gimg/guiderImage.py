@@ -501,7 +501,7 @@ class GuiderImageAnalysis(object):
 			return fibers
 
 		self.debug('Using flat image %s' % flatfn)
-		(flat, mask, fibers, flatoutname) = self.analyzeFlat(flatfn, cartridgeId, gprobes)
+		(flat, mask, fibers) = self.analyzeFlat(flatfn, cartridgeId, gprobes)
 		
 		fibers = [f for f in fibers if not f.is_fake()]
 

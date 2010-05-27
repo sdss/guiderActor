@@ -231,7 +231,8 @@ def main(actor, queues):
 
                 darkfile = h.get('DARKFILE', None)
                 if not darkfile:
-                    cmd.warn("text=%s" % qstr("No dark image available!!"))
+                    cmd.fail("text=%s" % qstr("No dark image available!!"))
+                    continue
 
                 cmd.inform("text=GuiderImageAnalysis()...")
                 GI = GuiderImageAnalysis(msg.filename, cmd=cmd)
@@ -339,9 +340,6 @@ def main(actor, queues):
                         fiber.dx = guideCameraScale*(fiber.xs - fiber.xcen) + (probe.xFerruleOffset / 1000.)
                         fiber.dy = guideCameraScale*(fiber.ys - fiber.ycen) + (probe.yFerruleOffset / 1000.)
 
-                        if expType == "flat":
-                            continue
-
                         poserr = fiber.xyserr
 
                         isnan = numpy.isnan
@@ -431,12 +429,6 @@ def main(actor, queues):
                         #
                         b3 += raCenter*dRA + decCenter*dDec
                         
-                    #if expType == "flat":
-                    #    GI.writeFITS(actorState.models, msg.cmd, frameInfo, gState.gprobes)
-                    #    queues[MASTER].put(Msg(Msg.STATUS, msg.cmd, finish=True))
-                    #    guideCmd = None
-                    #    continue
-
                     nStar = A[0, 0]
                     if nStar == 0:
                         guideCmd.warn('text="No stars are available for guiding"')
