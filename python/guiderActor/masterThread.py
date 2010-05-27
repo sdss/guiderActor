@@ -893,21 +893,14 @@ def main(actor, queues):
 def guidingIsOK(cmd, actorState, force=False):
     """Is it OK to be guiding?"""
 
-    #quick hack to skip all the bypass suff for tonight May 28 UT
-    if True:
-        return True
-
     if force:
         return True
 
-    ffsStatus = actorState.models["mcp"].keyVarDict["ffsStatus"]
     bypassed = actorState.models["sop"].keyVarDict["bypassed"]
- 
-    bypassSubsystem = {}
-    for k in ("ffs", "tcc"):
-        bypass = [b[1] for b in bypassed if b[0] == k]
-        bypassSubsystem[k] = bypass[0] if len(bypass) > 0 else False
+    bypassNames = actorState.models["sop"].keyVarDict["bypassNames"]
+    bypassSubsystem = dict(zip(bypassNames, bypassed))
 
+    ffsStatus = actorState.models["mcp"].keyVarDict["ffsStatus"]
     open, closed = 0, 0
     for s in ffsStatus:
         if s == None:
@@ -918,7 +911,7 @@ def guidingIsOK(cmd, actorState, force=False):
         closed += int(s[1])
 
     if open != 8:
-        msg = "FF petals aren\'t open"
+        msg = "FF petals aren\'t all open"
         if bypassSubsystem["ffs"]:
             cmd.warn('text="%s; guidingIsOk failed, but ffs is bypassed in sop"' % msg)
         else:
