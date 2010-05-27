@@ -327,7 +327,7 @@ that isn't actually mounted (unless you specify force)
     def ping(self, cmd):
         """ Top-level 'ping' command handler. Query the actor for liveness/happiness. """
 
-        self.actor.genVersionKey(cmd)
+        self.actor.sendVersionKey(cmd)
         cmd.finish('text="pong"')
 
     def restart(self, cmd):
@@ -378,7 +378,7 @@ that isn't actually mounted (unless you specify force)
     def status(self, cmd, full=True):
         """Return guide status status"""
 
-        self.actor.genVersionKey(cmd)
+        self.actor.sendVersionKey(cmd)
         if "geek" in cmd.cmd.keywords:
             for t in threading.enumerate():
                 cmd.inform('text="%s"' % t)
