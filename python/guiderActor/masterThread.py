@@ -912,7 +912,7 @@ def guidingIsOK(cmd, actorState, force=False):
 
     if open != 8:
         msg = "FF petals aren\'t all open"
-        if bypassSubsystem["ffs"]:
+        if bypassSubsystem.get("ffs", False)
             cmd.warn('text="%s; guidingIsOk failed, but ffs is bypassed in sop"' % msg)
         else:
             cmd.warn('text="%s; aborting guiding"' % msg)
@@ -921,8 +921,8 @@ def guidingIsOK(cmd, actorState, force=False):
     tccState = actorState.tccState
     if tccState.halted or tccState.goToNewField:
         print "TCC aborting", tccState.halted, tccState.slewing, tccState.goToNewField
-        if bypassSubsystem["tcc"]:
-            cmd.warn('text="TCC motion failed, but tcc is bypassed in sop"')
+        if bypassSubsystem.get("axes", False):
+            cmd.warn('text="TCC motion failed, but axis motions are bypassed in sop"')
         else:
             cmd.warn('text="TCC motion aborted guiding"')
             return False
