@@ -294,10 +294,10 @@ def main(actor, queues):
                         enabled = gp.enabled
 
                         #
-                        # dx, dy are the offsets on the ALTA guider image
-                        #
-                        fiber.dx = guideCameraScale*(fiber.xs - fiber.xcen)
-                        fiber.dy = guideCameraScale*(fiber.ys - fiber.ycen)
+                        # dx, dy are the offsets (in mm) on the ALTA guider image
+                        fiber.dx = guideCameraScale*(fiber.xs - fiber.xcen) + (probe.xFerruleOffset / 1000.)
+                        fiber.dy = guideCameraScale*(fiber.ys - fiber.ycen) + (probe.yFerruleOffset / 1000.)
+
                         poserr = fiber.xyserr
 
                         isnan = numpy.isnan
@@ -892,6 +892,11 @@ def main(actor, queues):
 
 def guidingIsOK(cmd, actorState, force=False):
     """Is it OK to be guiding?"""
+
+    #quick hack to skip all the bypass suff for tonight May 28 UT
+    if True
+        return True
+
     if force:
         return True
 
