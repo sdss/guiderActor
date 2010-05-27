@@ -206,6 +206,43 @@ def main(actor, queues):
                 guideCmd.respond("guideState=on")
                 queues[GCAMERA].put(Msg(Msg.EXPOSE, guideCmd, replyQueue=queues[MASTER], expTime=gState.expTime))
 
+            elif msg.type == Msg.TAKE_FLAT:
+                if gState.cartridge <= 0:
+                    msg.cmd.fail('text="no valid cartridge is loaded"')
+                    continue
+
+                queues[GCAMERA].put(Msg(Msg.EXPOSE, msg.cmd, replyQueue=queues[MASTER], 
+                                        expType="flat", expTime=msg.expTime, cartridge=gState.cartridge))
+
+            elif msg.type == Msg.FLAT_FINISHED:
+                cmd = msg.cmd
+                if not msg.success:
+                    cmd.fail('text="something went wrong when taking the flat"')
+                    continue
+
+                cmd.respond("processing=%s" % msg.filename)
+                frameNo = int(re.search(r"([0-9]+)\.fits$", msg.filename).group(1))
+                
+                h = pyfits.getheader(msg.filename)
+                exptype = h.get('IMAGETYP')
+                if exptype != "flat":
+                    cmd.fail('text="flat image processing ignoring a %s image!!"' % (exptype))
+                    continue
+
+                darkfile = h.get('DARKFILE', None)
+                if not darkfile:
+                    cmd.warn("text=%s" % qstr("No dark image available!!"))
+
+                cmd.inform("text=GuiderImageAnalysis()...")
+                GI = GuiderImageAnalysis(msg.filename, cmd=cmd)
+                cmd.inform("text=GuiderImageAnalysis.findFibers()...")
+                fibers = GI.findFibers(gState.gprobes)
+                flatoutname = GI.getProcessedOutputName(msg.filename) 
+                dirname, filename = os.path.split(flatoutname)
+                cmd.inform('file=%s/,%s' % (dirname, filename))
+                cmd.finish('text="flat image processing done"')
+                continue
+
             elif msg.type == Msg.EXPOSURE_FINISHED:
                 if True:
                     if not guideCmd:    # exposure already finished
@@ -219,26 +256,30 @@ def main(actor, queues):
                     frameNo = int(re.search(r"([0-9]+)\.fits$", msg.filename).group(1))
 
                     h = pyfits.getheader(msg.filename)
-                    flatfile = h.get('FLATFILE', None)
-                    flatcart = h.get('FLATCART', None)
-                    darkfile = h.get('DARKFILE', None)
-                    if not flatfile:
-                        guideCmd.fail("text=%s" % qstr("No flat image available"))
-                        guideCmd = None
-                        continue
-                    if not darkfile:
-                        guideCmd.fail("text=%s" % qstr("No dark image available"))
-                        guideCmd = None
-                        continue
-                    if flatcart != gState.cartridge:
-                        if False:
-                            guideCmd.fail("text=%s" % qstr("Guider flat is for cartridge %d but %d is loaded" % (
-                                flatcart, gState.cartridge)))
+                    exptype = h.get('IMAGETYP')
+                    if exptype == "flat":
+                        cmd.inform('text="processing flat image..."')
+                    else:
+                        flatfile = h.get('FLATFILE', None)
+                        flatcart = h.get('FLATCART', None)
+                        darkfile = h.get('DARKFILE', None)
+                        if not flatfile:
+                            guideCmd.fail("text=%s" % qstr("No flat image available"))
                             guideCmd = None
                             continue
-                        else:
-                            guideCmd.warn("text=%s" % qstr("Guider flat is for cartridge %d but %d is loaded" % (
-                                flatcart, gState.cartridge)))
+                        if not darkfile:
+                            guideCmd.fail("text=%s" % qstr("No dark image available"))
+                            guideCmd = None
+                            continue
+                        if flatcart != gState.cartridge:
+                            if False:
+                                guideCmd.fail("text=%s" % qstr("Guider flat is for cartridge %d but %d is loaded" % (
+                                            flatcart, gState.cartridge)))
+                                guideCmd = None
+                                continue
+                            else:
+                                guideCmd.warn("text=%s" % qstr("Guider flat is for cartridge %d but %d is loaded" % (
+                                            flatcart, gState.cartridge)))
 
                     #try:
                     if True:
@@ -297,6 +338,9 @@ def main(actor, queues):
                         # dx, dy are the offsets (in mm) on the ALTA guider image
                         fiber.dx = guideCameraScale*(fiber.xs - fiber.xcen) + (probe.xFerruleOffset / 1000.)
                         fiber.dy = guideCameraScale*(fiber.ys - fiber.ycen) + (probe.yFerruleOffset / 1000.)
+
+                        if expType == "flat":
+                            continue
 
                         poserr = fiber.xyserr
 
@@ -387,6 +431,12 @@ def main(actor, queues):
                         #
                         b3 += raCenter*dRA + decCenter*dDec
                         
+                    #if expType == "flat":
+                    #    GI.writeFITS(actorState.models, msg.cmd, frameInfo, gState.gprobes)
+                    #    queues[MASTER].put(Msg(Msg.STATUS, msg.cmd, finish=True))
+                    #    guideCmd = None
+                    #    continue
+
                     nStar = A[0, 0]
                     if nStar == 0:
                         guideCmd.warn('text="No stars are available for guiding"')
@@ -912,7 +962,7 @@ def guidingIsOK(cmd, actorState, force=False):
 
     if open != 8:
         msg = "FF petals aren\'t all open"
-        if bypassSubsystem.get("ffs", False)
+        if bypassSubsystem.get("ffs", False):
             cmd.warn('text="%s; guidingIsOk failed, but ffs is bypassed in sop"' % msg)
         else:
             cmd.warn('text="%s; aborting guiding"' % msg)

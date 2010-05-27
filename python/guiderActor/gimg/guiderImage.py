@@ -191,7 +191,7 @@ class GuiderImageAnalysis(object):
 		DARKFILE= '/data/gcam/55205/gimg-0003.fits'
 		FLATFILE= '/data/gcam/55205/gimg-0224.fits'
 		'''
-		return (fitsheader['DARKFILE'], fitsheader['FLATFILE'])
+		return (fitsheader['DARKFILE'], fitsheader.get('FLATFILE', None))
 
 	def setOutputDir(self, dirnm):
 		self.outputDir = dirnm
@@ -493,9 +493,16 @@ class GuiderImageAnalysis(object):
 		#   we'll need hdr['EXPTIME'] if we do.
 		# FIXME -- filter probes here for !exists, !tritium ?
 
-		self.debug('Using flat image %s' % flatfn)
-		(flat, mask, fibers) = self.analyzeFlat(flatfn, cartridgeId, gprobes)
+		if hdr['IMAGETYP'] == 'flat':
+			flatfn = self.gimgfn
+			self.debug('Analysing flat image %s' % (flatfn))
+			(flat, mask, fibers) = self.analyzeFlat(flatfn, cartridgeId, gprobes)
+			flatoutname = self.getProcessedOutputName(flatfn) 
+			return fibers
 
+		self.debug('Using flat image %s' % flatfn)
+		(flat, mask, fibers, flatoutname) = self.analyzeFlat(flatfn, cartridgeId, gprobes)
+		
 		fibers = [f for f in fibers if not f.is_fake()]
 
 		# FIXME -- presumably we want to mask pixels that are saturated?
@@ -833,6 +840,16 @@ class GuiderImageAnalysis(object):
 		if hdulist is None:
 			self.warn('Failed to create processed flat file')
 			return (flat, mask, fibers)
+
+		imageHDU = hdulist[0]
+
+		# Bah! Need to scoosh this in.
+		guideCameraScale = 0.026
+		plugPlateScale = 217.7358
+		imageHDU.header.update('SDSSFMT', 'GPROC 1 3', 'type major minor version for this file')
+		imageHDU.header.update('IMGBACK', 0.0, 'crude background for entire image. For displays.')
+		#imageHDU.header.update('GCAMSCAL', guideCameraScale, 'guide camera plate scale (mm/pixel)')
+		#imageHDU.header.update('PLATSCAL', plugPlateScale, 'plug plate scale (mm/degree)')
 
 		hdulist.writeto(flatout, clobber=True)
 		# Now read that file we just wrote...
