@@ -84,7 +84,7 @@ class GuiderCmd(object):
             ("enable", "<fibers>|<gprobes>", self.enableFibers),
             ("loadCartridge", "[<cartridge>] [<pointing>] [<plate>] [<mjd>] [<fscanId>] [force]", self.loadCartridge),
             ("showCartridge", "", self.showCartridge),
-            ("flat", "", self.flat),
+            ("flat", "[<time>]", self.flat),
             ('ping', '', self.ping),
             ('restart', '', self.restart),
             ('axes', '(on|off)', self.axes),
@@ -126,8 +126,9 @@ class GuiderCmd(object):
         myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.SET_TIME, cmd=cmd, expTime=expTime))
 
     def flat(self, cmd):
+        expTime = cmd.cmd.keywords["time"].values[0]
         myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.TAKE_FLAT, cmd=cmd,
-                                                                start=True, expTime=0.5))
+                                                                start=True, expTime=expTime))
 
     def setPID(self, cmd):
         """Set something's PID coefficients"""
