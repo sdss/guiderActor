@@ -14,14 +14,16 @@ import actorkeys
 
 import gcameraThread
 import masterThread
+
+from loadGprobes import getGprobes
         
 from guiderActor import *
 import guiderActor.myGlobals
 #
 # Import sdss3logging before logging if you want to use it
 #
-if False:
-    import opscore.utility.sdss3logging as sdss3logging
+#if False:
+import opscore.utility.sdss3logging as sdss3logging
 import logging
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
