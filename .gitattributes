@@ -11,6 +11,7 @@ python/guiderActor/PID.py -text
 python/guiderActor/__init__.py -text
 python/guiderActor/gcameraThread.py -text
 python/guiderActor/gimg/__init__.py -text
+python/guiderActor/gimg/findsinglestar.py -text
 python/guiderActor/gimg/guiderImage.py -text
 python/guiderActor/gimg/guiderImagePlots.py -text
 python/guiderActor/gimg/procimg.py -text

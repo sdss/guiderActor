@@ -5,6 +5,7 @@ import sys
 
 import matplotlib
 matplotlib.use('Agg')
+from matplotlib import rc
 
 from numpy import *
 from numpy.random import *
@@ -22,6 +23,9 @@ from tests import getGprobes, getModels, getCommand, ducky
 from astrometry.util.pyfits_utils import *
 from astrometry.util.file import *
 import pylab
+
+rc('xtick', labelsize=10)
+rc('ytick', labelsize=10)
 
 def savefig(fn):
 	print 'Saving', fn
@@ -121,7 +125,7 @@ def testPixelConventions():
 	# arcsec/(binned)pix
 	pixelscale = 0.428
 
-	if False:
+	if True:
 		truefwhm = 1.5
 		# magic 2 because we bin by 2 below.
 		ssig = 2. * truefwhm / pixelscale / 2.35
@@ -165,6 +169,7 @@ def testPixelConventions():
 				#extent=[x, x+imw, a[2], a[2]+imh])
 		axis(a)
 		savefig('sx.png')
+		savefig('sx.pdf')
 
 
 	if True:
@@ -215,6 +220,7 @@ def testPixelConventions():
 				   vmin=vmin, vmax=vmax)
 		axis(a)
 		savefig('fwhm.png')
+		savefig('fwhm.pdf')
 
 	return
 
@@ -279,6 +285,7 @@ def testPixelConventions():
 
 	title('slope %.3f' % ((allsx[-1]-allsx[0])/(SXs[-1]-SXs[0])))
 	savefig('sx.png')
+	savefig('sx.pdf')
 
 
 
@@ -429,7 +436,8 @@ def flux_calibration():
 	maglo,maghi = min(grmag)-0.25, max(grmag)+0.25
 	plot([maglo,maghi], [maglo,maghi],'-', color='0.5')
 	axis([maglo,maghi,maglo,maghi])
-	savefig('rockout.png')
+	savefig('zeropoint.png')
+	savefig('zeropoint.pdf')
 
 	#clf()
 	#plot(grmag, mag, 'k.')
@@ -648,6 +656,9 @@ def resids(pfn, tt):
 	savefig('resids-dec.png')
 
 	clf()
+	allresids = hstack(gresids)
+	rms = sqrt(mean(allresids[5:] ** 2))
+	
 	(meanr,stdr) = ([mean(x) for x in gresids],
 					[std(x) for x in gresids])
 	#for i,x in enumerate(gresids):
@@ -656,9 +667,13 @@ def resids(pfn, tt):
 	ylabel('Residuals at guide stars (arcsec)')
 	xlabel('Guider frame #')
 	title(tt)
-	ylim(ymax=1)
+	ylim(ymax=0.8)
 	xlim(xmax=84)
+	print 'RMS', rms
+	axhline(rms, color=(0.3,0.3,1))
+	text(40, 0.7, 'RMS = %.2f arcsec' % rms, horizontalalignment='center', fontsize=12)
 	savefig('resids.png')
+	savefig('resids.pdf')
 
 	clf()
 	for i,x in enumerate(gresids):
@@ -668,7 +683,10 @@ def resids(pfn, tt):
 	ylim(ymax=1)
 	xlim(xmax=84)
 	title(tt)
+	axhline(rms, color=(0.3,0.3,1))
+	text(40, 0.7, 'RMS = %.2f arcsec' % rms, horizontalalignment='center', fontsize=12)
 	savefig('all-resids.png')
+	savefig('all-resids.pdf')
 
 	errorbar(range(len(meanr)), meanr, yerr=stdr)
 	ylim(ymax=1)
@@ -699,13 +717,21 @@ def resids(pfn, tt):
 	axvline(0, color='0.5')
 	xlabel('RA guiding correction (arcsec)')
 	ylabel('Dec guiding correction (arcsec)')
+	title(tt)
+	xlim(-0.2, 0.4)
+	ylim(-0.3, 0.3)
 	savefig('radec.png')
+	savefig('radec.pdf')
 
 	clf()
 	plot(grots*3600., 'r.')
+	xlabel('Guider frame #')
 	ylabel('Guider rotation correction (arcsec)')
 	axhline(0, color='0.5')
+	ylim(-2.5,2.5)
+	title(tt)
 	savefig('rot.png')
+	savefig('rot.pdf')
 
 	clf()
 	plot(gscales * 1e4, 'r.')
@@ -736,11 +762,11 @@ if __name__ == '__main__':
 	os.environ['GUIDERACTOR_DIR'] = '..'
 	fiberinfofn = '../etc/gcamFiberInfo.par'
 
+	flux_calibration()
+	sys.exit(0)
+	testPixelConventions()
 	resids('3666-2.pickle', 'MJD 55259 -- Plate 3666')
 	#resids('55247-3854-1.pickle')
-	#flux_calibration()
-	#testPixelConventions()
-	sys.exit(0)
 	#summarize(range(1029,1463), '55247-3854-1.pickle')
 	#summarize(range(63, 123), '3666-1.pickle')
 
@@ -752,7 +778,8 @@ if __name__ == '__main__':
 	#sys.exit(0)
 
 	testInputs = [
-		(55205,     4,    5, 13, 'plPlugMapM-3615-55201-09.par'),
+		(55205,     4,   50, 13, 'plPlugMapM-3615-55201-09.par'),
+		#(55205,     4,    5, 13, 'plPlugMapM-3615-55201-09.par'),
 		#(55243,    1,    7, 10, 'plPlugMapM-3650-55242-01.par'),
 		#(55244,  424,  148, 13, 'plPlugMapM-3657-55244-01.par'),
 		]
@@ -854,7 +881,7 @@ if __name__ == '__main__':
 		origflat = pyfits.getdata(fn)
 		halfflat = GuiderImageAnalysis.binImage(origflat, 2)
 
-		if True:
+		if False:
 			clf()
 			plot_fibers(halfflat, fibers)
 			subplots_adjust(left=0.05, right=0.99, bottom=0.03, top=0.95,
@@ -902,6 +929,24 @@ if __name__ == '__main__':
 				 horizontalalignment='center', verticalalignment='top')
 			savefig(outbase + '.png')
 
+		if True and comparefn and os.path.exists(comparefn):
+			img = pyfits.open(comparefn)[0].data
+			p = pyfits.open(comparefn)[6].data
+			xs = p.field('xStar')
+			ys = p.field('yStar')
+			for f in fibers:
+				f.xs = xs[f.fiberid - 1]
+				f.ys = ys[f.fiberid - 1]
+			clf()
+			plot_fibers(img, fibers, circles=True)#, starxy=True)
+			subplots_adjust(left=0.05, right=0.99, bottom=0.03, top=0.95,
+							wspace=0.05, hspace=0.05)
+			text(0.5, 0.98,
+				 'MJD %i  -  Gimg %04i  -  Plate %i' % (mjd, compnum, plate),
+				 transform=gcf().transFigure, fontsize=12,
+				 horizontalalignment='center', verticalalignment='top')
+			savefig(outbase + '-stars.png')
+			sys.exit(0)
 
 		#acq_fiber_centers()
 
