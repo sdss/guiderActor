@@ -62,7 +62,8 @@ def dcen3x3(img):
 
 
 def find_single_star(img, medfiltsize = 10, psfsigma = 1.0,
-					 min_npix = 10, noise_est_margin=10, noise_est_dpix=5):
+					 min_npix = 10, noise_est_margin=10, noise_est_dpix=5,
+					 grow = 5):
 	# median filter to remove background
 	bg = median_filter(img, size=medfiltsize)
 	img = img - bg
@@ -95,12 +96,8 @@ def find_single_star(img, medfiltsize = 10, psfsigma = 1.0,
 		slices = find_objects(labels, nobjs)
 		# Count number of pixels above threshold in each connected component
 		npix = array([sum((labels[s] == i+1).ravel()) for i,s in enumerate(slices)])
-		#I = argsort(-npix)
-		#print '	  n pix:', npix[I[:10]]
 		# Find components with more than min_npix pixels above threshold
 		I = (npix >= min_npix)
-		#print 'Number of sources with more than %i pixels: %i' % (min_npix, sum(I))
-		#print '	  n pix:', npix[I]
 		print ('Trying nsigma=%g, threshold=%g ==> detected %i objects, %i with more than %i pixels above threshold' %
 			   (nsigma, thresh, nobjs, sum(I), min_npix))
 
@@ -122,7 +119,6 @@ def find_single_star(img, medfiltsize = 10, psfsigma = 1.0,
 	slc = slices[i]
 	(sy,sx) = slc
 	# Grow region of interest
-	grow = 5
 	# The +1 here isn't actually necessary.
 	sx = slice(sx.start - (grow+1), sx.stop + (grow+1))
 	sy = slice(sy.start - (grow+1), sy.stop + (grow+1))
@@ -140,17 +136,6 @@ def find_single_star(img, medfiltsize = 10, psfsigma = 1.0,
 	my = sum(sum(subobj * subimg, axis=1) * arange(SH)) / norm
 	ox = x0 + mx
 	oy = y0 + my
-
-	if False:
-		obj = (labels == i+1)
-		# Dilate by a few sigma to grab pixels that aren't so high above threshold.
-		obj = binary_dilation(obj, iterations=5, structure=ones((3,3)))
-		X,Y = meshgrid(arange(W),arange(H))
-		so = sum((obj * img).ravel())
-		ox = sum((obj * img * X).ravel()) / so
-		oy = sum((obj * img * Y).ravel()) / so
-		ix,iy = int(round(ox)), int(round(oy))
-		xc,yc = dcen3x3(img[iy-1:iy+2, ix-1:ix+2])
 
 	# Starting at the centroid position, find the peak of the paraboloid
 	# using Blanton's dcen3x3.
