@@ -171,33 +171,34 @@ def guideStep(actor, queues, cmd, guideCmd, inFile, oneExposure):
     if not flatfile:
         guideCmd.fail("text=%s" % qstr("No flat image available"))
         guideCmd = None
-        continue
+        return
+    
     if not darkfile:
         guideCmd.fail("text=%s" % qstr("No dark image available"))
         guideCmd = None
-        continue
+        return
+
     if flatcart != gState.cartridge:
         if False:
             guideCmd.fail("text=%s" % qstr("Guider flat is for cartridge %d but %d is loaded" % (
                 flatcart, gState.cartridge)))
             guideCmd = None
-            continue
+            return
         else:
             guideCmd.warn("text=%s" % qstr("Guider flat is for cartridge %d but %d is loaded" % (
                 flatcart, gState.cartridge)))
 
-    #try:
-    if True:
+    try:
         guideCmd.inform("text=GuiderImageAnalysis()...")
         GI = GuiderImageAnalysis(inFile, cmd=guideCmd)
         guideCmd.inform("text=GuiderImageAnalysis.findFibers()...")
         fibers = GI.findFibers(gState.gprobes)
         guideCmd.inform("text=GuiderImageAnalysis.findFibers() got %i fibers" % len(fibers))
-    #except Exception, e:
-    #    tback("GuideTest", e)
-    #    guideCmd.fail("text=%s" % qstr("Error in processing guide images: %s" % e))
-    #    guideCmd = None
-    #    continue
+    except Exception, e:
+        tback("GuideTest", e)
+        guideCmd.fail("text=%s" % qstr("Error in processing guide images: %s" % e))
+        guideCmd = None
+        return
 
     # Object to gather all per-frame guiding info into.
     frameInfo = FrameInfo()
@@ -343,13 +344,13 @@ def guideStep(actor, queues, cmd, guideCmd, inFile, oneExposure):
         if oneExposure:
             queues[MASTER].put(Msg(Msg.STATUS, cmd, finish=True))
             guideCmd = None
-            continue
+            return
 
         if guidingIsOK(cmd, actorState, force=force):
             queues[GCAMERA].put(Msg(Msg.EXPOSE, guideCmd, replyQueue=queues[MASTER],
                                     expTime=gState.expTime))
-            continue
-
+            return
+        
     A[2, 0] = A[0, 2]
     A[2, 1] = A[1, 2]
     try:
@@ -487,12 +488,12 @@ def guideStep(actor, queues, cmd, guideCmd, inFile, oneExposure):
         if oneExposure:
             queues[MASTER].put(Msg(Msg.STATUS, cmd, finish=True))
             guideCmd = None
-            continue
+            return
 
         if guidingIsOK(cmd, actorState, force=force):
             queues[GCAMERA].put(Msg(Msg.EXPOSE, guideCmd, replyQueue=queues[MASTER],
                                     expTime=gState.expTime))
-        continue
+        return
 
     # RMS guiding error 
     print "RMS guiding error= %4.3f, n stars= %d" %(guideRMS, nguideRMS) 
@@ -706,7 +707,6 @@ def main(actor, queues):
     
     guideCmd = None                     # the Cmd that started the guide loop
 
-#    import pdb; pdb.set_trace()
     while True:
         try:
             msg = queues[MASTER].get(timeout=timeout)
@@ -784,15 +784,16 @@ def main(actor, queues):
                 msg.cmd.finish('text="I do so hope that succeeded."')
                 
             elif msg.type == Msg.EXPOSURE_FINISHED:
-                
                 if not guideCmd:    # exposure already finished
                     continue
 
                 if not msg.success:
                     queues[MASTER].put(Msg(Msg.START_GUIDING, guideCmd, start=False))
                     continue
-
+                    
                 guideStep(actor, queues, msg.cmd, guideCmd, msg.filename, oneExposure)
+                if not guideCmd:    # something fatal happened in guideStep
+                    continue
 
                 #
                 # Is there anything to indicate that we shouldn't be guiding?
@@ -808,9 +809,33 @@ def main(actor, queues):
                     guideCmd = None
                 else:
                     queues[GCAMERA].put(Msg(Msg.EXPOSE, guideCmd, replyQueue=queues[MASTER], expTime=gState.expTime))
+                
+            elif msg.type == Msg.TAKE_FLAT:
+                if gState.cartridge <= 0:
+                    msg.cmd.fail('text="no valid cartridge is loaded"')
+                    continue
+
+                queues[GCAMERA].put(Msg(Msg.EXPOSE, msg.cmd, replyQueue=queues[MASTER], 
+                                        expType="flat", expTime=msg.expTime, cartridge=gState.cartridge))
+
+            elif msg.type == Msg.FLAT_FINISHED:
+                cmd = msg.cmd
+                if not msg.success:
+                    cmd.fail('text="something went wrong when taking the flat"')
+                    continue
+
+                cmd.respond("processing=%s" % msg.filename)
+                frameNo = int(re.search(r"([0-9]+)\.fits$", msg.filename).group(1))
+                
+                h = pyfits.getheader(msg.filename)
+                exptype = h.get('IMAGETYP')
+                if exptype != "flat":
+                    cmd.fail('text="flat image processing ignoring a %s image!!"' % (exptype))
+                    continue
 
             elif msg.type == Msg.FAIL:
                 msg.cmd.fail('text="%s"' % msg.text);
+
             elif msg.type == Msg.LOAD_CARTRIDGE:
                 gState.deleteAllGprobes()
 
@@ -885,6 +910,7 @@ def main(actor, queues):
                 except AttributeError:
                     pass
 
+                msg.cmd.respond("guideState=%s" % ("on" if guideCmd else "off"))
                 msg.cmd.inform('text="The guider is %s"' % ("running" if guideCmd else "off"))
 
                 fiberState = []
@@ -941,9 +967,13 @@ def main(actor, queues):
 
 def guidingIsOK(cmd, actorState, force=False):
     """Is it OK to be guiding?"""
+
     if force:
         return True
 
+    bypassed = actorState.models["sop"].keyVarDict["bypassed"]
+    bypassNames = actorState.models["sop"].keyVarDict["bypassNames"]
+    bypassSubsystem = dict(zip(bypassNames, bypassed))
     ffsStatus = actorState.models["mcp"].keyVarDict["ffsStatus"]
 
     open, closed = 0, 0
@@ -956,9 +986,14 @@ def guidingIsOK(cmd, actorState, force=False):
         closed += int(s[1])
 
     if open != 8:
-        cmd.warn('text="FF petals aren\'t open; aborting guiding"')
-        return False
+        msg = "FF petals aren\'t all open"
+        if bypassSubsystem.get("ffs", False):
+            cmd.warn('text="%s; guidingIsOk failed, but ffs is bypassed in sop"' % msg)
+        else:
+            cmd.warn('text="%s; aborting guiding"' % msg)
+            return False
 
+#CPL must recheck this
 #   should we allow guiding with lamps on if axes are disabled
 #   check if lamps are actually ON
     ffLamp = actorState.models["mcp"].keyVarDict["ffLamp"]
@@ -966,8 +1001,7 @@ def guidingIsOK(cmd, actorState, force=False):
     neLamp = actorState.models["mcp"].keyVarDict["neLamp"]
     if ffLamp or hgCdLamp or neLamp:
         cmd.warn('text="Calibration lamp on; aborting guiding"')
-        return False
-   
+
 #   check if non sensed lamps are commanded ON
     uvLamp = actorState.models["mcp"].keyVarDict["uvLampCommandedOn"]
     whtLamp = actorState.models["mcp"].keyVarDict["whtLampCommandedOn"]
@@ -977,8 +1011,10 @@ def guidingIsOK(cmd, actorState, force=False):
     
     tccState = actorState.tccState
     if tccState.halted or tccState.goToNewField:
-        cmd.warn('text="TCC motion aborted guiding"')
-        print "TCC aborting", tccState.halted, tccState.slewing, tccState.goToNewField
-        return False
+        if bypassSubsystem.get("axes", False):
+            cmd.warn('text="TCC motion failed, but axis motions are bypassed in sop"')
+        else:
+            cmd.warn('text="TCC motion aborted guiding"')
+            return False
 
     return True

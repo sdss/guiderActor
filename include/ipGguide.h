@@ -112,7 +112,7 @@ STATIC char pbuf[256];
    The 14 guide fibers occupy 1% 
    Wings of fibers bring the total fiber area up to near 5%
 */
-#define PEAK_PERCENTILE 0.015
+#define PEAK_PERCENTILE 0.010
 #define MEDIAN_PERCENTILE 0.55
 #define   BIAS_PERCENTILE 0.70
 

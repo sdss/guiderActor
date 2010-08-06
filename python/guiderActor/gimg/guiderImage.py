@@ -122,9 +122,11 @@ class GuiderImageAnalysis(object):
 		if cmd:
 			self.informFunc = cmd.inform
 			self.warnFunc = cmd.warn
+			self.debugFunc = cmd.diag
 		else:
 			self.informFunc = None
 			self.warnFunc = None
+			self.debugFunc = None
 
 		# Print debugging?
 		self.printDebug = False
@@ -197,9 +199,13 @@ class GuiderImageAnalysis(object):
 				s = 'text="%s"' % (s)
 			self.informFunc(s)
 
-	def debug(self, s):
-		if self.debug:
-			print s
+	def debug(self, s, hasKey=False):
+		if self.debugFunc is None:
+			print 'debug:', s
+		else:
+			if not hasKey:
+				s = 'text="%s"' % (s)
+			self.debugFunc(s)
 
 	def findDarkAndFlat(self, gimgfn, fitsheader):
 		''' findDarkAndFlat(...)
@@ -213,7 +219,7 @@ class GuiderImageAnalysis(object):
 		DARKFILE= '/data/gcam/55205/gimg-0003.fits'
 		FLATFILE= '/data/gcam/55205/gimg-0224.fits'
 		'''
-		return (fitsheader['DARKFILE'], fitsheader['FLATFILE'])
+		return (fitsheader['DARKFILE'], fitsheader.get('FLATFILE', None))
 
 	def setOutputDir(self, dirnm):
 		self.outputDir = dirnm
@@ -305,7 +311,7 @@ class GuiderImageAnalysis(object):
 			self.libguide.rotate_region(numpy_array_to_REGION(stamp),
 										numpy_array_to_REGION(rstamp),
 										rot)
-			stamps.append(rstamp)
+			stamps.append(numpy.flipud(rstamp))
 			# Rotate the mask image...
 			stamp = mask[yc-r:yc+r+1, xc-r:xc+r+1].astype(uint8)
 			#print 'stamp values:', unique(stamp.ravel())
@@ -321,7 +327,7 @@ class GuiderImageAnalysis(object):
 			# Reinstate the zeroes.
 			rstamp[rstamp == 255] = 0
 			#print 'rotated stamp values:', unique(rstamp.ravel())
-			maskstamps.append(rstamp)
+			maskstamps.append(numpy.flipud(rstamp))
 
 		# Stack the stamps into one image.
 		stamps = vstack(stamps)
@@ -339,7 +345,7 @@ class GuiderImageAnalysis(object):
 		if stampImage is None:
 			stampImage = image
 
-		bg = median(image)
+		bg = median(image[numpy.isfinite(image)])
 		#bg = median(image[mask == 0])
 		#bg = self.imageBias
 		
@@ -453,7 +459,7 @@ class GuiderImageAnalysis(object):
 			tback('Narf', e)
 			return None
 		return hdulist
-		
+
 
 	def writeFITS(self, models, cmd, frameInfo, gprobes):
 		if not self.fibers:
@@ -465,17 +471,17 @@ class GuiderImageAnalysis(object):
 		procpath = self.getProcessedOutputName(self.gimgfn)
 		objectname = os.path.splitext(self.gimgfn)[0]
 
-		#bg = median(gimg)#image[mask == 0])
-
-		hdulist = self._getProcGimgHDUList(hdr, gprobes, fibers, gimg, self.maskImage)
-		imageHDU = hdulist[0]
-		imageHDU.header.update('SEEING', frameInfo.seeing if frameInfo.seeing is not numpy.nan else 0.0,
-							   'Estimate of current seeing, arcsec fwhm')
-		self.fillPrimaryHDU(cmd, models, imageHDU, frameInfo, objectname)
-		hdulist.writeto(procpath, clobber=True)
-
-                dirname, filename = os.path.split(procpath)
-		self.inform('file=%s/,%s' % (dirname, filename), hasKey=True)
+		try:
+			hdulist = self._getProcGimgHDUList(hdr, gprobes, fibers, gimg, self.maskImage)
+			imageHDU = hdulist[0]
+			imageHDU.header.update('SEEING', frameInfo.seeing if numpy.isfinite(frameInfo.seeing) else 0.0,
+					       'Estimate of current seeing, arcsec fwhm')
+			self.fillPrimaryHDU(cmd, models, imageHDU, frameInfo, objectname)
+			hdulist.writeto(procpath, clobber=True)
+			dirname, filename = os.path.split(procpath)
+			self.inform('file=%s/,%s' % (dirname, filename), hasKey=True)
+		except Exception, e:
+			cmd.warn('text="failed to write FITS file %s: %r"' % (procpath, e))
 
 	def findFibers(self, gprobes):
 		''' findFibers(gprobes)
@@ -522,6 +528,13 @@ class GuiderImageAnalysis(object):
 		# FIXME -- we currently don't do anything with the dark frame.
 		#   we'll need hdr['EXPTIME'] if we do.
 		# FIXME -- filter probes here for !exists, !tritium ?
+
+		if hdr['IMAGETYP'] == 'flat':
+			flatfn = self.gimgfn
+			self.debug('Analysing flat image %s' % (flatfn))
+			(flat, mask, fibers) = self.analyzeFlat(flatfn, cartridgeId, gprobes)
+			flatoutname = self.getProcessedOutputName(flatfn) 
+			return fibers
 
 		self.debug('Using flat image %s' % flatfn)
 		X = self.analyzeFlat(flatfn, cartridgeId, gprobes)
@@ -737,6 +750,7 @@ class GuiderImageAnalysis(object):
 		BIN = self.binning
 
 		fibers = []
+		self.debug('%d components' % (nl))
 		for i in range(1, nl+1):
 			# find pixels labelled as belonging to object i.
 			obji = (L == i)
@@ -749,6 +763,7 @@ class GuiderImageAnalysis(object):
 			# to report in binned pixels.
 			# The 0.25 pixel offset makes these centroids agree with gfindstar's
 			# pixel coordinate convention.
+			self.debug('fiber %d (%d,%g,%g,%g)' % (i,npix,xc,yc,sqrt(npix/pi)))
 			fibers.append(fiber(-1, xc/BIN - 0.25, yc/BIN - 0.25, sqrt(npix/pi)/BIN, -1))
 
 		# Match up the fibers with the known probes.
@@ -818,6 +833,7 @@ class GuiderImageAnalysis(object):
 		fmatch = best
 		# Check for duplicates...
 		fmap = {}
+		finvmap = {}
 		for fi,probei,dx,dy in fmatch:
 			if fi in fmap:
 				self.warn('Fiber %i wants to match to probe %i and %i.' % (fi, fmap[fi], probei))
@@ -826,9 +842,11 @@ class GuiderImageAnalysis(object):
 				self.warn('Fiber %i wants to be matched to already-matched probe %i.' % (fi, probei))
 				continue
 			fmap[fi] = probei
+			finvmap[int(probei)] = fi
 		dx = mean([dx for fi,probei,dx,dy in fmatch])
 		dy = mean([dy for fi,probei,dx,dy in fmatch])
 		self.inform('Matched %i fibers, with dx,dy = (%g,%g)' % (len(fmap), dx, dy))
+		#import pdb; pdb.set_trace()
 
 		# Filter out those with no match...
 		fibers = [f for i,f in enumerate(fibers) if i in fmap]
@@ -883,6 +901,16 @@ class GuiderImageAnalysis(object):
 		if hdulist is None:
 			self.warn('Failed to create processed flat file')
 			return (flat, mask, fibers)
+
+		imageHDU = hdulist[0]
+
+		# Bah! Need to scoosh this in.
+		guideCameraScale = 0.026
+		plugPlateScale = 217.7358
+		imageHDU.header.update('SDSSFMT', 'GPROC 1 3', 'type major minor version for this file')
+		imageHDU.header.update('IMGBACK', 0.0, 'crude background for entire image. For displays.')
+		#imageHDU.header.update('GCAMSCAL', guideCameraScale, 'guide camera plate scale (mm/pixel)')
+		#imageHDU.header.update('PLATSCAL', plugPlateScale, 'plug plate scale (mm/degree)')
 
 		hdulist.writeto(flatout, clobber=True)
 		# Now read that file we just wrote...
