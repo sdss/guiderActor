@@ -783,7 +783,29 @@ def main(actor, queues):
                 processOneProcFile(msg.filename, actor, queues, cmd=msg.cmd)
                 msg.cmd.finish('text="I do so hope that succeeded."')
                 
+            elif msg.type == Msg.TCC_EXPOSURE:
+                queues[GCAMERA].put(Msg(Msg.EXPOSE, msg.cmd, replyQueue=queues[MASTER], 
+                                        expTime=gState.expTime, forTCC=msg.forTCC, camera=msg.camera))
+
             elif msg.type == Msg.EXPOSURE_FINISHED:
+                if msg.forTCC:
+                    if not msg.success:
+                        msg.cmd.warn('text="exposure failed"')
+                        msg.cmd.finish('txtForTcc=" OK"')
+                        continue
+                        
+                    self.tccDoreadFile = msg.filename
+                    ccdTemp = 0.0   # self.camera.cam.read_TempCCD()
+                    d = msg.forTCC
+                    msg.cmd.respond('txtForTcc=%s' % (qstr('%d %d %0.1f %0.1f %0.1f %0.1f %0.2f %d %0.2f %s' % \
+                                                               (d['xbin'], d['ybin'],
+                                                                d['xCtr'], d['yCtr'],
+                                                                d['xSize'], d['ySize'],
+                                                                d['itime'], d['GImCamId'], ccdTemp,
+                                                                "image: binXY begXY sizeXY expTime camID temp"))))
+                    msg.cmd.finish('txtForTcc=" OK"')
+                    continue
+
                 if not guideCmd:    # exposure already finished
                     continue
 
@@ -832,6 +854,20 @@ def main(actor, queues):
                 if exptype != "flat":
                     cmd.fail('text="flat image processing ignoring a %s image!!"' % (exptype))
                     continue
+
+                darkfile = h.get('DARKFILE', None)
+                if not darkfile:
+                    cmd.fail("text=%s" % qstr("No dark image available!!"))
+                    continue
+
+                cmd.inform("text=GuiderImageAnalysis()...")
+                GI = GuiderImageAnalysis(msg.filename, cmd=cmd)
+                cmd.inform("text=GuiderImageAnalysis.findFibers()...")
+                fibers = GI.findFibers(gState.gprobes)
+                flatoutname = GI.getProcessedOutputName(msg.filename) 
+                dirname, filename = os.path.split(flatoutname)
+                cmd.inform('file=%s/,%s' % (dirname, filename))
+                cmd.finish('text="flat image processing done"')
 
             elif msg.type == Msg.FAIL:
                 msg.cmd.fail('text="%s"' % msg.text);

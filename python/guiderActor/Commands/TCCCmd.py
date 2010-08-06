@@ -12,6 +12,11 @@ import opscore.protocols.types as types
 
 from opscore.utility.qstr import qstr
 
+# I hate this...
+from guiderActor import Msg
+import guiderActor
+import guiderActor.myGlobals as myGlobals
+
 class TCCCmd(object):
     '''
  For commands from the tcc, we need to support:
@@ -138,14 +143,27 @@ doread       8.00     3     3      171.0      171.0     1024.0     1024.0
         tccCmd = self.splitTccCmd(cmd)
         try:
             itime = float(tccCmd[1])
-            xbin, ybin, xCtr, yCtr, xSize, ySize = tccCmd[2:]
+            xbin, ybin = map(int, tccCmd[2:4])
+            xCtr, yCtr, xSize, ySize = map(float, tccCmd[4:])
         except Exception, e:
             cmd.warn('text="doTccRead barfed on %s: %s"' % (tccCmd, e))
             self.OK(cmd)
             return
 
         cmd.warn('text="doTccDoRead itime=%01.f"' % (itime))
-        self.OK(cmd)
+        self.itime = itime
+
+        forTCC = dict(itime=itime,
+                      xbin=xbin, ybin=ybin,
+                      xCtr=xCtr, yCtr=yCtr,
+                      xSize=xSize, ySize=ySize,
+                      GCamId=self.GCamId,
+                      camera=("gcamera" if (self.GCamId == 6) else "ecamera"))
+
+        myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.TCC_EXPOSURE, cmd=cmd,
+                                                                expTime=itime,
+                                                                forTCC=forTCC, 
+                                                                camera=forTCC['camera']))
 
     def doTccFindstars(self, cmd):
         """ findstars N Xctr Yctr Xsize Ysize XpredFWHM YpredFWHM
@@ -190,11 +208,11 @@ showstatus
                                             self.size[0], self.size[1], 16,
                                             temp,
                                             "camera: ID# name sizeXY bits/pixel temp lastFileNum"))))
-        time.sleep(0.1)
+#        time.sleep(0.4)
         cmd.respond('txtForTcc=%s' % (qstr('%d %d %d %d %d %d nan 0 nan "%s"' % \
                                            (1, 1, 0, 0, 0, 0,
                                             "image: binXY begXY sizeXY expTime camID temp"))))
-        time.sleep(0.1)
+#        time.sleep(0.4)
         cmd.respond('txtForTcc=%s' % (qstr('8.00 1000 "%s"' % \
                                            ("params: boxSize (FWHM units) maxFileNum"))))
         self.OK(cmd)

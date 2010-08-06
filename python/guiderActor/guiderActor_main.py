@@ -14,8 +14,6 @@ import actorkeys
 import gcameraThread
 import masterThread
 
-from loadGprobes import getGprobes
-        
 from guiderActor import *
 import guiderActor.myGlobals
 #

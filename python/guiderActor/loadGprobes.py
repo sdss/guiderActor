@@ -1,5 +1,5 @@
 import math
-from YPF import YPF
+from opscore.utility.YPF import YPF
 
 def getGprobes(fiberinfofn, plugmapfn, cartridge):
 	par = YPF(fiberinfofn)

@@ -87,7 +87,7 @@ class GuiderCmd(object):
             ("enable", "<fibers>|<gprobes>", self.enableFibers),
             ("loadCartridge", "[<cartridge>] [<pointing>] [<plate>] [<mjd>] [<fscanId>] [force]", self.loadCartridge),
             ("showCartridge", "", self.showCartridge),
-            ("loadPlateFiles", "", "<cartfile>", "<plugfile>", self.loadPlateFiles),
+            ("loadPlateFiles", "<cartfile> <plugfile>", self.loadPlateFiles),
             ("reprocessFile", "<file>", self.reprocessFile),
             ("flat", "[<time>]", self.flat),
             ('ping', '', self.ping),
