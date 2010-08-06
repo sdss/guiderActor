@@ -785,23 +785,25 @@ def main(actor, queues):
                 
             elif msg.type == Msg.TCC_EXPOSURE:
                 queues[GCAMERA].put(Msg(Msg.EXPOSE, msg.cmd, replyQueue=queues[MASTER], 
-                                        expTime=gState.expTime, forTCC=msg.forTCC, camera=msg.camera))
+                                        expTime=msg.expTime, forTCC=msg.forTCC, camera=msg.camera))
 
             elif msg.type == Msg.EXPOSURE_FINISHED:
                 if msg.forTCC:
+                    tccState = msg.forTCC
+
                     if not msg.success:
+                        tccState.doreadFilename = None
                         msg.cmd.warn('text="exposure failed"')
                         msg.cmd.finish('txtForTcc=" OK"')
                         continue
                         
-                    self.tccDoreadFile = msg.filename
+                    tccState.doreadFilename = msg.filename
                     ccdTemp = 0.0   # self.camera.cam.read_TempCCD()
-                    d = msg.forTCC
                     msg.cmd.respond('txtForTcc=%s' % (qstr('%d %d %0.1f %0.1f %0.1f %0.1f %0.2f %d %0.2f %s' % \
-                                                               (d['xbin'], d['ybin'],
-                                                                d['xCtr'], d['yCtr'],
-                                                                d['xSize'], d['ySize'],
-                                                                d['itime'], d['GImCamId'], ccdTemp,
+                                                               (tccState.binX, tccState.binY,
+                                                                tccState.ctrX, tccState.ctrY,
+                                                                tccState.sizeX, tccState.sizeY,
+                                                                tccState.itime, tccState.gImCamID, ccdTemp,
                                                                 "image: binXY begXY sizeXY expTime camID temp"))))
                     msg.cmd.finish('txtForTcc=" OK"')
                     continue

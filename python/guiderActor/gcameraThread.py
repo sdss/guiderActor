@@ -35,7 +35,7 @@ def main(actor, queues):
 
                 timeLim = msg.expTime + 15     # allow for readout time
                 
-                filenameKey = guiderActor.myGlobals.actorState.models["gcamera"].keyVarDict["filename"]
+                filenameKey = guiderActor.myGlobals.actorState.models[camera].keyVarDict["filename"]
 
                 try:
                     forTCC = msg.forTCC
