@@ -153,14 +153,17 @@ def processOneProcFile(guiderFile, cartFile, plateFile, actor=None, queues=None,
 
     guideStep(None, queues, cmd, cmd, guiderFile, True)
 
-def guideStep(actor, queues, cmd, guideCmd, inFile, oneExposure):
+def guideStep(actor, queues, cmd, guideCmd, inFile, oneExposure,
+              plot=False, psPlot=False, sm=False):
     """ One step of the guide loop, based on the given guider file. 
 
     Args: (TOOOO MANY!!)
         actor      - 
 """
     sigmaToFWHM = 2.35 # approximate conversion for a Gaussian
-    
+    psPlotDir  = "/data/gcam/scratch/"
+
+    actorState = guiderActor.myGlobals.actorState
     guideCmd.respond("processing=%s" % inFile)
     frameNo = int(re.search(r"([0-9]+)\.fits$", inFile).group(1))
 
@@ -346,7 +349,7 @@ def guideStep(actor, queues, cmd, guideCmd, inFile, oneExposure):
             guideCmd = None
             return
 
-        if guidingIsOK(cmd, actorState, force=force):
+        if guidingIsOK(cmd, actor, force=force):
             queues[GCAMERA].put(Msg(Msg.EXPOSE, guideCmd, replyQueue=queues[MASTER],
                                     expTime=gState.expTime))
             return
@@ -815,7 +818,8 @@ def main(actor, queues):
                     queues[MASTER].put(Msg(Msg.START_GUIDING, guideCmd, start=False))
                     continue
                     
-                guideStep(actor, queues, msg.cmd, guideCmd, msg.filename, oneExposure)
+                guideStep(actor, queues, msg.cmd, guideCmd, msg.filename, oneExposure,
+                          plot=plot, psPlot=psPlot, sm=sm)
                 if not guideCmd:    # something fatal happened in guideStep
                     continue
 
@@ -1037,13 +1041,15 @@ def guidingIsOK(cmd, actorState, force=False):
     ffLamp = actorState.models["mcp"].keyVarDict["ffLamp"]
     hgCdLamp = actorState.models["mcp"].keyVarDict["hgCdLamp"]
     neLamp = actorState.models["mcp"].keyVarDict["neLamp"]
-    if ffLamp or hgCdLamp or neLamp:
+    if (any(ffLamp) and not bypassSubsystem['ff_lamp']) or \
+            (any(hgCdLamp) and not bypassSubstem['hgcd_lamp']) or \
+            (any(neLamp) and not bypassSubsystem['ne_lamp']):
         cmd.warn('text="Calibration lamp on; aborting guiding"')
 
 #   check if non sensed lamps are commanded ON
     uvLamp = actorState.models["mcp"].keyVarDict["uvLampCommandedOn"]
     whtLamp = actorState.models["mcp"].keyVarDict["whtLampCommandedOn"]
-    if ffLamp or uvLamp or whtLamp:
+    if uvLamp.getValue() or whtLamp.getValue():
         cmd.warn('text="Calibration lamp comanded on; aborting guiding"')
         return False
     
