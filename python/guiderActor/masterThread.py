@@ -698,7 +698,6 @@ def main(actor, queues):
     """Main loop for master thread"""
 
     threadName = "master"
-    psPlotDir  = "/data/gcam/scratch/"
 
     actorState = guiderActor.myGlobals.actorState
     timeout = actorState.timeout
@@ -1035,22 +1034,22 @@ def guidingIsOK(cmd, actorState, force=False):
             cmd.warn('text="%s; aborting guiding"' % msg)
             return False
 
-#CPL must recheck this
 #   should we allow guiding with lamps on if axes are disabled
 #   check if lamps are actually ON
     ffLamp = actorState.models["mcp"].keyVarDict["ffLamp"]
     hgCdLamp = actorState.models["mcp"].keyVarDict["hgCdLamp"]
     neLamp = actorState.models["mcp"].keyVarDict["neLamp"]
-    if (any(ffLamp) and not bypassSubsystem['ff_lamp']) or \
-            (any(hgCdLamp) and not bypassSubstem['hgcd_lamp']) or \
-            (any(neLamp) and not bypassSubsystem['ne_lamp']):
+    if (any(ffLamp) and not bypassSubsystem.get('ff_lamp', False)) or \
+            (any(hgCdLamp) and not bypassSubstem.get('hgcd_lamp', False)) or \
+            (any(neLamp) and not bypassSubsystem.get('ne_lamp', False)):
         cmd.warn('text="Calibration lamp on; aborting guiding"')
+        return False
 
 #   check if non sensed lamps are commanded ON
     uvLamp = actorState.models["mcp"].keyVarDict["uvLampCommandedOn"]
     whtLamp = actorState.models["mcp"].keyVarDict["whtLampCommandedOn"]
     if uvLamp.getValue() or whtLamp.getValue():
-        cmd.warn('text="Calibration lamp comanded on; aborting guiding"')
+        cmd.warn('text="Calibration lamp commanded on; aborting guiding"')
         return False
     
     tccState = actorState.tccState
