@@ -182,7 +182,7 @@ def guideStep(actor, queues, cmd, guideCmd, inFile, oneExposure,
         return
 
     if flatcart != gState.cartridge:
-        if False:
+        if True:
             guideCmd.fail("text=%s" % qstr("Guider flat is for cartridge %d but %d is loaded" % (
                 flatcart, gState.cartridge)))
             guideCmd = None
