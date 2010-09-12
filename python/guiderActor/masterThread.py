@@ -4,7 +4,8 @@ import math, numpy, re
 from guiderActor import *
 import guiderActor.myGlobals
 from opscore.utility.qstr import qstr
-from opscore.utility.tback import tback
+import opscore.utility.tback as tback
+
 import PID
 
 from gimg.guiderImage import GuiderImageAnalysis
@@ -198,7 +199,7 @@ def guideStep(actor, queues, cmd, guideCmd, inFile, oneExposure,
         fibers = GI.findFibers(gState.gprobes)
         guideCmd.inform("text=GuiderImageAnalysis.findFibers() got %i fibers" % len(fibers))
     except Exception, e:
-        tback("GuideTest", e)
+        tback.tback("GuideTest", e)
         guideCmd.fail("text=%s" % qstr("Error in processing guide images: %s" % e))
         guideCmd = None
         return
@@ -868,12 +869,18 @@ def main(actor, queues):
                 cmd.inform("text=GuiderImageAnalysis()...")
                 GI = GuiderImageAnalysis(msg.filename, cmd=cmd)
                 cmd.inform("text=GuiderImageAnalysis.findFibers()...")
-                fibers = GI.findFibers(gState.gprobes)
-                flatoutname = GI.getProcessedOutputName(msg.filename) 
-                dirname, filename = os.path.split(flatoutname)
-                cmd.inform('file=%s/,%s' % (dirname, filename))
-                cmd.finish('text="flat image processing done"')
+                try:
+                    fibers = GI.findFibers(gState.gprobes)
+                    flatoutname = GI.getProcessedOutputName(msg.filename) 
+                    dirname, filename = os.path.split(flatoutname)
+                    cmd.inform('file=%s/,%s' % (dirname, filename))
+                    cmd.finish('text="flat image processing done"')
+                except Exception, e:
+                    tback.tback("findFibers", e)
+                    cmd.fail('text="findFibers failed: %s"' % (e))
 
+                continue
+                    
             elif msg.type == Msg.FAIL:
                 msg.cmd.fail('text="%s"' % msg.text);
 
@@ -940,7 +947,10 @@ def main(actor, queues):
                 if msg.cmd:
                     queues[MASTER].put(Msg(Msg.STATUS, msg.cmd, finish=True))
             elif msg.type == Msg.STATUS:
-                msg.cmd.respond("cartridgeLoaded=%d, %d, %s, %d, %d" % (
+                # Try to generate status even after we have failed.
+                cmd = msg.cmd if msg.cmd.alive else actor.bcast
+
+                cmd.respond("cartridgeLoaded=%d, %d, %s, %d, %d" % (
                     gState.cartridge, gState.plate, gState.pointing, gState.fscanMJD, gState.fscanID))
 
                 try:
@@ -951,8 +961,8 @@ def main(actor, queues):
                 except AttributeError:
                     pass
 
-                msg.cmd.respond("guideState=%s" % ("on" if guideCmd else "off"))
-                msg.cmd.inform('text="The guider is %s"' % ("running" if guideCmd else "off"))
+                cmd.respond("guideState=%s" % ("on" if guideCmd else "off"))
+                cmd.inform('text="The guider is %s"' % ("running" if guideCmd else "off"))
 
                 fiberState = []
                 gprobeBitsDict = {}
@@ -962,27 +972,27 @@ def main(actor, queues):
                         gprobeBitsDict[f.id] = ("0x%x" % f.flags)
 
                 if len(fiberState) > 0:
-                    msg.cmd.respond("gprobes=%s" % ", ".join(fiberState))
+                    cmd.respond("gprobes=%s" % ", ".join(fiberState))
 
                 # Some fiber IDs may be absent from gprobeBits.keys(), so make a filled list
                 if gprobeBitsDict:
                     gprobeBits = [0xff,]*(1 + sorted([int(k) for k in gprobeBitsDict.keys()])[-1])
                     for k, f in gprobeBitsDict.items():
                         gprobeBits[k] = f
-                    msg.cmd.respond("gprobeBits=%s" % ", ".join(gprobeBits[1:]))
+                    cmd.respond("gprobeBits=%s" % ", ".join(gprobeBits[1:]))
                     
 
-                msg.cmd.respond("guideEnable=%s, %s, %s" % (gState.guideAxes, gState.guideFocus, gState.guideScale))
-                msg.cmd.respond("expTime=%g" % (gState.expTime))
-                msg.cmd.respond("scales=%g, %g, %g, %g" % (gState.plugPlateScale,
+                cmd.respond("guideEnable=%s, %s, %s" % (gState.guideAxes, gState.guideFocus, gState.guideScale))
+                cmd.respond("expTime=%g" % (gState.expTime))
+                cmd.respond("scales=%g, %g, %g, %g" % (gState.plugPlateScale,
                                                            gState.gcameraMagnification, gState.gcameraPixelSize,
                                                            gState.dSecondary_dmm,))
                 for w in gState.pid.keys():
-                    msg.cmd.respond("pid=%s, %g, %g, %g, %g" % (w,
+                    cmd.respond("pid=%s, %g, %g, %g, %g" % (w,
                                                                 gState.pid[w].Kp, gState.pid[w].Ti, gState.pid[w].Td,
                                                                 gState.pid[w].Imax))
                 if msg.finish:
-                    msg.cmd.finish()
+                    cmd.finish()
             else:
                 raise ValueError, ("Unknown message type %s" % msg.type)
         except Queue.Empty:
@@ -995,7 +1005,7 @@ def main(actor, queues):
 
             #import pdb; pdb.set_trace()
             try:
-                print "\n".join(tback(errMsg, e)[0]) # old versions of tback return None
+                print "\n".join(tback.tback(errMsg, e)[0]) # old versions of tback return None
             except:
                 pass
 
