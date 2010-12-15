@@ -412,9 +412,9 @@ def guideStep(actor, queues, cmd, inFile, oneExposure,
             gState.setCmd(None)
             return
 
-        if guidingIsOK(cmd, actorState):
-            queues[GCAMERA].put(Msg(Msg.EXPOSE, guideCmd, replyQueue=queues[MASTER],
-                                    expTime=gState.expTime))
+        #if guidingIsOK(cmd, actorState):
+        #    queues[GCAMERA].put(Msg(Msg.EXPOSE, guideCmd, replyQueue=queues[MASTER],
+        #                            expTime=gState.expTime))
         return
         
     A[2, 0] = A[0, 2]
@@ -568,9 +568,9 @@ def guideStep(actor, queues, cmd, inFile, oneExposure,
             gState.setCmd(None)
             return
 
-        if guidingIsOK(cmd, actorState):
-            queues[GCAMERA].put(Msg(Msg.EXPOSE, guideCmd, replyQueue=queues[MASTER],
-                                    expTime=gState.expTime))
+        #if guidingIsOK(cmd, actorState):
+        #    queues[GCAMERA].put(Msg(Msg.EXPOSE, guideCmd, replyQueue=queues[MASTER],
+        #                            expTime=gState.expTime))
         return
 
     # RMS guiding error 
@@ -811,6 +811,10 @@ def main(actor, queues):
         try:
             msg = queues[MASTER].get(timeout=timeout)
 
+            qlen = queues[MASTER].qsize()
+            if qlen > 0 and msg.cmd:
+                msg.cmd.diag("master thread has %d items after a .get()" % (qlen))
+                
             if msg.type == Msg.EXIT:
                 if msg.cmd:
                     msg.cmd.inform('text="Exiting thread %s"' % (threading.current_thread().name))
