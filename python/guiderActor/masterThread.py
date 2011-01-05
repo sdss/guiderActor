@@ -500,10 +500,10 @@ def guideStep(actor, queues, cmd, inFile, oneExposure,
             trimHi= nFwhm - trimLo
             nKept = nFwhm - 2*trimLo
             nReject = nFwhm - nKept
-            meanFwhm = (sum(inFocusFwhm))/nFwhm
-            tMeanFwhm = (sum(sorted(inFocusFwhm)[trimLo:trimHi]))/nKept
-            loKept = inFocusFwhm[trimLo]
-            hiKept = inFocusFwhm[(trimHi-1)]
+            meanFwhm = (sum(inFocusFwhm))/nFwhm if nFwhm > 0 else numpy.nan
+            tMeanFwhm = (sum(sorted(inFocusFwhm)[trimLo:trimHi]))/nKept if nKept > 0 else numpy.nan
+            #loKept = inFocusFwhm[trimLo]
+            #hiKept = inFocusFwhm[(trimHi-1)]
             print ("FWHM: %d, %7.2f, %d, %d, %7.2f" % (
                     frameNo, tMeanFwhm, nKept, nReject, meanFwhm))
 
