@@ -33,6 +33,7 @@ class GuiderCmd(object):
                                         keys.Key("fscanId", types.Int(), help="The fscanId identifying a plate scanning"),
                                         keys.Key("mjd", types.Int(), help="The MJD when a plate was scanned"),
                                         keys.Key("plate", types.Int(), help="A plugplate ID"),
+                                        keys.Key("guideWavelength", types.Float(), help="The wavelength at which to guide"),
                                         keys.Key("fibers", types.Int()*(1,None), help="A list of fibers"),
                                         keys.Key("probe", types.Int(), help="A probe ID, 1-indexed"),
                                         keys.Key("gprobe", types.Int(), help="A probe ID, 1-indexed"),
@@ -81,7 +82,7 @@ class GuiderCmd(object):
             ("setPID", "(raDec|rot|focus|scale) <Kp> [<Ti>] [<Td>] [<Imax>] [nfilt]", self.setPID),
             ("disable", "<fibers>|<gprobes>", self.disableFibers),
             ("enable", "<fibers>|<gprobes>", self.enableFibers),
-            ("loadCartridge", "[<cartridge>] [<pointing>] [<plate>] [<mjd>] [<fscanId>] [force]", self.loadCartridge),
+            ("loadCartridge", "[<cartridge>] [<pointing>] [<plate>] [<mjd>] [<fscanId>] [<guideWavelength>] [force]", self.loadCartridge),
             ("showCartridge", "", self.showCartridge),
             ("loadPlateFiles", "<cartfile> <plugfile>", self.loadPlateFiles),
             ("reprocessFile", "<file>", self.reprocessFile),
@@ -282,6 +283,9 @@ class GuiderCmd(object):
         mjd = cmd.cmd.keywords["mjd"].values[0] if "mjd" in cmd.cmd.keywords else None
         fscanId = cmd.cmd.keywords["fscanId"].values[0] if "fscanId" in cmd.cmd.keywords else None
 
+        guideWavelength = (cmd.cmd.keywords['guideWavelength'].values[0]
+                           if 'guideWavelength' in cmd.cmd.keywords else None)
+
         # Cartridge ID of 0 means that no cartridge is loaded
         if cartridge == 0:
             gprobes = {}
@@ -357,6 +361,13 @@ class GuiderCmd(object):
         design_ha = cmdVar.getLastKeyVarData(pointingInfoKey)[5]
         survey = cmdVar.getLastKeyVarData(pointingInfoKey)[8]
         surveyMode = cmdVar.getLastKeyVarData(pointingInfoKey)[9]
+
+        # Retrieves the guide wavelength from the DB. If guideWavelength has
+        # not been defined in the command, uses that.
+        currentGuideWavelength = cmdVar.getLastKeyVarData(pointingInfoKey)[10]
+        if not guideWavelength:
+            guideWavelength = currentGuideWavelength
+
         if design_ha < 0:
             design_ha += 360
 
@@ -418,7 +429,27 @@ class GuiderCmd(object):
         if pointing != 'A':
             cmd.warn('text="pointing name is %s, but we are using pointing #1. This is probably OK."' % (pointing))
 
-        self.addGuideOffsets(cmd, plate, pointingID, gprobes)
+        # Depending on the combination of survey and surveyMode we decide
+        # whether addGuideOffsets should fail if the plateGuideOffsets file
+        # is not found.
+        failOnGuideOffsets = False
+        if survey in ['APOGEE', 'APOGEE-2']:
+            failOnGuideOffsets = True
+        elif survey in ['APOGEE&MaNGA', 'APOGEE-2&MaNGA']:
+            if surveyMode == 'APOGEE lead':
+                failOnGuideOffsets = True
+
+        offsetStatus = self.addGuideOffsets(
+            cmd, plate, guideWavelength, pointingID, gprobes,
+            fail=failOnGuideOffsets)
+
+        # If a plateGuideOffsets has been found and the offsets applied,
+        # sets the refractionBalance to 1.
+        gState = actorState.gState
+        if offsetStatus:
+            gState.refractionBalance = 1
+        else:
+            gState.refractionBalance = 0
 
         # Send that information off to the master thread
         #
@@ -429,43 +460,52 @@ class GuiderCmd(object):
                   design_ha=design_ha, survey=survey, surveyMode=surveyMode,
                   gprobes=gprobes))
 
-    def addGuideOffsets(self, cmd, plate, pointingID, gprobes):
+    def addGuideOffsets(self, cmd, plate, wavelength, pointingID, gprobes,
+                        fail=False):
         """
         Read in the new (needed for APOGEE/MARVELS) plateGuideOffsets interpolation arrays.
         """
 
         # Get .par file name in the platelist product.
         # plates/0046XX/004671/plateGuideOffsets-004671-p1-l16600.par
-        for wavelength in (16600,):
-            path = os.path.join(os.environ['PLATELIST_DIR'],
-                                'plates',
-                                '%04dXX' % (int(plate/100)),
-                                '%06d' % (plate),
-                                'plateGuideOffsets-%06d-p%d-l%05d.par' % (plate, pointingID, wavelength))
-            if not os.path.exists(path):
-                cmd.warn('text="no refraction corrections for plate %d at %dA"' % (plate, wavelength))
-                continue
+        path = os.path.join(os.environ['PLATELIST_DIR'],
+                            'plates',
+                            '%04dXX' % (int(plate/100)),
+                            '%06d' % (plate),
+                            'plateGuideOffsets-%06d-p%d-l%05d.par' % (plate, pointingID, wavelength))
+        if not os.path.exists(path):
+            failMsg = ('text="no refraction corrections for '
+                       'plate {0} at {1:d}A"'.format(plate, wavelength))
+            if fail:
+                cmd.fail(failMsg)
+                return False
+            cmd.warn(failMsg)
+            return False
 
-            try:
-                ygo = YPF.YPF(path)
-                guideOffsets = ygo.structs['HAOFFSETS'].asObjlist()
-                cmd.inform('text="loaded guider coeffs for %dA from %s"' % (wavelength, path))
-            except Exception, e:
-                cmd.warn('text="failed to read plateGuideOffsets file %s: %s"' % (path, e))
-                continue
+        try:
+            ygo = YPF.YPF(path)
+            guideOffsets = ygo.structs['HAOFFSETS'].asObjlist()
+            cmd.inform('text="loaded guider coeffs for %dA from %s"' % (wavelength, path))
+        except Exception, e:
+            cmd.warn('text="failed to read plateGuideOffsets file %s: %s"' % (path, e))
+            return False
 
-            for gpID, gProbe in gprobes.items():
-                if gProbe.fiber_type == 'TRITIUM':
-                    continue
+        for gpID, gProbe in gprobes.items():
+            if gProbe.fiber_type == 'TRITIUM':
+                return False
 
-                offset = [o for o in guideOffsets if o.holetype == "GUIDE" and o.iguide == gpID]
-                if len(offset) != 1:
-                    cmd.warn('text="no or too many (%d) guideOffsets for probe %s"' % (len(offset), gpID))
-                    continue
+            offset = [o for o in guideOffsets if o.holetype == "GUIDE" and o.iguide == gpID]
+            if len(offset) != 1:
+                cmd.warn('text="no or too many (%d) guideOffsets for probe %s"' % (len(offset), gpID))
+                return False
 
-                gProbe.haOffsetTimes[wavelength] = offset[0].delha
-                gProbe.haXOffsets[wavelength] = offset[0].xfoff
-                gProbe.haYOffsets[wavelength] = offset[0].yfoff
+            gProbe.haOffsetTimes[wavelength] = offset[0].delha
+            gProbe.haXOffsets[wavelength] = offset[0].xfoff
+            gProbe.haYOffsets[wavelength] = offset[0].yfoff
+            cmd.inform('test="applied corrections to gProbes for {0:d}A"'
+                       .format(wavelength))
+
+            return True
 
     def setRefractionBalance(self, cmd):
         """Set refraction balance to a specific correction ratio, or based on plateType/surveyMode."""
