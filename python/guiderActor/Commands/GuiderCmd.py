@@ -21,7 +21,7 @@ class GuiderCmd(object):
     def __init__(self, actor):
         """
         Declares keys that this actor uses, and available commands that can be sent to it.
-        
+
         actor is the actor that this is part of (guiderActor, in this case).
         """
         self.actor = actor
@@ -181,7 +181,7 @@ class GuiderCmd(object):
     def guideOn(self, cmd):
         """Turn guiding on"""
 
-        force = "force" in cmd.cmd.keywords 
+        force = "force" in cmd.cmd.keywords
         oneExposure = "oneExposure" in cmd.cmd.keywords
         expTime = cmd.cmd.keywords["time"].values[0] if "time" in cmd.cmd.keywords else None
         stack = cmd.cmd.keywords["stack"].values[0] if "stack" in cmd.cmd.keywords else 1
@@ -230,7 +230,7 @@ class GuiderCmd(object):
 
     def loadAllProbes(self, cmd):
         pass
-    
+
     def starInFiber(self, cmd):
         """ Put a star down a given probe """
 
@@ -239,7 +239,7 @@ class GuiderCmd(object):
         if (probe == None and gprobe == None) or (probe != None and gprobe != None) :
             cmd.fail('text="exactly one destination probe must specified"')
             return
-        
+
         fromProbe = cmd.cmd.keywords["fromProbe"].values[0] if 'fromProbe' in cmd.cmd.keywords else None
         fromGprobe = cmd.cmd.keywords["fromGprobe"].values[0] if 'fromGprobe' in cmd.cmd.keywords else None
         if (fromProbe != None and fromGprobe != None) :
@@ -253,7 +253,7 @@ class GuiderCmd(object):
     def reprocessFile(self, cmd):
         """Reprocess a single file."""
 
-        myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.REPROCESS_FILE, cmd=cmd, 
+        myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.REPROCESS_FILE, cmd=cmd,
                                                                 filename=cmd.cmd.keywords["filename"].values[0]))
 
     def loadPlateFiles(self, cmd):
@@ -342,7 +342,7 @@ class GuiderCmd(object):
         if plate: extraArgs += " plate=%s" % (plate)
         if mjd: extraArgs += " mjd=%s" % (mjd)
         if fscanId: extraArgs += " fscanId=%s" % (fscanId)
-        
+
         cmdVar = actorState.actor.cmdr.call(actor="platedb", forUserCmd=cmd,
                                             cmdStr="loadCartridge cartridge=%d pointing=%s %s" % \
                                                 (cartridge, pointing, extraArgs),
@@ -370,7 +370,7 @@ class GuiderCmd(object):
         if cmdVar.didFail:
             cmd.fail("text=\"Failed to lookup gprobes for cartridge %d\"" % (cartridge))
             return
-        
+
         # Unpack the various platedb guider keys into a Probe instance for each probe
         # NOTE: ordered so that we first set the gprobebits, then fill in the rest of the values.
         # as otherwise the gprobebits would overwrite some of the state we set.
@@ -400,7 +400,7 @@ class GuiderCmd(object):
         assert int(cmdVar.getLastKeyVarData(plPlugMapMKey)[0]) == plate
         fscanMJD = cmdVar.getLastKeyVarData(plPlugMapMKey)[1]
         fscanID = cmdVar.getLastKeyVarData(plPlugMapMKey)[2]
-        
+
         # unpack the platedb guideInfo keys into the probe
         for key in cmdVar.getKeyVarData(guideInfoKey):
             try:
@@ -417,7 +417,7 @@ class GuiderCmd(object):
         pointingID = 1
         if pointing != 'A':
             cmd.warn('text="pointing name is %s, but we are using pointing #1. This is probably OK."' % (pointing))
-            
+
         self.addGuideOffsets(cmd, plate, pointingID, gprobes)
 
         # Send that information off to the master thread
@@ -433,7 +433,7 @@ class GuiderCmd(object):
         """
         Read in the new (needed for APOGEE/MARVELS) plateGuideOffsets interpolation arrays.
         """
-        
+
         # Get .par file name in the platelist product.
         # plates/0046XX/004671/plateGuideOffsets-004671-p1-l16600.par
         for wavelength in (16600,):
@@ -542,7 +542,7 @@ class GuiderCmd(object):
                 cmd.inform('text="%s"' % t)
 
         myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.STATUS, cmd=cmd, finish=True))
-    
+
     def decenter(self, cmd):
         """Enable/disable decentered guiding."""
         on = "on" in cmd.cmd.keywords
@@ -556,15 +556,15 @@ class GuiderCmd(object):
         decenters = {}
         decenters['decenterRA'] = keywords["decenterRA"].values[0] if "decenterRA" in keywords else 0
         decenters['decenterDec'] = keywords["decenterDec"].values[0] if "decenterDEC" in keywords else 0
-        
+
         # Though these are currently available, we don't want to use them.
         if "decenterRot" in keywords:
             cmd.fail('Guider cannot apply a decenter in Rotation (yet).')
             return
-        
+
         masterQueue = myGlobals.actorState.queues[guiderActor.MASTER]
         masterQueue.put(Msg(Msg.DECENTER, cmd=cmd, decenters=decenters))
-    
+
     def mangaDither(self, cmd):
         """Specify a particular manga dither position for decentered guiding."""
         # ra, dec, rot
@@ -581,7 +581,7 @@ class GuiderCmd(object):
         else:
             masterQueue = myGlobals.actorState.queues[guiderActor.MASTER]
             masterQueue.put(Msg(Msg.DECENTER, cmd=cmd, decenters=decenters))
-    
+
     def makeMovie(self,cmd):
         """Create a movie of guider images in /data/gcam/movieMJD from a range of exposures from start to end."""
         mjd = cmd.cmd.keywords['movieMJD'].values[0] if 'movieMJD' in cmd.cmd.keywords else None
@@ -603,4 +603,3 @@ class GuiderCmd(object):
         queue = myGlobals.actorState.queues[guiderActor.MASTER]
         queue.put(Msg(Msg.START_GUIDING, cmd=cmd, expTime=time, oneExposure=True,
                   bin=bin, camera='ecamera'))
-
