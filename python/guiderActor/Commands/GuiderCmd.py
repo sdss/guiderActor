@@ -9,7 +9,7 @@ import opscore.protocols.keys as keys
 import opscore.protocols.types as types
 
 from opscore.utility.qstr import qstr
-import sdss.utilities import yanny
+from sdss.utilities import yanny
 
 from guiderActor import Msg, GuiderState
 import guiderActor
