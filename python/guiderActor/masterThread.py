@@ -923,9 +923,11 @@ def set_refraction(cmd, gState, corrRatio):
     if corrRatio is not None and corrRatio >= 0 and corrRatio <= 1:
         gState.refractionBalance = corrRatio
         cmd.inform('text="refraction balance set to {0}"'.format(corrRatio))
+        return True
     else:
         cmd.fail('text="failed to set refraction balance to {0}"'
                  .format(corrRatio))
+        return False
 
 
 def start_guider(cmd, gState, actorState, queues, camera='gcamera', stack=1,
