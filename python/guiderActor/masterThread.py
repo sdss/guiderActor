@@ -917,12 +917,16 @@ def set_decenter(cmd, decenters, gState, enable):
     gState.setDecenter(decenters,cmd,enable)
 #...
 
-def set_refraction(cmd, gState, corrRatio, plateType, surveyMode):
-    """Set refraction balance to either a specific value or based on plateType/surveyMode."""
-    if corrRatio is not None:
+
+def set_refraction(cmd, gState, corrRatio):
+    """Set refraction balance to a specific value."""
+    if corrRatio is not None and corrRatio >= 0 and corrRatio <= 1:
         gState.refractionBalance = corrRatio
-    elif plateType is not None:
-        gState.setRefractionBalance(plateType,surveyMode)
+        cmd.inform('text="refraction balance set to {0}"'.format(corrRatio))
+    else:
+        cmd.fail('text="failed to set refraction balance to {0}"'
+                 .format(corrRatio))
+
 
 def start_guider(cmd, gState, actorState, queues, camera='gcamera', stack=1,
                  expTime=5, force=False):
@@ -1168,7 +1172,7 @@ def main(actor, queues):
                     queues[MASTER].put(Msg(Msg.STATUS, msg.cmd, finish=True))
 
             elif msg.type == Msg.SET_REFRACTION:
-                set_refraction(msg.cmd, gState, msg.corrRatio, msg.plateType, msg.surveyMode)
+                set_refraction(msg.cmd, gState, msg.corrRatio,)
                 if msg.cmd:
                     queues[MASTER].put(Msg(Msg.STATUS, msg.cmd, finish=True))
 
