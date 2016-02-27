@@ -438,7 +438,7 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
 
     # At present, only APOGEE uses refractionOffsets.
     # So, only this wavelength will have haOffsetTime specified for each gprobe.
-    frameInfo.wavelength = 16600
+    frameInfo.wavelength = gState.guideWavelength
     frameInfo.refractionBalance = gState.refractionBalance
 
     haLimWarn = False # so we only warn once about passing the HA limit for refraction balance

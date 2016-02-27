@@ -9,7 +9,7 @@ import opscore.protocols.keys as keys
 import opscore.protocols.types as types
 
 from opscore.utility.qstr import qstr
-import opscore.utility.YPF as YPF
+import sdss.utilities import yanny
 
 from guiderActor import Msg, GuiderState
 import guiderActor
@@ -364,9 +364,18 @@ class GuiderCmd(object):
 
         # Retrieves the guide wavelength from the DB. If guideWavelength has
         # not been defined in the command, uses that.
-        currentGuideWavelength = cmdVar.getLastKeyVarData(pointingInfoKey)[10]
+        dbGuideWavelength = cmdVar.getLastKeyVarData(pointingInfoKey)[10]
         if not guideWavelength:
-            guideWavelength = currentGuideWavelength
+            guideWavelength = dbGuideWavelength
+
+        # If the guideWavelength is not defined and the plate is APOGEE-lead,
+        # we set the default guide wavelength
+        if not guideWavelength or guideWavelength == -1:
+            if survey in ['APOGEE', 'APOGEE-2']:
+                guideWavelength = 16600
+            elif survey in ['APOGEE&MaNGA', 'APOGEE-2&MaNGA']:
+                if surveyMode == 'APOGEE lead':
+                    guideWavelength = 16600
 
         if design_ha < 0:
             design_ha += 360
@@ -429,27 +438,16 @@ class GuiderCmd(object):
         if pointing != 'A':
             cmd.warn('text="pointing name is %s, but we are using pointing #1. This is probably OK."' % (pointing))
 
-        # Depending on the combination of survey and surveyMode we decide
-        # whether addGuideOffsets should fail if the plateGuideOffsets file
-        # is not found.
-        failOnGuideOffsets = False
-        if survey in ['APOGEE', 'APOGEE-2']:
-            failOnGuideOffsets = True
-        elif survey in ['APOGEE&MaNGA', 'APOGEE-2&MaNGA']:
-            if surveyMode == 'APOGEE lead':
-                failOnGuideOffsets = True
-
-        offsetStatus = self.addGuideOffsets(
-            cmd, plate, guideWavelength, pointingID, gprobes,
-            fail=failOnGuideOffsets)
-
-        # If a plateGuideOffsets has been found and the offsets applied,
-        # sets the refractionBalance to 1.
+        # Sets the guide offsets, if the guide wavelength is defined
         gState = actorState.gState
-        if offsetStatus:
-            gState.refractionBalance = 1
-        else:
-            gState.refractionBalance = 0
+        gState.refractionBalance = 0
+        gState.guideWavelength = -1
+        if guideWavelength and guideWavelength != -1.:
+            offsetStatus = self.addGuideOffsets(
+                cmd, plate, guideWavelength, pointingID, gprobes)
+            if offsetStatus:
+                gState.guideWavelength = guideWavelength
+                gState.refractionBalance = 1
 
         # Send that information off to the master thread
         #
@@ -460,8 +458,7 @@ class GuiderCmd(object):
                   design_ha=design_ha, survey=survey, surveyMode=surveyMode,
                   gprobes=gprobes))
 
-    def addGuideOffsets(self, cmd, plate, wavelength, pointingID, gprobes,
-                        fail=False):
+    def addGuideOffsets(self, cmd, plate, wavelength, pointingID, gprobes):
         """
         Read in the new (needed for APOGEE/MARVELS) plateGuideOffsets interpolation arrays.
         """
@@ -476,32 +473,29 @@ class GuiderCmd(object):
         if not os.path.exists(path):
             failMsg = ('text="no refraction corrections for '
                        'plate {0} at {1:d}A"'.format(plate, wavelength))
-            if fail:
-                cmd.fail(failMsg)
-                return False
-            cmd.warn(failMsg)
-            return False
+            cmd.fail(failMsg)
+            return
 
         try:
-            ygo = YPF.YPF(path)
-            guideOffsets = ygo.structs['HAOFFSETS'].asObjlist()
+            ygo = yanny.yanny(path, np=True)
+            guideOffsets = ygo['HAOFFSETS']
             cmd.inform('text="loaded guider coeffs for %dA from %s"' % (wavelength, path))
         except Exception, e:
-            cmd.warn('text="failed to read plateGuideOffsets file %s: %s"' % (path, e))
-            return False
+            cmd.fail('text="failed to read plateGuideOffsets file %s: %s"' % (path, e))
+            return
 
         for gpID, gProbe in gprobes.items():
             if gProbe.fiber_type == 'TRITIUM':
                 return False
 
-            offset = [o for o in guideOffsets if o.holetype == "GUIDE" and o.iguide == gpID]
+            offset = [o for o in guideOffsets if o['holetype'] == "GUIDE" and o['iguide'] == gpID]
             if len(offset) != 1:
                 cmd.warn('text="no or too many (%d) guideOffsets for probe %s"' % (len(offset), gpID))
                 return False
 
-            gProbe.haOffsetTimes[wavelength] = offset[0].delha
-            gProbe.haXOffsets[wavelength] = offset[0].xfoff
-            gProbe.haYOffsets[wavelength] = offset[0].yfoff
+            gProbe.haOffsetTimes[wavelength] = offset[0]['delha']
+            gProbe.haXOffsets[wavelength] = offset[0]['xfoff']
+            gProbe.haYOffsets[wavelength] = offset[0]['yfoff']
             cmd.inform('test="applied corrections to gProbes for {0:d}A"'
                        .format(wavelength))
 
