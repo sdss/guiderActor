@@ -497,7 +497,7 @@ class GuiderCmd(object):
             gProbe.haOffsetTimes[wavelength] = offset[0]['delha']
             gProbe.haXOffsets[wavelength] = offset[0]['xfoff']
             gProbe.haYOffsets[wavelength] = offset[0]['yfoff']
-            cmd.inform('text="applied corrections to gProbes for {0:d}A"'
+            cmd.inform('text="applied corrections to gProbes for {0}A"'
                        .format(wavelength))
 
             return True
