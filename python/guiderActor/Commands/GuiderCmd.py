@@ -102,7 +102,7 @@ class GuiderCmd(object):
             ('decenter', '(on|off)', self.decenter),
             ('setDecenter', "[<decenterRA>] [<decenterDec>] [<decenterRot>]", self.setDecenter),
             ('mangaDither', "<ditherPos>", self.mangaDither),
-            ('setRefractionBalance', "[<corrRatio>]", self.setRefractionBalance),
+            ('setRefractionBalance', "<corrRatio>", self.setRefractionBalance),
             ('makeMovie','[<movieMJD>] <start> <end>',self.makeMovie),
             ('findstar', '[<time>] [<bin>]', self.ecam_findstar),
             ]
