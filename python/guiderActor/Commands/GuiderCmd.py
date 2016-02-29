@@ -442,13 +442,15 @@ class GuiderCmd(object):
         gState = actorState.gState
         gState.refractionBalance = 0
         gState.guideWavelength = -1
-        if guideWavelength and guideWavelength != -1.:
+        if guideWavelength and guideWavelength != -1:
             offsetStatus = self.addGuideOffsets(
                 cmd, plate, guideWavelength, pointingID, gprobes)
             if offsetStatus:
                 gState.guideWavelength = guideWavelength
                 gState.refractionBalance = 1
                 cmd.inform('text="refraction balance set to 1"')
+            else:
+                return
 
         # Send that information off to the master thread
         #
