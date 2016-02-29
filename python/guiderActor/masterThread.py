@@ -436,8 +436,8 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
     else:
         frameInfo.setDecenter(None)
 
-    # At present, only APOGEE uses refractionOffsets.
-    # So, only this wavelength will have haOffsetTime specified for each gprobe.
+    # Gets the wavelength and refraction balance from the guider state.
+    # Wavelength will be -1 unless a custom guide wavelength is defined.
     frameInfo.wavelength = gState.guideWavelength
     frameInfo.refractionBalance = gState.refractionBalance
 
