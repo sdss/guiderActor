@@ -442,7 +442,7 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
     frameInfo.refractionBalance = gState.refractionBalance
 
     guideCmd.respond('text=frameInfo.wavelength={0.wavelength}, '
-                     'refractionBalance={1.refractionBalance}'
+                     'refractionBalance={0.refractionBalance}'
                      .format(frameInfo))
 
     haLimWarn = False # so we only warn once about passing the HA limit for refraction balance
@@ -1383,27 +1383,27 @@ def main(actor, queues):
                 raise ValueError("Unknown message type %s" % msg.type)
         except Queue.Empty:
             actor.bcast.diag('text="%s alive"' % threadName)
-        # except Exception as e:
-        #     errMsg = "Unexpected exception %s in guider %s thread" % (e, threadName)
-        #     if gState.cmd:
-        #         gState.cmd.error('text="%s"' % errMsg)
-        #     else:
-        #         actor.bcast.error('text="%s"' % errMsg)
-        #     gState.cmd = None
-        #     # jkp NOTE: this gives a RunTimeError/max recurision depth if
-        #     # guiderActor isn't built correctly (missing lib/libguide.so)
-        #     tback.tback(errMsg, e)
-        #
-        #     #import pdb; pdb.set_trace()
-        #     try:
-        #         print "\n".join(tback.tback(errMsg, e)[0]) # old versions of tback return None
-        #     except:
-        #         pass
-        #
-        #     try:
-        #         msg.replyQueue.put(Msg.EXIT, cmd=msg.cmd, success=False)
-        #     except Exception as e:
-        #         pass
+        except Exception as e:
+            errMsg = "Unexpected exception %s in guider %s thread" % (e, threadName)
+            if gState.cmd:
+                gState.cmd.error('text="%s"' % errMsg)
+            else:
+                actor.bcast.error('text="%s"' % errMsg)
+            gState.cmd = None
+            # jkp NOTE: this gives a RunTimeError/max recurision depth if
+            # guiderActor isn't built correctly (missing lib/libguide.so)
+            tback.tback(errMsg, e)
+
+            #import pdb; pdb.set_trace()
+            try:
+                print "\n".join(tback.tback(errMsg, e)[0]) # old versions of tback return None
+            except:
+                pass
+
+            try:
+                msg.replyQueue.put(Msg.EXIT, cmd=msg.cmd, success=False)
+            except Exception as e:
+                pass
 
 def guidingIsOK(cmd, actorState, force=False):
     """Is it OK to be guiding?"""
