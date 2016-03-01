@@ -448,8 +448,9 @@ class GuiderCmd(object):
             if offsetStatus:
                 gState.guideWavelength = guideWavelength
                 gState.refractionBalance = 1
-                cmd.inform('text="refraction balance set to 1"')
+                cmd.inform('text="refraction balance set to 1."')
             else:
+                cmd.fail('text="failed to load guide offsets."')
                 return
 
         # Send that information off to the master thread
@@ -476,25 +477,25 @@ class GuiderCmd(object):
         if not os.path.exists(path):
             failMsg = ('text="no refraction corrections for '
                        'plate {0} at {1:d}A"'.format(plate, wavelength))
-            cmd.fail(failMsg)
-            return
+            cmd.error(failMsg)
+            return False
 
         try:
             ygo = yanny.yanny(path, np=True)
             guideOffsets = ygo['HAOFFSETS']
             cmd.inform('text="loaded guider coeffs for %dA from %s"' % (wavelength, path))
         except Exception, e:
-            cmd.fail('text="failed to read plateGuideOffsets file %s: %s"' % (path, e))
-            return
+            cmd.error('text="failed to read plateGuideOffsets file %s: %s"' % (path, e))
+            return False
 
         for gpID, gProbe in gprobes.items():
             if gProbe.fiber_type == 'TRITIUM':
-                return False
+                continue
 
             offset = [o for o in guideOffsets if o['holetype'] == "GUIDE" and o['iguide'] == gpID]
             if len(offset) != 1:
                 cmd.warn('text="no or too many (%d) guideOffsets for probe %s"' % (len(offset), gpID))
-                return False
+                continue
 
             gProbe.haOffsetTimes[wavelength] = offset[0]['delha']
             gProbe.haXOffsets[wavelength] = offset[0]['xfoff']
