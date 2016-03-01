@@ -441,8 +441,8 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
     frameInfo.wavelength = gState.guideWavelength
     frameInfo.refractionBalance = gState.refractionBalance
 
-    guideCmd.respond('text=frameInfo.wavelength={0.wavelength}, '
-                     'refractionBalance={0.refractionBalance}'
+    guideCmd.respond('text="frameInfo.wavelength={0.wavelength}, '
+                     'refractionBalance={0.refractionBalance}"'
                      .format(frameInfo))
 
     haLimWarn = False # so we only warn once about passing the HA limit for refraction balance
