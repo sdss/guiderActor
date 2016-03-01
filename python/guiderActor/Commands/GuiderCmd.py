@@ -499,10 +499,10 @@ class GuiderCmd(object):
             gProbe.haOffsetTimes[wavelength] = offset[0]['delha']
             gProbe.haXOffsets[wavelength] = offset[0]['xfoff']
             gProbe.haYOffsets[wavelength] = offset[0]['yfoff']
-            cmd.inform('text="applied corrections to gProbes for {0}A"'
-                       .format(wavelength))
+            cmd.inform('text="applied corrections to gProbeID={0} for {1}A"'
+                       .format(gpID, wavelength))
 
-            return True
+        return True
 
     def setRefractionBalance(self, cmd):
         """Set refraction balance to a specific correction ratio."""
