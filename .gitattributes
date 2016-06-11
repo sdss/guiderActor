@@ -3,6 +3,11 @@ bin/bad_gimg_search.py -text
 bin/convertPlPlugMap.py -text
 bin/darksStackFlow.py -text
 bin/extract_headers.py -text
+<<<<<<< HEAD
+=======
+bin/getGProbeInfo.py -text
+bin/guiderActor_main.py -text
+>>>>>>> 7d5dd2b... added guiderActor_main into bin
 bin/guiderToDs9 -text
 bin/guider_movie.py -text
 bin/open_shutter_search.py -text
