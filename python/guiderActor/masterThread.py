@@ -949,10 +949,10 @@ def start_guider(cmd, gState, actorState, queues, camera='gcamera', stack=1,
     if gState.guideWavelength == -1:
         cmd.inform('text="guiding begins."')
     elif gState.guideWavelength != -1 and gState.refractionBalance == 0:
-        cmd.warn('text="guiding begings. '
+        cmd.warn('text="guiding begins. '
                  'guideWavelength={0} but refractionBalance=0."'.format(gState.guideWavelength))
     elif gState.guideWavelength != -1 and gState.refractionBalance != 0:
-        cmd.warn('text="guiding begings. guiding at {0}A with refractionBalance={1:.2f}."'
+        cmd.warn('text="guiding begins. guiding at {0}A with refractionBalance={1:.2f}."'
                  .format(gState.guideWavelength, gState.refractionBalance))
 
     if gState.cartridge <= 0:
