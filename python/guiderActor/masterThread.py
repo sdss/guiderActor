@@ -946,6 +946,15 @@ def start_guider(cmd, gState, actorState, queues, camera='gcamera', stack=1,
             cmd.fail('text="%s"' % (errMsg))
             return
 
+    if gState.guideWavelength == -1:
+        cmd.inform('text="guiding begins."')
+    elif gState.guideWavelength != -1 and gState.refractionBalance == 0:
+        cmd.warn('text="guiding begings. '
+                 'guideWavelength={0} but refractionBalance=0."'.format(gState.guideWavelength))
+    elif gState.guideWavelength != -1 and gState.refractionBalance != 0:
+        cmd.warn('text="guiding begings. guiding at {0}A with refractionBalance={1:.2f}."'
+                 .format(gState.guideWavelength, gState.refractionBalance))
+
     if gState.cartridge <= 0:
         failMsg = "No cart/plate information: please load cartridge and try again."
         cmd.fail('guideState=failed; text="%s"' % failMsg)
