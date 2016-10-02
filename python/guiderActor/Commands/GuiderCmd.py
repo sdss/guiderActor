@@ -364,9 +364,11 @@ class GuiderCmd(object):
 
         # Retrieves the guide wavelength from the DB. If guideWavelength has
         # not been defined in the command, uses that.
-        dbGuideWavelength = cmdVar.getLastKeyVarData(pointingInfoKey)[10]
         if not guideWavelength:
-            guideWavelength = dbGuideWavelength
+            dbGuideWavelength = cmdVar.getLastKeyVarData(pointingInfoKey)[10]
+            guideWavelength = int(dbGuideWavelength) if dbGuideWavelength else None
+        else:
+            guideWavelength = int(guideWavelength)
 
         # If the guideWavelength is not defined and the plate is APOGEE-lead,
         # we set the default guide wavelength
