@@ -240,16 +240,26 @@ class GuiderCmd(object):
         mprobe = cmd.cmd.keywords['mprobe'].values[0] if 'mprobe' in cmd.cmd.keywords else None
         gprobe = cmd.cmd.keywords['gprobe'].values[0] if 'gprobe' in cmd.cmd.keywords else None
         if (probe == None and mprobe == None and gprobe == None) or (probe != None and mprobe != None and gprobe != None) :
-            cmd.fail('text="exactly one destination probe must specified"')
+            cmd.fail('text="exactly one destination probe must be specified"')
             return
-        
+        if (probe !== None and mprobe !== None) or (probe != None and gprobe != None) or (mprobe != None and gprobe != None) :
+            cmd.fail('text="exactly one destination probe must be specified"')
+            return
         fromProbe = cmd.cmd.keywords["fromProbe"].values[0] if 'fromProbe' in cmd.cmd.keywords else None
         fromMprobe = cmd.cmd.keywords["fromMprobe"].values[0] if 'fromMprobe' in cmd.cmd.keywords else None
         fromGprobe = cmd.cmd.keywords["fromGprobe"].values[0] if 'fromGprobe' in cmd.cmd.keywords else None
         if (fromProbe != None and fromMprobe != None and fromGprobe != None) :
             cmd.fail('text="no more than one source probe can be specified"')
             return
-
+        if (fromProbe != None and fromMprobe != None) :
+            cmd.fail('text="no more than one source probe can be specified"')
+            return
+        if (fromProbe != None and fromGprobe != None) :
+            cmd.fail('text="no more than one source probe can be specified"')
+            return
+        if (fromMprobe != None and fromGprobe != None) :
+            cmd.fail('text="no more than one source probe can be specified"')
+            return
         myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.STAR_IN_FIBER, cmd=cmd,
                                                                 probe=probe, mprobe=mprobe gprobe=gprobe,
                                                                 fromProbe=fromProbe, fromMprobe=fromProbe, fromGprobe=fromGprobe))
