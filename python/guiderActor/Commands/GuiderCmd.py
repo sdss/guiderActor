@@ -242,7 +242,7 @@ class GuiderCmd(object):
         if (probe == None and mprobe == None and gprobe == None) or (probe != None and mprobe != None and gprobe != None) :
             cmd.fail('text="exactly one destination probe must be specified"')
             return
-        if (probe !== None and mprobe !== None) or (probe != None and gprobe != None) or (mprobe != None and gprobe != None) :
+        if (probe != None and mprobe != None) or (probe != None and gprobe != None) or (mprobe != None and gprobe != None) :
             cmd.fail('text="exactly one destination probe must be specified"')
             return
         fromProbe = cmd.cmd.keywords["fromProbe"].values[0] if 'fromProbe' in cmd.cmd.keywords else None
@@ -261,7 +261,7 @@ class GuiderCmd(object):
             cmd.fail('text="no more than one source probe can be specified"')
             return
         myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.STAR_IN_FIBER, cmd=cmd,
-                                                                probe=probe, mprobe=mprobe gprobe=gprobe,
+                                                                probe=probe, mprobe=mprobe, gprobe=gprobe,
                                                                 fromProbe=fromProbe, fromMprobe=fromProbe, fromGprobe=fromGprobe))
 
     def reprocessFile(self, cmd):
