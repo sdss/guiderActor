@@ -261,12 +261,12 @@ class GuiderCmd(object):
         if (fromMprobe != None and fromGprobe != None) :
             cmd.fail('text="no more than one source probe can be specified, you asked for M and G"')
             return
+        #myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.STAR_IN_FIBER, cmd=cmd,
+        #                                                        probe=probe, mprobe=mprobe, gprobe=gprobe,
+        #                                                        fromProbe=fromProbe, fromMprobe=fromMprobe, fromGprobe=fromGprobe))
         myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.STAR_IN_FIBER, cmd=cmd,
-                                                                probe=probe, mprobe=mprobe, gprobe=gprobe,
-                                                                fromProbe=fromProbe, fromMprobe=fromMprobe, fromGprobe=fromGprobe))
-        #-myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.STAR_IN_FIBER, cmd=cmd,
-        #-                                                        probe=probe, gprobe=gprobe,
-        #-                                                        fromProbe=fromProbe, fromGprobe=fromGprobe))
+                                                                probe=probe, gprobe=gprobe,
+                                                                fromProbe=fromProbe, fromGprobe=fromGprobe))
 
 
     def reprocessFile(self, cmd):
