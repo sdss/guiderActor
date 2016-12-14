@@ -1185,6 +1185,7 @@ def main(actor, queues):
                     w = numpy.where((gState.allProbes.fiberId == msg.mprobe) &
                                     (gState.allProbes.holeType == 'MANGA'))
                     w = w[0]
+                    msg.cmd.warn('text="MANGA probel is selected as destination"')
                 elif msg.gprobe:
                     w = numpy.where((gState.allProbes.fiberId == msg.gprobe) &
                                     (gState.allProbes.holeType == 'GUIDE'))
@@ -1210,7 +1211,7 @@ def main(actor, queues):
                                     (gState.allProbes.holeType == 'MANGA'))
                     w = w[0]
                     if len(w) != 1:
-                        msg.cmd.fail('text="no unique source probe was specified"')
+                        msg.cmd.fail('text="no unique source MANGA probe was specified"')
                         continue
                 elif msg.fromGprobe:
                     w = numpy.where((gState.allProbes.fiberId == msg.fromGprobe) &
