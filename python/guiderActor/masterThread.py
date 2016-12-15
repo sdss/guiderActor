@@ -716,13 +716,9 @@ def loadAllProbes(cmd, gState):
         # so that we can put "any star down any hole". This is potentially
         # very useful for testing.
         # TBD: we'll probably need a new type here for MaNGA.
-        #-keep = pm[numpy.where(((pm.holeType == "GUIDE") & (pm.objType == "NA"))
-        #-                      | (pm.holeType == "OBJECT"))]
         keep = pm[numpy.where(((pm.holeType == "GUIDE") & (pm.objType == "NA"))
-                              | (pm.holeType == "MANGA"))]
+                              | (pm.holeType == "OBJECT"))]
         cmd.diag('text="kept %d probes"' % (len(keep)))
-        #- add !
-        cmd.diag('text="dmtest dmtest "' % keep)
         gState.allProbes = keep
     except Exception as e:
         cmd.warn('text=%s' % (qstr("could not load all probe info: %s" % (e))))
@@ -1184,8 +1180,6 @@ def main(actor, queues):
                     w = numpy.where((gState.allProbes.spectrographId == 2) &
                                     (gState.allProbes.fiberId == msg.probe) &
                                     (gState.allProbes.holeType == 'OBJECT'))
-                    #-w = numpy.where((gState.allProbes.holeType == 'MANGA') &
-                    #-                (gState.allProbes.fiberId == msg.probe))
                     w = w[0]
                 elif msg.gprobe:
                     w = numpy.where((gState.allProbes.fiberId == msg.gprobe) &
@@ -1200,11 +1194,9 @@ def main(actor, queues):
                 
                 w = None
                 if msg.fromProbe:
-                    w = numpy.where((gState.allProbes.holeType == 'OBJECT') &
+                    w = numpy.where((gState.allProbes.spectrographId == 2) &
                                     (gState.allProbes.fiberId == msg.fromProbe) &
-                                    (gState.allProbes.spectrographId == 2))
-                    #-w = numpy.where((gState.allProbes.holeType == 'MANGA') &
-                    #-                (gState.allProbes.fiberId == msg.fromProbe))
+                                    (gState.allProbes.holeType == 'OBJECT'))
                     w = w[0]
                     if len(w) != 1:
                         msg.cmd.fail('text="no unique source probe was specified"')
