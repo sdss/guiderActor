@@ -1186,7 +1186,7 @@ def main(actor, queues):
                     w = numpy.where((gState.allProbes.holeType == 'MANGA') &
                                     (gState.allProbes.fiberId == msg.probe))
                     w = w[0]
-                    cmd.warn('text="dmbiz_probe all matching fibers %d %d %s"' % (len(w),gState.allProbes[w].fiberId,gState.allProbes[w].holeType))
+                    cmd.warn('text="dmbiz_probe all matching fibers %d %s %s"' % (len(w),gState.allProbes[w].fiberId,gState.allProbes[w].holeType))
                 elif msg.gprobe:
                     w = numpy.where((gState.allProbes.fiberId == msg.gprobe) &
                                     (gState.allProbes.holeType == 'GUIDE'))
@@ -1206,7 +1206,7 @@ def main(actor, queues):
                     w = numpy.where((gState.allProbes.holeType == 'MANGA') &
                                     (gState.allProbes.fiberId == msg.fromProbe))
                     w = w[0]
-                    cmd.warn('text="dmbiz_fromProbe all matching fibers %d %d %s"' % (len(w),gState.allProbes[w].fiberId,gState.allProbes[w].holeType))
+                    cmd.warn('text="dmbiz_fromProbe all matching fibers %d %s %s"' % (len(w),gState.allProbes[w].fiberId,gState.allProbes[w].holeType))
                     if len(w) != 1:
                         msg.cmd.fail('text="no unique source probe was specified"')
                         continue
