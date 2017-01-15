@@ -13,6 +13,7 @@ from Queue import Queue
 import guiderActor
 import guiderActor.myGlobals as myGlobals
 from guiderActor.Commands import GuiderCmd
+from guiderActor import masterThread
 
 from actorcore import TestHelper
 import guiderTester
@@ -63,7 +64,7 @@ class TestDecentering(GuiderCmdTester,unittest.TestCase):
                   'decenterRot':0,
                   'mangaDither':'E'}
         self._mangaDither(expect,'ditherPos=E')
-    
+
     def _decenter(self,expect,args):
         queue = self.queues[guiderActor.MASTER]
         msg = self._run_cmd('decenter %s'%(args),queue)
@@ -101,23 +102,29 @@ class TestDecentering(GuiderCmdTester,unittest.TestCase):
         self._setDecenter({},'decenterRot=10',didFail=True)
 
 class TestSetRefractionBalance(GuiderCmdTester,unittest.TestCase):
-    def _setRefractionBalance(self, args, expect):
+
+    def _setRefractionBalance(self, args, expect, didFail=False):
         queue = self.queues[guiderActor.MASTER]
-        msg = self._run_cmd('setRefractionBalance %s'%(args),queue)
+        msg = self._run_cmd('setRefractionBalance %s' % (args), queue)
         self.assertEqual(msg.type, guiderActor.Msg.SET_REFRACTION)
-        self.assertEqual(msg.corrRatio, expect.get('corrRatio',None))
-        self.assertEqual(msg.plateType, expect.get('plateType',None))
-        self.assertEqual(msg.surveyMode, expect.get('surveyMode',None))
+
+        result = masterThread.set_refraction(self.cmd, self.gState,
+                                             msg.corrRatio)
+        self.assertEqual(self.gState.refractionBalance,
+                         expect.get('corrRatio', None))
+        self.assertEqual(result, not didFail)
 
     def test_corrRatio_1(self):
+        self.gState.refractionBalance = 0
         args = 'corrRatio=1'
-        expect = {'corrRatio':1}
-        self._setRefractionBalance(args,expect)
-    def test_survey(self):
-        args = 'plateType="APOGEE-2&MaNGA" surveyMode="APOGEE lead" '
-        expect = {'plateType':'APOGEE-2&MaNGA',
-                  'surveyMode':'APOGEE lead'}
-        self._setRefractionBalance(args,expect)
+        expect = {'corrRatio': 1}
+        self._setRefractionBalance(args, expect)
+
+    def test_corrRatio_fails(self):
+        self.gState.refractionBalance = 0
+        args = 'corrRatio=10'
+        expect = {'corrRatio': 0}
+        self._setRefractionBalance(args, expect, didFail=True)
 
 
 class TestGuideOnOff(GuiderCmdTester,unittest.TestCase):
@@ -166,7 +173,7 @@ class TestEcam(GuiderCmdTester,unittest.TestCase):
 
 if __name__ == '__main__':
     verbosity = 2
-    
+
     suite = None
     # to test just one piece
     #suite = unittest.TestLoader().loadTestsFromTestCase(TestClassifyCartridge)

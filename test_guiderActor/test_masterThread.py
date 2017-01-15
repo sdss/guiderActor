@@ -16,7 +16,7 @@ class TestMasterThread(guiderTester.GuiderTester,unittest.TestCase):
     """Test specific masterThread commands."""
     def setUp(self):
         super(TestMasterThread,self).setUp()
-    
+
     def test_load_cartridge(self):
         pass
 
@@ -28,12 +28,12 @@ class TestGuiderStep(guiderTester.GuiderTester,unittest.TestCase):
         self.guidingIn = 'data/gimg-0040.fits.gz'
         self.guidingOut = 'data/proc-'+self.guidingIn
         super(TestGuiderStep,self).setUp()
-    
+
     def tearDown(self):
         self._remove_file(self.centerUpOut)
         self._remove_file(self.guidingOut)
         super(TestGuiderStep,self).tearDown()
-    
+
     def test_check_fiber_guiding(self):
         self.gState.centerUp = False
         self.fibers = self.gi(self.cmd,self.guidingIn,self.gState.gprobes,setPoint=self.setPoint_good)
@@ -46,7 +46,7 @@ class TestGuiderStep(guiderTester.GuiderTester,unittest.TestCase):
                 self.assertFalse(result,name)
             else:
                 self.assertTrue(result,name)
-    
+
     def test_check_fiber_centerUp(self):
         self.gState.centerUp = True
         self.fibers = self.gi(self.cmd,self.centerUpIn,self.gState.gprobes,setPoint=self.setPoint_good)
@@ -75,7 +75,7 @@ class TestDecenter(guiderTester.GuiderTester,unittest.TestCase):
         self.assertEqual(self.gState.decenterRA,0)
         self.assertEqual(self.gState.decenterDec,0)
         self.assertEqual(self.gState.mangaDither,'C')
-    
+
     def _set_decenter_ok(self,decenters):
         masterThread.set_decenter(self.cmd, {}, self.gState, True)
         masterThread.set_decenter(self.cmd, decenters, self.gState, None)
@@ -89,7 +89,7 @@ class TestDecenter(guiderTester.GuiderTester,unittest.TestCase):
     def test_set_decenter_mangaDither(self):
         decenters = {'decenterRA':1,'decenterDec':2,'mangaDither':'N'}
         self._set_decenter_ok(decenters)
-    
+
     def test_set_decenter_cannot_change(self):
         decenters = {'decenterRA':1,'decenterDec':2}
         masterThread.set_decenter(self.cmd, decenters, self.gState, None)
@@ -99,17 +99,26 @@ class TestDecenter(guiderTester.GuiderTester,unittest.TestCase):
         self.assertEqual(self.gState.decenterDec,0)
         self.assertEqual(self.gState.mangaDither,'C')
 
+
 class TestSetRefraction(guiderTester.GuiderTester,unittest.TestCase):
-    def _set_refraction(self, corrRatio, plateType, surveyMode, expect):
-        self.gState.refractionBalance = -100 # ensure it's always different to start.
-        masterThread.set_refraction(self.cmd, self.gState, corrRatio, plateType, surveyMode)
+
+    def _set_refraction(self, corrRatio, expect, didFail=False):
+        # ensure it's always different to start.
+        self.gState.refractionBalance = -100
+        masterThread.set_refraction(self.cmd, self.gState, corrRatio)
         self.assertEqual(self.gState.refractionBalance, expect)
-    def test_corrRatio_1(self):
-        self._set_refraction(1, None, None, 1)
-    def test_apogee(self):
-        self._set_refraction(None, 'APOGEE', None, 1)
-    def test_boss(self):
-        self._set_refraction(None, 'eBOSS', None, 0)
+        if didFail:
+            self.assertTrue(self.cmd.didFail)
+
+    def test_corrRatio(self):
+        self._set_refraction(1, 1)
+        self._set_refraction(0, 0)
+        self._set_refraction(0.5, 0.5)
+
+    def test_fails(self):
+        self._set_refraction(None, -100)
+        self._set_refraction(3, -100)
+        self._set_refraction(-1, -100)
 
 
 class TestGuidingIsOK(guiderTester.GuiderTester,unittest.TestCase):
@@ -262,7 +271,7 @@ class TestStartStopGuider(guiderTester.GuiderTester,unittest.TestCase):
 
 if __name__ == '__main__':
     verbosity = 2
-    
+
     suite = None
     # to test just one piece
     # suite = unittest.TestLoader().loadTestsFromTestCase(TestStartStopGuider)
