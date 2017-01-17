@@ -734,12 +734,9 @@ def loadAllProbes(cmd, gState):
         # so that we can put "any star down any hole". This is potentially
         # very useful for testing.
         # TBD: we'll probably need a new type here for MaNGA.
-        keep0 = pm[numpy.where(((pm.holeType == "GUIDE") & (pm.objType == "NA"))
-                              | (pm.holeType == "OBJECT"))]
         keep = pm[numpy.where(((pm.holeType == "GUIDE") & (pm.objType == "NA"))
-                              | (pm.holeType == "MANGA"))]
+                              | (pm.holeType == "OBJECT"))]
         cmd.diag('text="kept %d probes"' % (len(keep)))
-        cmd.diag('text="original was %d probes"' % (len(keep0)))
         gState.allProbes = keep
     except Exception as e:
         cmd.warn('text=%s' % (qstr("could not load all probe info: %s" % (e))))
@@ -1211,18 +1208,15 @@ def main(actor, queues):
 
             elif msg.type == Msg.STAR_IN_FIBER:
                 if gState.allProbes == None:
-                    msg.cmd.fail('text="the probes for this plate are not available, allProbes=None"')
+                    msg.cmd.fail('text="the probes for this plate are not available"')
                     continue
+
                 w = None
                 if msg.probe:
-                    #w = numpy.where((gState.allProbes.spectrographId == 2) &
-                    #                (gState.allProbes.fiberId == msg.probe) &
-                    #                (gState.allProbes.holeType == 'OBJECT'))
-                    #cmd.warn(text="dmbiz all matching fibers %d"' % (len(w))
-                    w = numpy.where((gState.allProbes.holeType == 'MANGA') &
-                                    (gState.allProbes.fiberId == msg.probe))
+                    w = numpy.where((gState.allProbes.spectrographId == 2) &
+                                    (gState.allProbes.fiberId == msg.probe) &
+                                    (gState.allProbes.holeType == 'OBJECT'))
                     w = w[0]
-                    cmd.warn('text="dmbiz_probe all matching fibers %d %s %s"' % (len(w),gState.allProbes[w].fiberId,gState.allProbes[w].holeType))
                 elif msg.gprobe:
                     w = numpy.where((gState.allProbes.fiberId == msg.gprobe) &
                                     (gState.allProbes.holeType == 'GUIDE'))
@@ -1236,13 +1230,10 @@ def main(actor, queues):
 
                 w = None
                 if msg.fromProbe:
-                    #w = numpy.where((gState.allProbes.holeType == 'OBJECT') &
-                    #                (gState.allProbes.fiberId == msg.fromProbe) &
-                    #                (gState.allProbes.spectrographId == 2))
-                    w = numpy.where((gState.allProbes.holeType == 'MANGA') &
-                                    (gState.allProbes.fiberId == msg.fromProbe))
+                    w = numpy.where((gState.allProbes.spectrographId == 2) &
+                                    (gState.allProbes.fiberId == msg.fromProbe) &
+                                    (gState.allProbes.holeType == 'OBJECT'))
                     w = w[0]
-                    cmd.warn('text="dmbiz_fromProbe all matching fibers %d %s %s"' % (len(w),gState.allProbes[w].fiberId,gState.allProbes[w].holeType))
                     if len(w) != 1:
                         msg.cmd.fail('text="no unique source probe was specified"')
                         continue
@@ -1257,12 +1248,10 @@ def main(actor, queues):
                     srcProbe = gState.allProbes[w]
                     srcX = srcProbe.xFocal
                     srcY = srcProbe.yFocal
-                    
                 else:
                     srcProbe = None
                     srcX, srcY = 0.0, 0.0
 
-                msg.cmd.diag('text="dmbiz dstXY = %d %d SrcXY= %d %d "' % (dstX,dstY,srcX,srcY))
                 dx = (dstX - srcX) / gState.plugPlateScale
                 dy = (dstY - srcY) / gState.plugPlateScale
 
