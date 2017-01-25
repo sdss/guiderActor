@@ -341,16 +341,18 @@ class GuiderCmd(object):
             return
 
         # Get the plate from the plateDB
-        pointingInfoKey = actorState.models["platedb"].keyVarDict["pointingInfo"]
         extraArgs = ""
         if plate: extraArgs += " plate=%s" % (plate)
         if mjd: extraArgs += " mjd=%s" % (mjd)
         if fscanId: extraArgs += " fscanId=%s" % (fscanId)
 
+        pointingInfoKey = actorState.models['platedb'].keyVarDict['pointingInfo']
+        guideWavelengthKey = actorState.models['platedb'].keyVarDict['guideWavelength']
+
         cmdVar = actorState.actor.cmdr.call(actor="platedb", forUserCmd=cmd,
                                             cmdStr="loadCartridge cartridge=%d pointing=%s %s" % \
                                                 (cartridge, pointing, extraArgs),
-                                            keyVars=[pointingInfoKey])
+                                            keyVars=[pointingInfoKey, guideWavelengthKey])
         if cmdVar.didFail:
             cmd.fail("text=\"Failed to lookup plate corresponding to %d/%s\"" % (cartridge, pointing))
             return
@@ -365,7 +367,7 @@ class GuiderCmd(object):
         # Retrieves the guide wavelength from the DB. If guideWavelength has
         # not been defined in the command, uses that.
         if not guideWavelength:
-            dbGuideWavelength = cmdVar.getLastKeyVarData(pointingInfoKey)[10]
+            dbGuideWavelength = cmdVar.getLastKeyVarData(guideWavelengthKey)
             guideWavelength = int(dbGuideWavelength) if dbGuideWavelength else None
         else:
             guideWavelength = int(guideWavelength)
