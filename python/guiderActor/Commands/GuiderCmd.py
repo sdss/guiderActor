@@ -367,7 +367,7 @@ class GuiderCmd(object):
         # Retrieves the guide wavelength from the DB. If guideWavelength has
         # not been defined in the command, uses that.
         if not guideWavelength:
-            dbGuideWavelength = cmdVar.getLastKeyVarData(guideWavelengthKey)
+            dbGuideWavelength = cmdVar.getLastKeyVarData(guideWavelengthKey)[0]
             guideWavelength = int(dbGuideWavelength) if dbGuideWavelength else None
         else:
             guideWavelength = int(guideWavelength)
