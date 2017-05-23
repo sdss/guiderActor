@@ -109,7 +109,10 @@ class TestSetRefractionBalance(GuiderCmdTester,unittest.TestCase):
         self.assertEqual(msg.type, guiderActor.Msg.SET_REFRACTION)
 
         result = masterThread.set_refraction(self.cmd, self.gState,
-                                             msg.corrRatio)
+                                             corrRatio=msg.corrRatio,
+                                             plateType=msg.plateType,
+                                             surveyMode=msg.surveyMode)
+
         self.assertEqual(self.gState.refractionBalance,
                          expect.get('corrRatio', None))
         self.assertEqual(result, not didFail)
@@ -123,6 +126,20 @@ class TestSetRefractionBalance(GuiderCmdTester,unittest.TestCase):
     def test_corrRatio_fails(self):
         self.gState.refractionBalance = 0
         args = 'corrRatio=10'
+        expect = {'corrRatio': 0}
+        self._setRefractionBalance(args, expect, didFail=True)
+
+    def test_apogee2(self):
+
+        self.gState.refractionBalance = 0
+        args = 'plateType=APOGEE-2 surveyMode=None'
+        expect = {'corrRatio': 1}
+        self._setRefractionBalance(args, expect, didFail=False)
+
+    def test_bad_input(self):
+
+        self.gState.refractionBalance = 0
+        args = ''
         expect = {'corrRatio': 0}
         self._setRefractionBalance(args, expect, didFail=True)
 

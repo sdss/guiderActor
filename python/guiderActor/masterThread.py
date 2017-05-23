@@ -936,15 +936,23 @@ def set_decenter(cmd, decenters, gState, enable):
 #...
 
 
-def set_refraction(cmd, gState, corrRatio):
+def set_refraction(cmd, gState, corrRatio=None, surveyMode=None, plateType=None):
     """Set refraction balance to a specific value."""
+
+    if corrRatio is None and surveyMode is None and plateType is None:
+        cmd.fail('text="need to define corrRatio or survey information"')
+        return False
+
     if corrRatio is not None and corrRatio >= 0 and corrRatio <= 1:
         gState.refractionBalance = corrRatio
         cmd.inform('text="refraction balance set to {0}"'.format(corrRatio))
         return True
+    elif surveyMode is not None and plateType is not None:
+        gState.setRefractionBalance(plateType, surveyMode)
+        cmd.inform('text="refraction balance set to {0}"'.format(gState.refractionBalance))
+        return True
     else:
-        cmd.fail('text="failed to set refraction balance to {0}"'
-                 .format(corrRatio))
+        cmd.fail('text="failed to set refraction balance to {0}"'.format(corrRatio))
         return False
 
 
@@ -1202,7 +1210,9 @@ def main(actor, queues):
                     queues[MASTER].put(Msg(Msg.STATUS, msg.cmd, finish=True))
 
             elif msg.type == Msg.SET_REFRACTION:
-                set_refraction(msg.cmd, gState, msg.corrRatio,)
+
+                set_refraction(msg.cmd, gState, corrRatio=msg.corrRatio, plateType=msg.plateType,
+                               surveyMode=msg.surveyMode)
                 if msg.cmd:
                     queues[MASTER].put(Msg(Msg.STATUS, msg.cmd, finish=True))
 
