@@ -175,7 +175,7 @@ class GuiderCmd(object):
         Imax = cmd.cmd.keywords["Imax"].values[0] if "Imax" in cmd.cmd.keywords else 0
         nfilt = cmd.cmd.keywords["nfilt"].values[0] if "nfilt" in cmd.cmd.keywords else 0
 
-        myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.SET_PID, cmd=cmd, what=what,
+        myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.SET_PID, cmd=cmd, axis=what,
                                                                 Kp=Kp, Ti=Ti, Td=Td, Imax=Imax,
                                                                 nfilt=nfilt))
 
