@@ -90,7 +90,47 @@ def _check_fiber(fiber, gState, guideCmd):
         if fiber.gProbe.disabled:
             guideCmd.diag('text="Gprobe %d is not enabled."' % fiber.fiberid)
         return fiber.gProbe.enabled
-#...
+
+
+def prep_for_flat(cmd, gState, actorState):
+    """Checks whether the FFS is closed and the FF lamp on."""
+
+    if gState.cartridge <= 0:
+        cmd.fail('text="no valid cartridge is loaded"')
+        return False
+
+    # Checks that all the petals are closed.
+    ffs_status = actorState.models['mcp'].keyVarDict['ffsStatus']
+
+    open_petals, closed_petals = 0, 0
+    for ss in ffs_status:
+        if ss is None:
+            cmd.fail('text="Failed to get state of flat field screen from MCP"')
+            return False
+
+        open_petals += int(ss[0])
+        closed_petals += int(ss[1])
+
+    if closed_petals == 8:
+        cmd.debug('text="FFS petals are all closed."')
+    elif open_petals == 8:
+        cmd.fail('text="FFS are open. Cannot take flat."')
+        return False
+    else:
+        cmd.failed('text="FFS are neither opened not closed. This looks serious."')
+        return False
+
+    # Checks FF lamps
+    ff_lamp_status = actorState.models['mcp'].keyVarDict['ffLamp']
+
+    if all(ff_lamp_status):
+        cmd.debug('text="FF lamps are on."')
+    else:
+        cmd.fail('text="the FF lamps are not on."')
+        return False
+
+    return True
+
 
 def _do_one_fiber(fiber, gState, cmd, frameInfo, haLimWarn):
     """
@@ -1048,6 +1088,7 @@ def stop_guider(cmd, gState, actorState, queues, frameNo, success):
         gState.cmd.fail("guideState=failed")
         gState.cmd = None
 
+
 def main(actor, queues):
     """Main loop for master thread"""
 
@@ -1165,8 +1206,7 @@ def main(actor, queues):
                                             expTime=gState.expTime, stack=gState.stack, camera=camera))
 
             elif msg.type == Msg.TAKE_FLAT:
-                if gState.cartridge <= 0:
-                    msg.cmd.fail('text="no valid cartridge is loaded"')
+                if not prep_for_flat(msg.cmd, gState, actorState):
                     continue
                 camera = 'ecamera' if gState.plateType == 'ecamera' else 'gcamera'
                 queues[GCAMERA].put(Msg(Msg.EXPOSE, msg.cmd, replyQueue=queues[MASTER],
