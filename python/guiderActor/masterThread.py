@@ -155,19 +155,6 @@ def _do_one_fiber(fiber, gState, cmd, frameInfo, haLimWarn):
     try:
         if gState.refractionBalance > 0:
 
-            # Some debug messages
-            try:
-                cmd.warn('text="this is a debug message: frameInfo.wavelength={0}"'
-                         .format(frameInfo.wavelength))
-                cmd.warn('text="this is a debug message: type(frameInfo.wavelength)={0}"'
-                         .format(type(frameInfo.wavelength)))
-                cmd.warn('text="this is a debug message: gProbe.haOffsetTimes={0}"'
-                         .format(gProbe.haOffsetTimes))
-                cmd.warn('text="this is a debug message: gProbe.haOffsetTimes.keys()={0}"'
-                         .format(gProbe.haOffsetTimes.keys()))
-            except:
-                pass
-
             if frameInfo.wavelength in gProbe.haOffsetTimes:
                 haTimes = gProbe.haOffsetTimes[frameInfo.wavelength]
                 if frameInfo.dHA < haTimes[0]:
