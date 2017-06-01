@@ -102,7 +102,7 @@ class GuiderCmd(object):
             ('decenter', '(on|off)', self.decenter),
             ('setDecenter', "[<decenterRA>] [<decenterDec>] [<decenterRot>]", self.setDecenter),
             ('mangaDither', "<ditherPos>", self.mangaDither),
-            ('setRefractionBalance', "<corrRatio>", self.setRefractionBalance),
+            ('setRefractionBalance', '[<corrRatio>] [<plateType>] [<surveyMode>]', self.setRefractionBalance),
             ('makeMovie','[<movieMJD>] <start> <end>',self.makeMovie),
             ('findstar', '[<time>] [<bin>]', self.ecam_findstar),
             ]
@@ -512,12 +512,13 @@ class GuiderCmd(object):
     def setRefractionBalance(self, cmd):
         """Set refraction balance to a specific correction ratio."""
         keywords = cmd.cmd.keywords
-        corrRatio = keywords["corrRatio"].values[0] if 'corrRatio' in keywords else None
-        # plateType = keywords["plateType"].values[0] if 'plateType' in keywords else None
-        # surveyMode = keywords["surveyMode"].values[0] if 'surveyMode' in keywords else None
+        corrRatio = keywords['corrRatio'].values[0] if 'corrRatio' in keywords else None
+        plateType = keywords['plateType'].values[0] if 'plateType' in keywords else None
+        surveyMode = keywords['surveyMode'].values[0] if 'surveyMode' in keywords else None
 
         myGlobals.actorState.queues[guiderActor.MASTER].put(
-            Msg(Msg.SET_REFRACTION, corrRatio=corrRatio, cmd=cmd))
+            Msg(Msg.SET_REFRACTION, corrRatio=corrRatio, plateType=plateType,
+                surveyMode=surveyMode, cmd=cmd))
 
     def ping(self, cmd):
         """ Top-level 'ping' command handler. Query the actor for liveness/happiness. """
