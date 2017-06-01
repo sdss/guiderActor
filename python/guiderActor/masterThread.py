@@ -112,7 +112,7 @@ def prep_for_flat(cmd, gState, actorState):
         closed_petals += int(ss[1])
 
     if closed_petals == 8:
-        cmd.debug('text="FFS petals are all closed."')
+        cmd.diag('text="FFS petals are all closed."')
     elif open_petals == 8:
         cmd.fail('text="FFS are open. Cannot take flat."')
         return False
@@ -124,7 +124,7 @@ def prep_for_flat(cmd, gState, actorState):
     ff_lamp_status = actorState.models['mcp'].keyVarDict['ffLamp']
 
     if all(ff_lamp_status):
-        cmd.debug('text="FF lamps are on."')
+        cmd.diag('text="FF lamps are on."')
     else:
         cmd.fail('text="the FF lamps are not on."')
         return False
