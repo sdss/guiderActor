@@ -34,12 +34,8 @@ class GuiderCmd(object):
                                         keys.Key("fscanId", types.Int(), help="The fscanId identifying a plate scanning"),
                                         keys.Key("mjd", types.Int(), help="The MJD when a plate was scanned"),
                                         keys.Key("plate", types.Int(), help="A plugplate ID"),
-<<<<<<< HEAD
                                         keys.Key("guideWavelength", types.Float(), help="The wavelength at which to guide"),
                                         keys.Key("fibers", types.Int()*(1,None), help="A list of fibers"),
-=======
-                                        keys.Key("fibers", types.Int()*(1, None), help="A list of fibers"),
->>>>>>> 3cd55d1... fixing GuiderActor
                                         keys.Key("probe", types.Int(), help="A probe ID, 1-indexed"),
                                         keys.Key("gprobe", types.Int(), help="A probe ID, 1-indexed"),
                                         keys.Key("fromProbe", types.Int(), help="A probe ID, 1-indexed"),
@@ -88,12 +84,7 @@ class GuiderCmd(object):
             ('resetPID', '[(raDec|rot|focus|scale)]', self.resetPID),
             ("disable", "<fibers>|<gprobes>", self.disableFibers),
             ("enable", "<fibers>|<gprobes>", self.enableFibers),
-<<<<<<< HEAD
             ("loadCartridge", "[<cartridge>] [<pointing>] [<plate>] [<mjd>] [<fscanId>] [<guideWavelength>] [force]", self.loadCartridge),
-=======
-            # fake this, get info directly from plPlugMap file
-            ("loadCartridge", "[<cartridge>] [<pointing>] [<plate>] [<mjd>] [<fscanId>] [force]", self.loadCartridge),
->>>>>>> 3cd55d1... fixing GuiderActor
             ("showCartridge", "", self.showCartridge),
             ("loadPlateFiles", "<cartfile> <plugfile>", self.loadPlateFiles),
             ("reprocessFile", "<file>", self.reprocessFile),
@@ -113,13 +104,8 @@ class GuiderCmd(object):
             ('decenter', '(on|off)', self.decenter),
             ('setDecenter', "[<decenterRA>] [<decenterDec>] [<decenterRot>]", self.setDecenter),
             ('mangaDither', "<ditherPos>", self.mangaDither),
-<<<<<<< HEAD
             ('setRefractionBalance', '[<corrRatio>] [<plateType>] [<surveyMode>]', self.setRefractionBalance),
-            ('makeMovie','[<movieMJD>] <start> <end>',self.makeMovie),
-=======
-            ('setRefractionBalance', "[<corrRatio>] [<plateType>] [<surveyMode>]", self.setRefractionBalance),
             ('makeMovie', '[<movieMJD>] <start> <end>', self.makeMovie),
->>>>>>> 3cd55d1... fixing GuiderActor
             ('findstar', '[<time>] [<bin>]', self.ecam_findstar),
             ]
     #
@@ -389,15 +375,9 @@ class GuiderCmd(object):
         guideWavelengthKey = actorState.models['platedb'].keyVarDict['guideWavelength']
 
         cmdVar = actorState.actor.cmdr.call(actor="platedb", forUserCmd=cmd,
-<<<<<<< HEAD
                                             cmdStr="loadCartridge cartridge=%d pointing=%s %s" % \
                                                 (cartridge, pointing, extraArgs),
                                             keyVars=[pointingInfoKey, guideWavelengthKey])
-=======
-                                            cmdStr="loadCartridge cartridge=%d pointing=%s %s" %
-                                            (cartridge, pointing, extraArgs),
-                                            keyVars=[pointingInfoKey])
->>>>>>> 3cd55d1... fixing GuiderActor
         if cmdVar.didFail:
             cmd.fail("text=\"Failed to lookup plate corresponding to %d/%s\"" % (cartridge, pointing))
             return

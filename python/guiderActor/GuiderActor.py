@@ -48,7 +48,7 @@ def set_gcamera(config, gState):
     """Set values related to the guide camera from the config file."""
     expTime = float(config.get('gcamera', "exposureTime"))
     readTime = float(config.get('gcamera', "binnedReadTime"))
-    masterThread.set_time(gState, expTime, 1, readTime)
+    #masterThread.set_time(gState, expTime, 1, readTime)
     gState.gcameraPixelSize = float(config.get('gcamera', "pixelSize"))
     gState.gcameraMagnification = float(config.get('gcamera', "magnification"))
 
