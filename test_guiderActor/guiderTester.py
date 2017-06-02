@@ -6,10 +6,10 @@ Example:
         def setUp(self):
             #do some stuff
             super(TestGuiderImage,self).setUp())
-    
+
         def test_guiderImageThingy(self):
             self.call_gi(filename)
-    
+
     if __name__ == '__main__':
         unittest.main()
 """
@@ -23,7 +23,7 @@ from actorcore import TestHelper
 from guiderActor.gimg import guiderImage
 from guiderActor import GuiderState
 import guiderActor.myGlobals as myGlobals
-from guiderActor.guiderActor_main import set_default_pids, set_pid_scaling
+from guiderActor.GuiderActor import set_default_pids, set_pid_scaling
 
 gprobeKey = {}
 guideInfoKey = {}
@@ -48,6 +48,7 @@ def updateModel(name,model):
     """Update the named actorState model with new parameters."""
     myGlobals.actorState.models[name] = TestHelper.Model(name,model)
 
+
 class GuiderTester(TestHelper.ActorTester):
     """
     guiderActor test suites should subclass this and unittest, in that order.
@@ -56,18 +57,20 @@ class GuiderTester(TestHelper.ActorTester):
         """Populate fake guide probes, etc."""
         self.verbose = True
         self.name = 'guider'
-        super(GuiderTester,self).setUp()
+        self.actor = TestHelper.FakeActor(self.name, self.name + 'Actor')
+        super(GuiderTester, self).setUp()
         myGlobals.actorState = self.actorState
         self.setPoint_good = -40
         self.setPoint_bad = -35
         self.gi = guiderImage.GuiderImageAnalysis(self.setPoint_good)
         gState = GuiderState.GuiderState()
-        myGlobals.actorState.gState = gState
+        self.gState = gState
+        myGlobals.actorState.gState = self.gState
 
-        self.config = ConfigParser.ConfigParser()
-        self.config.read('../etc/guider.cfg')
-        set_default_pids(self.config, gState)
-        set_pid_scaling(self.config, gState)
+        # self.config = ConfigParser.ConfigParser()
+        # self.config.read('../etc/guider.cfg')
+        # set_default_pids(self.config, gState)
+        # set_pid_scaling(self.config, gState)
 
         self.probeNames = {}
         for name in gprobeKey:
@@ -78,7 +81,7 @@ class GuiderTester(TestHelper.ActorTester):
             if 'disabled' in name:
                 gState.gprobes[gk[1]].disabled = True
         self.gState = gState
-    
+
     def _call_gi(self,filename,setpoint=None,args=[]):
         """Use this to simplify calls to guiderImageAnalysis."""
         if setpoint is None: setpoint = self.setPoint_good
