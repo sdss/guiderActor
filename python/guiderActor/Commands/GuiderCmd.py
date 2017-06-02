@@ -168,12 +168,13 @@ class GuiderCmd(object):
 
         if not what:
             cmd.fail("text=\"Impossible condition in setPID\"")
+            return
 
         Kp = cmd.cmd.keywords["Kp"].values[0]
-        Ti = cmd.cmd.keywords["Ti"].values[0] if "Ti" in cmd.cmd.keywords else 0
-        Td = cmd.cmd.keywords["Td"].values[0] if "Td" in cmd.cmd.keywords else 0
-        Imax = cmd.cmd.keywords["Imax"].values[0] if "Imax" in cmd.cmd.keywords else 0
-        nfilt = cmd.cmd.keywords["nfilt"].values[0] if "nfilt" in cmd.cmd.keywords else 0
+        Ti = cmd.cmd.keywords["Ti"].values[0] if "Ti" in cmd.cmd.keywords else None
+        Td = cmd.cmd.keywords["Td"].values[0] if "Td" in cmd.cmd.keywords else None
+        Imax = cmd.cmd.keywords["Imax"].values[0] if "Imax" in cmd.cmd.keywords else None
+        nfilt = cmd.cmd.keywords["nfilt"].values[0] if "nfilt" in cmd.cmd.keywords else None
 
         myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.SET_PID, cmd=cmd, axis=what,
                                                                 Kp=Kp, Ti=Ti, Td=Td, Imax=Imax,
