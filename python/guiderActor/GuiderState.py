@@ -422,6 +422,19 @@ class GuiderState(object):
         for key in kwargs:
             self.pid_defaults[axis][key] = kwargs[key]
 
+    def reset_pid_defaults(self, terms=None):
+        """Resets the PID coefficients to the default ones."""
+
+        if terms is None:
+            terms = self.pid.keys()
+
+        for term in terms:
+            coeffs = self.pid_defaults[term].copy()
+            coeffs['Ti'] = coeffs['Ti_min']
+            coeffs.pop('Ti_min')
+            coeffs.pop('Ti_max')
+            self.pid[term].setPID(**coeffs)
+
     def reset_pid_terms(self, terms=None):
         """Reset all PID terms, or just those listed."""
         if terms == None:

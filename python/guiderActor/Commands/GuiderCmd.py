@@ -80,6 +80,7 @@ class GuiderCmd(object):
             ("off", "", self.guideOff),
             ("setExpTime", "<time> [<stack>]", self.setExpTime),
             ("setPID", "(raDec|rot|focus|scale) <Kp> [<Ti>] [<Td>] [<Imax>] [nfilt]", self.setPID),
+            ('resetPID', '[(raDec|rot|focus|scale)]', self.resetPID),
             ("disable", "<fibers>|<gprobes>", self.disableFibers),
             ("enable", "<fibers>|<gprobes>", self.enableFibers),
             ("loadCartridge", "[<cartridge>] [<pointing>] [<plate>] [<mjd>] [<fscanId>] [<guideWavelength>] [force]", self.loadCartridge),
@@ -168,16 +169,34 @@ class GuiderCmd(object):
 
         if not what:
             cmd.fail("text=\"Impossible condition in setPID\"")
+            return
 
         Kp = cmd.cmd.keywords["Kp"].values[0]
-        Ti = cmd.cmd.keywords["Ti"].values[0] if "Ti" in cmd.cmd.keywords else 0
-        Td = cmd.cmd.keywords["Td"].values[0] if "Td" in cmd.cmd.keywords else 0
-        Imax = cmd.cmd.keywords["Imax"].values[0] if "Imax" in cmd.cmd.keywords else 0
-        nfilt = cmd.cmd.keywords["nfilt"].values[0] if "nfilt" in cmd.cmd.keywords else 0
+        Ti = cmd.cmd.keywords["Ti"].values[0] if "Ti" in cmd.cmd.keywords else None
+        Td = cmd.cmd.keywords["Td"].values[0] if "Td" in cmd.cmd.keywords else None
+        Imax = cmd.cmd.keywords["Imax"].values[0] if "Imax" in cmd.cmd.keywords else None
+        nfilt = cmd.cmd.keywords["nfilt"].values[0] if "nfilt" in cmd.cmd.keywords else None
 
         myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.SET_PID, cmd=cmd, axis=what,
                                                                 Kp=Kp, Ti=Ti, Td=Td, Imax=Imax,
                                                                 nfilt=nfilt))
+
+    def resetPID(self, cmd):
+        """Resets all or some of the PIDs terms to their default value."""
+
+        if len(cmd.cmd.keywords) == 1:
+            terms = [cmd.cmd.keywords[0].name]
+            cmd.inform('text="reseting PID terms for {0}"'.format(terms[0]))
+        elif len(cmd.cmd.keywords) == 0:
+            terms = None
+            cmd.inform('text="reseting all PID terms"')
+        else:
+            cmd.fail('text="failed"')
+            return
+
+        myGlobals.actorState.gState.reset_pid_defaults(terms=terms)
+
+        myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.STATUS, cmd=cmd, finish=True))
 
     def guideOn(self, cmd):
         """Turn guiding on"""
@@ -191,6 +210,7 @@ class GuiderCmd(object):
         myGlobals.actorState.queues[guiderActor.MASTER].put(Msg(Msg.START_GUIDING, cmd=cmd,
                                                                 expTime=expTime, stack=stack, camera=camera,
                                                                 force=force, oneExposure=oneExposure))
+
     def guideOff(self, cmd):
         """Turn guiding off"""
 
