@@ -290,7 +290,7 @@ class GuiderState(object):
         self.setGuideMode("focus")
         self.setGuideMode("scale")
         self.refractionBalance = 0
-        self.guiderWavelength = -1
+        self.guideWavelength = -1
 
         # Will contain [id]:gProbe pairs
         self.gprobes = {}
