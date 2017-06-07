@@ -3,6 +3,11 @@ bin/bad_gimg_search.py -text
 bin/convertPlPlugMap.py -text
 bin/darksStackFlow.py -text
 bin/extract_headers.py -text
+<<<<<<< HEAD
+=======
+bin/getGProbeInfo.py -text
+bin/guiderActor_main.py -text
+>>>>>>> 7d5dd2b... added guiderActor_main into bin
 bin/guiderToDs9 -text
 bin/guider_movie.py -text
 bin/open_shutter_search.py -text
@@ -12,9 +17,19 @@ etc/config.ini -text
 etc/gcamFiberInfo.par -text
 etc/guider.cfg -text
 etc/guiderActor.module -text
+<<<<<<< HEAD
 include/ipGguide.h -text
 include/shLegacy.h -text
 python/guiderActor/Commands/GuiderCmd.py -text
+=======
+etc/guider_APO.cfg -text
+etc/guider_LCO.cfg -text
+etc/guider_LOCAL.cfg -text
+python/guiderActor/Commands/GuiderCmd.py -text
+python/guiderActor/Commands/GuiderCmd_APO.py -text
+python/guiderActor/Commands/GuiderCmd_LCO.py -text
+python/guiderActor/Commands/GuiderCmd_LOCAL.py -text
+>>>>>>> 3cd55d1... fixing GuiderActor
 python/guiderActor/Commands/__init__.py -text
 python/guiderActor/GuiderState.py -text
 python/guiderActor/PID.py -text
