@@ -1168,6 +1168,9 @@ def main(actor, queues):
                 camera = getattr(msg,'camera','gcamera')
 
                 frameInfo = guideStep(actor, queues, msg.cmd, gState, msg.filename, oneExposure, guiderImageAnalysis, camera=camera)
+                if not gState.cmd:
+                    continue
+
                 gState.inMotion = False
 
                 # output the keywords after the decenter changes, and finish the command.
@@ -1294,7 +1297,7 @@ def main(actor, queues):
                     srcProbe = gState.allProbes[w]
                     srcX = srcProbe.xFocal
                     srcY = srcProbe.yFocal
-                    
+
                 else:
                     srcProbe = None
                     srcX, srcY = 0.0, 0.0
