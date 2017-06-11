@@ -7,7 +7,7 @@ Change Log
 This document records the main changes to the guiderActor code.
 
 .. _changelog-v3_7:
-v3_7 (unreleased)
+v3_7 (2017-06-11)
 -----------------
 
 Added
@@ -19,6 +19,7 @@ Fixed
 ^^^^^
 * Ticket `#2729 <https://trac.sdss.org/ticket/2729>`_: Incorrect guider behavior when PID coefficients adjusted during MANGA exposures
 * Ticket `#2759 <https://trac.sdss.org/ticket/2759>`_: Misbehavior of SOP bypasses. Restores some keywords for ``setRefractionBalance`` that allow SOP bypasses to work.
+* Cleaner exit when ``guiderStep`` fails.
 
 
 .. x.y.z (unreleased)
