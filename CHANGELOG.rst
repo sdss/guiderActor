@@ -6,6 +6,23 @@ Change Log
 
 This document records the main changes to the guiderActor code.
 
+.. _changelog-v3_8_0:
+
+v3_8_0 (unreleased)
+-----------------
+
+Added
+^^^^^
+
+* Implemented use of ``bumpversion``.
+* Implemented ``GuiderActor.version`` (needs ``actorcore >= v4_1_3``).
+
+Removed
+^^^^^^^
+
+- ``python/guiderActor/obsolete`` (as for ticket `#2596 <https://trac.sdss.org/ticket/2596>`_).
+
+
 .. _changelog-v3_7:
 v3_7 (2017-06-11)
 -----------------
