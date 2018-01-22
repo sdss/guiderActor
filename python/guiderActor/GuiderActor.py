@@ -73,7 +73,7 @@ class GuiderActor(actorcore.Actor.SDSSActor):
     def __init__(self, name, debugLevel=30, productName=None, makeCmdrConnection=True):
         actorcore.Actor.Actor.__init__(self, name, productName=productName, makeCmdrConnection=makeCmdrConnection)
 
-        self.headURL = '$HeadURL$'
+        self.version = guiderActor.__version__
 
         self.logger.setLevel(debugLevel)
         self.logger.propagate = True
@@ -208,4 +208,3 @@ class GuiderActorLocal(GuiderActor):
 
     def guidingIsOk(self, cmd, actorState, force=False):
         return True
-
