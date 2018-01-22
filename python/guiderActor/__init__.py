@@ -16,7 +16,7 @@ class Msg(object):
     HIGH = 2
     MEDIUM = 4
     NORMAL = 6
-    
+
     # Command types; use classes so that the unique IDs are automatically generated
     class START_GUIDING(): pass
     class STOP_GUIDING(): pass
@@ -44,7 +44,7 @@ class Msg(object):
     class SET_REFRACTION(): pass
     class STAR_IN_FIBER(): pass
     class MAKE_MOVIE(): pass
-    
+
     def __init__(self, type, cmd, **data):
         self.type = type
         self.cmd = cmd
@@ -69,7 +69,7 @@ class Msg(object):
 
 def flushQueue(queue):
     """flush queue"""
-    
+
     while True:
         try:
             msg = queue.get(timeout=0)
@@ -77,3 +77,5 @@ def flushQueue(queue):
             return
 
 __all__ = ["MASTER", "GCAMERA", "MOVIE", "Msg"]
+
+__version__ = 'v3_8_0dev'
