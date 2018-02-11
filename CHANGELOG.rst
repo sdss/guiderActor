@@ -16,6 +16,7 @@ Added
 
 * Implemented use of ``bumpversion``.
 * Implemented ``GuiderActor.version`` (needs ``actorcore >= v4_1_3``).
+* Ticket `#2030 <https://trac.sdss.org/ticket/2030>`_: proc-gimg shows parameters we are guiding on.
 
 Modified
 ^^^^^^^^
