@@ -27,7 +27,7 @@ Modified
 Removed
 ^^^^^^^
 
-- ``python/guiderActor/obsolete`` (as for ticket `#2596 <https://trac.sdss.org/ticket/2596>`_).
+* ``python/guiderActor/obsolete`` (as for ticket `#2596 <https://trac.sdss.org/ticket/2596>`_).
 
 
 .. _changelog-v3_7:
