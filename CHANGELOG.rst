@@ -6,9 +6,9 @@ Change Log
 
 This document records the main changes to the guiderActor code.
 
-.. _changelog-v3_8_0:
+.. _changelog-3.8.0:
 
-v3_8_0 (unreleased)
+3.8.0 (unreleased)
 -----------------
 
 Added
@@ -16,6 +16,12 @@ Added
 
 * Implemented use of ``bumpversion``.
 * Implemented ``GuiderActor.version`` (needs ``actorcore >= v4_1_3``).
+
+Modified
+^^^^^^^^
+
+* Using ``X.Y.Z`` instead of ``vX_Y_Z``.
+* Updated ``gcamFiberInfo.par``.
 
 Removed
 ^^^^^^^

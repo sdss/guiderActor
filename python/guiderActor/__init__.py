@@ -78,4 +78,4 @@ def flushQueue(queue):
 
 __all__ = ["MASTER", "GCAMERA", "MOVIE", "Msg"]
 
-__version__ = 'v3_8_0dev'
+__version__ = '3.8.0'
