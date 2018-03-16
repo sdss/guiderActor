@@ -132,61 +132,75 @@ def prep_for_flat(cmd, gState, actorState):
     return True
 
 
-def _do_one_fiber(fiber, gState, cmd, frameInfo, haLimWarn):
+def get_fiber_dra_ddec(fiber, gState, cmd, frameInfo, haLimWarn):
+    """Returns dRA and dDec for a given fibre.
+
+    - Derotates to sky.
+    - Applies refraction correction.
+    - Applies decentering.
+
     """
-    Process one single fiber, computing various scales and corrections.
-    """
+
     gProbe = fiber.gProbe
 
     # dx, dy are the offsets on the ALTA guider image
-    fiber.dx = frameInfo.guideCameraScale*(fiber.xs - fiber.xcen) + (gProbe.xFerruleOffset / 1000.)
-    fiber.dy = frameInfo.guideCameraScale*(fiber.ys - fiber.ycen) + (gProbe.yFerruleOffset / 1000.)
+    fiber.dx = frameInfo.guideCameraScale * \
+        (fiber.xs - fiber.xcen) + (gProbe.xFerruleOffset / 1000.)
+    fiber.dy = frameInfo.guideCameraScale * \
+        (fiber.ys - fiber.ycen) + (gProbe.yFerruleOffset / 1000.)
     poserr = fiber.xyserr
 
     # theta is the angle to rotate (x, y) on the ALTA to (ra, alt)
     # phi is the orientation of the alignment hole measured clockwise from N
     # rotation is the anticlockwise rotation from x on the ALTA to the pin
     theta = 90                   # allow for 90 deg rot of camera view, should be -90
-    theta += gProbe.rotation # allow for intrinsic fibre rotation
+    theta += gProbe.rotation     # allow for intrinsic fibre rotation
     try:
         theta -= gProbe.phi      # allow for orientation of alignment hole
     except Exception as e:
         cmd.warn('text="skipping phi-less probe %s"' % (fiber.fiberid))
         return
 
-    gProbe.rotStar2Sky = theta # Squirrel the real angle away.
+    gProbe.rotStar2Sky = theta  # Squirrel the real angle away.
 
-    #FIXME PH -- We should ignore gprobes not present on plate/pointing (MARVELS dual pointing)
-    #               and ignore fibers not found in flat.
-    #            However we probably want to record values of disabled fibers for diagnosis
+    # FIXME PH -- We should ignore gprobes not present on plate/pointing (MARVELS dual pointing)
+    #             and ignore fibers not found in flat.
+    #             However we probably want to record values of disabled fibers for diagnosis
     if numpy.isnan(fiber.dx) or numpy.isnan(fiber.dy) or numpy.isnan(poserr):
-        cmd.warn("text=%s" %
-                      qstr("NaN in analysis for gprobe %d star=(%g, %g) fiber measured=(%g, %g), nominal=(%g,%g)" % (
-                          fiber.fiberid, fiber.xs, fiber.ys, fiber.xcen, fiber.ycen, gProbe.xCenter, gProbe.yCenter)))
+        cmd.warn('text=%s' %
+                 qstr('NaN in analysis for gprobe %d star=(%g, %g) fiber '
+                      'measured=(%g, %g), nominal=(%g,%g)' % (fiber.fiberid, fiber.xs,
+                                                              fiber.ys, fiber.xcen,
+                                                              fiber.ycen, gProbe.xCenter,
+                                                              gProbe.yCenter)))
         return
 
     if fiber.flux < frameInfo.minStarFlux:
-        cmd.warn("text=%s" %
-                      qstr("Star in gprobe %d too faint for guiding flux %g < %g minimum flux" % (
-                          fiber.fiberid, fiber.flux, frameInfo.minStarFlux)))
+        cmd.warn('text=%s' %
+                 qstr('Star in gprobe %d too faint for guiding '
+                      'flux %g < %g minimum flux' % (fiber.fiberid, fiber.flux,
+                                                     frameInfo.minStarFlux)))
         gProbe.tooFaint = True
     else:
         gProbe.tooFaint = False
 
     if poserr == 0:
-        cmd.warn("text=%s" %
-                      qstr("position error is 0 for gprobe %d star=(%g, %g) fiber=(%g, %g) nominal=(%g,%g)" % (
-                          fiber.fiberid, fiber.xs, fiber.ys, fiber.xcen, fiber.ycen, gProbe.xCenter, gProbe.yCenter)))
+        cmd.warn('text=%s' %
+                 qstr('position error is 0 for gprobe %d star=(%g, %g) '
+                      'fiber=(%g, %g) nominal=(%g,%g)' % (fiber.fiberid, fiber.xs,
+                                                          fiber.ys, fiber.xcen,
+                                                          fiber.ycen, gProbe.xCenter,
+                                                          gProbe.yCenter)))
         return
 
     theta = math.radians(theta)
     ct, st = math.cos(theta), math.sin(theta)
     # error in guide star position; n.b. still in mm here
-    dRA   =  fiber.dx*ct + fiber.dy*st
-    dDec  = -fiber.dx*st + fiber.dy*ct
+    dRA = fiber.dx * ct + fiber.dy * st
+    dDec = -fiber.dx * st + fiber.dy * ct
     dDec *= -1
 
-    #FIXME PH -- calc dAlt and dAz for guiding diagnostics,(output as part of fiber?)
+    # FIXME PH -- calc dAlt and dAz for guiding diagnostics,(output as part of fiber?)
 
     # Apply refraction correction
     xRefractCorr = 0.0
@@ -199,12 +213,14 @@ def _do_one_fiber(fiber, gState, cmd, frameInfo, haLimWarn):
                 haTimes = gProbe.haOffsetTimes[frameInfo.wavelength]
                 if frameInfo.dHA < haTimes[0]:
                     if not haLimWarn:
-                        cmd.warn('text="dHA (%0.1f) is below interpolation table; using limit (%0.1f)"' % (frameInfo.dHA, haTimes[0]))
+                        cmd.warn('text="dHA (%0.1f) is below interpolation table; '
+                                 'using limit (%0.1f)"' % (frameInfo.dHA, haTimes[0]))
                         haLimWarn = True
                     haTime = haTimes[0]
                 elif frameInfo.dHA > haTimes[-1]:
                     if not haLimWarn:
-                        cmd.warn('text="dHA (%0.1f) is above interpolation table; using limit (%0.1f)"' % (frameInfo.dHA, haTimes[-1]))
+                        cmd.warn('text="dHA (%0.1f) is above interpolation table; '
+                                 'using limit (%0.1f)"' % (frameInfo.dHA, haTimes[-1]))
                         haLimWarn = True
                     haTime = haTimes[-1]
                 else:
@@ -219,7 +235,8 @@ def _do_one_fiber(fiber, gState, cmd, frameInfo, haLimWarn):
                 yRefractCorr = gState.refractionBalance * yInterp(haTime)
             else:
                 # JKP: TODO: these warnings might be excessive?
-                cmd.warn('text="No HA Offset Time available for probe %d at wavelength %d. No refraction offset calculated."'%(gProbe.id,frameInfo.wavelength))
+                cmd.warn('text="No HA Offset Time available for probe %d at wavelength %d. '
+                         'No refraction offset calculated."' % (gProbe.id, frameInfo.wavelength))
         else:
             # Don't do anything if the refraction balance is 0.
             pass
@@ -227,11 +244,10 @@ def _do_one_fiber(fiber, gState, cmd, frameInfo, haLimWarn):
         cmd.diag('text="failed to calc refraction offsets for %s: %s"' % (frameInfo.wavelength, e))
         pass
 
-    cmd.inform('refractionOffset=%d,%d,%0.1f,%0.4f,%0.6f,%0.6f' % (frameInfo.frameNo, fiber.fiberid,
-                                                                        gState.refractionBalance,
-                                                                        haTime,
-                                                                        xRefractCorr*frameInfo.arcsecPerMM,
-                                                                        yRefractCorr*frameInfo.arcsecPerMM))
+    cmd.inform('refractionOffset=%d,%d,%0.1f,%0.4f,%0.6f,%0.6f' %
+               (frameInfo.frameNo, fiber.fiberid, gState.refractionBalance, haTime,
+                xRefractCorr * frameInfo.arcsecPerMM, yRefractCorr * frameInfo.arcsecPerMM))
+
     dRA -= xRefractCorr
     dDec -= yRefractCorr
 
@@ -239,41 +255,55 @@ def _do_one_fiber(fiber, gState, cmd, frameInfo, haLimWarn):
     # The guiderRMS will be calculated around the new effective fiber centers
     if gState.decenter:
         # apply decenter offset so that telescope moves (not the star)
-        dRA  += gState.decenterRA/frameInfo.arcsecPerMM
-        dDec += gState.decenterDec/frameInfo.arcsecPerMM
-        #decenterRot applied after guide solution
+        dRA += gState.decenterRA / frameInfo.arcsecPerMM
+        dDec += gState.decenterDec / frameInfo.arcsecPerMM
+        # decenterRot applied after guide solution
+
+    return dRA, dDec
+
+
+def _do_one_fiber(fiber, gState, cmd, frameInfo, haLimWarn):
+    """Process one single fiber, computing various scales and corrections."""
+
+    gProbe = fiber.gProbe
+
+    result = get_fiber_dra_ddec(fiber, gState, cmd, frameInfo, haLimWarn)
+    if result is None:
+        return
+
+    dRA, dDec = result
 
     fiber.dRA = dRA
     fiber.dDec = dDec
-    raCenter  = gProbe.xFocal
+    raCenter = gProbe.xFocal
     decCenter = gProbe.yFocal
 
-    cmd.inform("probe=%d,%2d,0x%02x, %7.2f,%7.2f, %7.3f,%4.0f, %7.2f,%6.2f,%6.2f, %7.2f,%6.2f" % (
-        frameInfo.frameNo, fiber.fiberid, gProbe.gprobebits,
-        fiber.dRA*frameInfo.arcsecPerMM, fiber.dDec*frameInfo.arcsecPerMM,
-        fiber.fwhm, gProbe.focusOffset,
-        fiber.flux, fiber.mag, gProbe.ref_mag, fiber.sky, fiber.skymag))
+    cmd.inform('probe=%d,%2d,0x%02x, %7.2f,%7.2f, %7.3f,%4.0f, %7.2f,%6.2f,%6.2f, %7.2f,%6.2f' %
+               (frameInfo.frameNo, fiber.fiberid, gProbe.gprobebits,
+                fiber.dRA * frameInfo.arcsecPerMM, fiber.dDec * frameInfo.arcsecPerMM,
+                fiber.fwhm, gProbe.focusOffset,
+                fiber.flux, fiber.mag, gProbe.ref_mag, fiber.sky, fiber.skymag))
 
     if gProbe.tooFaint:
         return
 
-    #Collect fwhms for good in focus stars
+    # Collect fwhms for good in focus stars
     if gProbe.atFocus and gProbe.good:
         frameInfo.inFocusFwhm.append(fiber.fwhm)
 
-    #accumulate guiding errors for good stars used in fit
+    # accumulate guiding errors for good stars used in fit
     frameInfo.guideRMS += fiber.dx**2 + fiber.dy**2
     frameInfo.guideXRMS += fiber.dx**2
     frameInfo.guideYRMS += fiber.dy**2
     frameInfo.nguideRMS += 1
     frameInfo.guideRaRMS += dRA**2
     frameInfo.guideDecRMS += dDec**2
-    #guideAzRMS += fiber.dAz**2
-    #guideAltRMS += fiber.dAlt**2
+    # guideAzRMS += fiber.dAz**2
+    # guideAltRMS += fiber.dAlt**2
 
     frameInfo.b[0] += dRA
     frameInfo.b[1] += dDec
-    frameInfo.b[2] += raCenter*dDec - decCenter*dRA
+    frameInfo.b[2] += raCenter * dDec - decCenter * dRA
 
     frameInfo.A[0, 0] += 1
     frameInfo.A[0, 1] += 0
@@ -283,13 +313,13 @@ def _do_one_fiber(fiber, gState, cmd, frameInfo, haLimWarn):
     frameInfo.A[1, 1] += 1
     frameInfo.A[1, 2] += raCenter
 
-    frameInfo.A[2, 2] += raCenter*raCenter + decCenter*decCenter
+    frameInfo.A[2, 2] += raCenter * raCenter + decCenter * decCenter
 
     # Now scale.  We don't actually solve for scale and axis updates
     # simultanously, and we don't allow for the axis update when
     # estimating the scale.
-    frameInfo.b3 += raCenter*dRA + decCenter*dDec
-#...
+    frameInfo.b3 += raCenter * dRA + decCenter * dDec
+
 
 def _find_focus_one_fiber(fiber,gState,frameInfo,C,A,b):
     """Accumulate the focus for one fiber into A and b."""
