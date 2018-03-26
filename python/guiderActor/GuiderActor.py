@@ -112,6 +112,8 @@ class GuiderActor(actorcore.Actor.SDSSActor):
         set_telescope(self.config, gState)
         set_gcamera(self.config, gState)
 
+        gState.fitting_algorithm = self.config.get('general', 'fitting_algorithm')
+
 
 class GuiderActorAPO(GuiderActor):
     """APO version of this actor."""

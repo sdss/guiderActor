@@ -29,50 +29,51 @@ class GuiderCmd(object):
         #
         # Declare keys that we're going to use
         #
-        self.keys = keys.KeysDictionary("guider_guider", (2, 1),
-                                        keys.Key("cartridge", types.Int(), help="A cartridge ID"),
-                                        keys.Key("fscanId", types.Int(), help="The fscanId identifying a plate scanning"),
-                                        keys.Key("mjd", types.Int(), help="The MJD when a plate was scanned"),
-                                        keys.Key("plate", types.Int(), help="A plugplate ID"),
-                                        keys.Key("guideWavelength", types.Float(), help="The wavelength at which to guide"),
-                                        keys.Key("fibers", types.Int()*(1,None), help="A list of fibers"),
-                                        keys.Key("probe", types.Int(), help="A probe ID, 1-indexed"),
-                                        keys.Key("gprobe", types.Int(), help="A probe ID, 1-indexed"),
-                                        keys.Key("fromProbe", types.Int(), help="A probe ID, 1-indexed"),
-                                        keys.Key("fromGprobe", types.Int(), help="A probe ID, 1-indexed"),
-                                        keys.Key("pointing", types.String(),
-                                                 help="A pointing for the given plugplate"),
-                                        keys.Key("time", types.Float(), help="Exposure time for guider"),
-                                        keys.Key("force", help="Force requested action to happen"),
-                                        keys.Key("gprobes", types.Enum("acquire", "guide"), help="Type of gprobe"),
-                                        keys.Key("oneExposure", help="Take just one exposure"),
-                                        keys.Key("Kp", types.Float(), help="Proportional gain"),
-                                        keys.Key("Ti", types.Float(), help="Integral time"),
-                                        keys.Key("Td", types.Float(), help="Derivative time"),
-                                        keys.Key("Imax", types.Float(), help="|maximum value of I| (-ve to disable)"),
-                                        keys.Key("nfilt", types.Int(), help="number of input readings to filter with."),
-                                        keys.Key("geek", help="Show things that only some of us love"),
-                                        keys.Key("cartfile", types.String(), help="cartridge file"),
-                                        keys.Key("plugfile", types.String(), help="plugmap file"),
-                                        keys.Key("file", types.String(), help="guider file"),
-                                        keys.Key("decenterRA", types.Float(), help="Telescope absolute offset for guiding in RA arcsec"),
-                                        keys.Key("decenterDec", types.Float(), help="Telescope absolute offset for guiding in Dec arcsec"),
-                                        keys.Key("decenterRot", types.Float(), help="Telescope absolute offset for guiding in Rot"),
-                                        keys.Key("ditherPos", types.String(),  help="Named MaNGA guider dither position"),
-                                        keys.Key("scale", types.Float(), help="Current scale from \"tcc show scale\""),
-                                        keys.Key("delta", types.Float(), help="Delta scale (percent)"),
-                                        keys.Key("stack", types.Int(), help="number of itime gcamera integrations to request per exposure."),
-                                        keys.Key("corrRatio", types.Float(),
-                                                 help="How much refraction correction to apply (0..)"),
-                                        keys.Key("plateType", types.String(),
-                                                 help="Name of the current plateType (survey concatenation)"),
-                                        keys.Key("surveyMode", types.String(),
-                                                 help="Name of the current surveyMode"),
-                                        keys.Key("movieMJD", types.String(), help="The MJD that we want to generate the movie for."),
-                                        keys.Key("start", types.Int(), help="Guider frame number to start the movie at."),
-                                        keys.Key("end", types.Int(), help="Guider frame number to end the movie at."),
-                                        keys.Key("bin", types.Int(), help="bin factor for exposure"),
-                                        )
+        self.keys = keys.KeysDictionary(
+            "guider_guider", (2, 1),
+            keys.Key("cartridge", types.Int(), help="A cartridge ID"),
+            keys.Key("fscanId", types.Int(), help="The fscanId identifying a plate scanning"),
+            keys.Key("mjd", types.Int(), help="The MJD when a plate was scanned"),
+            keys.Key("plate", types.Int(), help="A plugplate ID"),
+            keys.Key("guideWavelength", types.Float(), help="The wavelength at which to guide"),
+            keys.Key("fibers", types.Int()*(1,None), help="A list of fibers"),
+            keys.Key("probe", types.Int(), help="A probe ID, 1-indexed"),
+            keys.Key("gprobe", types.Int(), help="A probe ID, 1-indexed"),
+            keys.Key("fromProbe", types.Int(), help="A probe ID, 1-indexed"),
+            keys.Key("fromGprobe", types.Int(), help="A probe ID, 1-indexed"),
+            keys.Key("pointing", types.String(),
+                     help="A pointing for the given plugplate"),
+            keys.Key("time", types.Float(), help="Exposure time for guider"),
+            keys.Key("force", help="Force requested action to happen"),
+            keys.Key("gprobes", types.Enum("acquire", "guide"), help="Type of gprobe"),
+            keys.Key("oneExposure", help="Take just one exposure"),
+            keys.Key("Kp", types.Float(), help="Proportional gain"),
+            keys.Key("Ti", types.Float(), help="Integral time"),
+            keys.Key("Td", types.Float(), help="Derivative time"),
+            keys.Key("Imax", types.Float(), help="|maximum value of I| (-ve to disable)"),
+            keys.Key("nfilt", types.Int(), help="number of input readings to filter with."),
+            keys.Key("geek", help="Show things that only some of us love"),
+            keys.Key("cartfile", types.String(), help="cartridge file"),
+            keys.Key("plugfile", types.String(), help="plugmap file"),
+            keys.Key("file", types.String(), help="guider file"),
+            keys.Key("decenterRA", types.Float(), help="Telescope absolute offset for guiding in RA arcsec"),
+            keys.Key("decenterDec", types.Float(), help="Telescope absolute offset for guiding in Dec arcsec"),
+            keys.Key("decenterRot", types.Float(), help="Telescope absolute offset for guiding in Rot"),
+            keys.Key("ditherPos", types.String(),  help="Named MaNGA guider dither position"),
+            keys.Key("scale", types.Float(), help="Current scale from \"tcc show scale\""),
+            keys.Key("delta", types.Float(), help="Delta scale (percent)"),
+            keys.Key("stack", types.Int(), help="number of itime gcamera integrations to request per exposure."),
+            keys.Key("corrRatio", types.Float(),
+                     help="How much refraction correction to apply (0..)"),
+            keys.Key("plateType", types.String(),
+                     help="Name of the current plateType (survey concatenation)"),
+            keys.Key("surveyMode", types.String(), help="Name of the current surveyMode"),
+            keys.Key("movieMJD", types.String(), help="The MJD that we want to generate the movie for."),
+            keys.Key("start", types.Int(), help="Guider frame number to start the movie at."),
+            keys.Key("end", types.Int(), help="Guider frame number to end the movie at."),
+            keys.Key("bin", types.Int(), help="bin factor for exposure"),
+            keys.Key('algorithm', types.String(), help='The fitting algorithm to use.'),
+        )
         #
         # Declare commands
         #
@@ -107,6 +108,7 @@ class GuiderCmd(object):
             ('setRefractionBalance', '[<corrRatio>] [<plateType>] [<surveyMode>]', self.setRefractionBalance),
             ('makeMovie', '[<movieMJD>] <start> <end>', self.makeMovie),
             ('findstar', '[<time>] [<bin>]', self.ecam_findstar),
+            ('setFittingAlgorithm', '<algorithm>', self.setFittingAlgorithm)
             ]
     #
     # Define commands' callbacks
@@ -670,3 +672,11 @@ class GuiderCmd(object):
         queue = myGlobals.actorState.queues[guiderActor.MASTER]
         queue.put(Msg(Msg.START_GUIDING, cmd=cmd, expTime=time, oneExposure=True,
                   bin=bin, camera='ecamera'))
+
+    def setFittingAlgorithm(self, cmd):
+        """Sets the fitting algorithm."""
+
+        algorithm = cmd.cmd.keywords['algorithm'].values[0]
+        myGlobals.actorState.gState.fitting_algorithm = algorithm
+
+        cmd.inform('algorithm="{}"'.format(algorithm))

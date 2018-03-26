@@ -309,6 +309,9 @@ class GuiderState(object):
         self.alt_min = 90.
         self.alt_max = 90.
 
+        # Algorithm to use
+        self.fitting_algorithm = None
+
         # reset the decenter positions.
         self.clearDecenter()
     #...
