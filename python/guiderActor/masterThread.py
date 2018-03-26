@@ -621,6 +621,8 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
                      'refractionBalance={0.refractionBalance}"'
                      .format(frameInfo))
 
+    guideCmd.inform('text="using algorithm {!r}"'.format(gState.fitting_algorithm))
+
     if gState.fitting_algorithm == 'standard':
         fit_status, fit_values = standard_fitting_algorithm(guideCmd, actorState,
                                                             gState, fibers, frameInfo)

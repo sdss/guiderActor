@@ -676,7 +676,11 @@ class GuiderCmd(object):
     def setFittingAlgorithm(self, cmd):
         """Sets the fitting algorithm."""
 
-        algorithm = cmd.cmd.keywords['algorithm'].values[0]
+        algorithm = cmd.cmd.keywords['algorithm'].values[0].lower()
         myGlobals.actorState.gState.fitting_algorithm = algorithm
+
+        if algorithm not in ['default', 'umeyama']:
+            cmd.error('text="invalid algorithm {!r}"'.format(algorithm))
+            return
 
         cmd.inform('algorithm="{}"'.format(algorithm))
