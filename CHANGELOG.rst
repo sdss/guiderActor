@@ -17,6 +17,7 @@ Added
 * Implemented use of ``bumpversion``.
 * Implemented ``GuiderActor.version`` (needs ``actorcore >= v4_1_3``).
 * Ticket `#2030 <https://trac.sdss.org/ticket/2030>`_: proc-gimg shows parameters we are guiding on.
+* Allows to choose the fitting algorithm between the default, traditional one, and Umeyama. The fitting algorithm can be defined in the configuration file and overridden via de `setFittingAlgorithm` command.
 
 Modified
 ^^^^^^^^
