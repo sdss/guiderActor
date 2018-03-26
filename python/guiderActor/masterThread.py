@@ -16,6 +16,8 @@ import RO
 
 from gimg.guiderImage import GuiderImageAnalysis
 from gimg import GuiderExceptions
+from gimg.umeyama import umeyama
+
 
 def adiff(a1, a2):
     """ return a1-a2, all in degrees. """
@@ -301,6 +303,8 @@ def _do_one_fiber(fiber, gState, cmd, frameInfo, haLimWarn):
     # guideAzRMS += fiber.dAz**2
     # guideAltRMS += fiber.dAlt**2
 
+    frameInfo.nStar += 1
+
     frameInfo.b[0] += dRA
     frameInfo.b[1] += dDec
     frameInfo.b[2] += raCenter * dDec - decCenter * dRA
@@ -321,7 +325,101 @@ def _do_one_fiber(fiber, gState, cmd, frameInfo, haLimWarn):
     frameInfo.b3 += raCenter * dRA + decCenter * dDec
 
 
-def _find_focus_one_fiber(fiber,gState,frameInfo,C,A,b):
+def standard_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
+    """Returns measured axes offsets using the standard algorithm."""
+
+    haLimWarn = False  # So we only warn once about passing the HA limit for refraction balance
+
+    for fiber in fibers:
+        if _check_fiber(fiber, gState, guideCmd):
+            _do_one_fiber(fiber, gState, guideCmd, frameInfo, haLimWarn)
+
+    frameInfo.guideMode(gState)
+
+    nStar = frameInfo.A[0, 0]
+    if nStar == 0 or gState.inMotion:
+        if nStar == 0:
+            guideCmd.warn('text="No stars are available for guiding."')
+        else:
+            guideCmd.warn('text="Telescope moved during exposure -- skipping this image."')
+
+        return None, None
+
+    frameInfo.A[2, 0] = frameInfo.A[0, 2]
+    frameInfo.A[2, 1] = frameInfo.A[1, 2]
+    try:
+        if nStar == 1:
+            guideCmd.warn('text="Only one star is usable"')
+            x = frameInfo.b
+            x[2, 0] = 0  # no rotation
+        else:
+            x = numpy.linalg.solve(frameInfo.A, frameInfo.b)
+
+        # convert from mm to degrees
+        dRA = x[0, 0] / gState.plugPlateScale
+        dDec = x[1, 0] / gState.plugPlateScale
+        dRot = -math.degrees(x[2, 0])  # and from radians to degrees
+        dScale = frameInfo.b3 / frameInfo.A[2, 2]
+
+    except numpy.linalg.LinAlgError:
+        guideCmd.warn('text=%s' % qstr('Unable to solve for axis offsets'))
+
+        return None, None
+
+    return True, (dRA, dDec, dRot, dScale)
+
+
+def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
+    """Returns measured axes offsets using the Umeyama fitting algorithm."""
+
+    haLimWarn = False
+
+    centres = []
+    deltas = []
+
+    for fiber in fibers:
+        if _check_fiber(fiber, gState, guideCmd):
+
+            result = get_fiber_dra_ddec(fiber, gState, guideCmd, frameInfo, haLimWarn)
+            if result is None:
+                continue
+
+            fiber.dRA, fiber.dDec = result
+
+            centres += (fiber.xcen, fiber.ycen)
+            deltas += (fiber.dRA, fiber.dDec)
+
+    frameInfo.nStar = len(centres)
+
+    if frameInfo.nStar == 0:
+        return None, None
+    elif frameInfo.nStar == 1:
+        dRA, dDec = deltas[0]
+        dRot = 0
+        dScale = None
+        return None, (dRA, dDec, dRot, dScale)
+    else:
+        centres = numpy.array(centres).T
+        deltas = numpy.array(deltas).T
+
+        p0 = centres
+        p1 = p0 + deltas
+
+        try:
+            cc, rot, tt = umeyama(p0, p1)
+        except ValueError as ee:
+            guideCmd.warn('text="failed applying Umeyama: {}"'.format(str(ee)))
+            return None, None
+
+            dRA = tt[0] / gState.plugPlateScale
+            dDec = tt[1] / gState.plugPlateScale
+            dRot = -numpy.rad2deg(numpy.arctan2(rot[1, 0], rot[0, 0]))
+            dScale = cc
+
+        return True, (dRA, dDec, dRot, dScale)
+
+
+def _find_focus_one_fiber(fiber, gState, frameInfo, C, A, b):
     """Accumulate the focus for one fiber into A and b."""
     # required?
     if fiber.gProbe is None:
@@ -355,7 +453,7 @@ def _find_focus_one_fiber(fiber,gState,frameInfo,C,A,b):
     A[0, 1] += d*ivar
 
     A[1, 1] += d*d*ivar
-#...
+
 
 def apply_radecrot(cmd, gState, actor, actorState, offsetRa, offsetDec, offsetRot):
     """Finish the calculation for the ra/dec/rot corrections and apply them."""
@@ -405,12 +503,12 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
     """
     # Setup to solve for the axis and maybe scale offsets.  We work consistently
     # in mm on the focal plane, only converting to angles to command the TCC.
-    guideCameraScale = gState.gcameraMagnification*gState.gcameraPixelSize*1e-3 # mm/pixel
-    arcsecPerMM = 3600./gState.plugPlateScale   #arcsec per mm
+    guideCameraScale = gState.gcameraMagnification * gState.gcameraPixelSize * 1e-3  # mm/pixel
+    arcsecPerMM = 3600. / gState.plugPlateScale   # arcsec per mm
     frameNo = int(re.search(r"([0-9]+)\.fits.*$", inFile).group(1))
 
     # Object to gather all per-frame guiding info into.
-    frameInfo = GuiderState.FrameInfo(frameNo,arcsecPerMM,guideCameraScale,gState.plugPlateScale)
+    frameInfo = GuiderState.FrameInfo(frameNo,arcsecPerMM, guideCameraScale, gState.plugPlateScale)
 
     actorState = guiderActor.myGlobals.actorState
     guideCmd = gState.cmd
@@ -421,81 +519,88 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
     flatcart = h.get('FLATCART', None)
     darkfile = h.get('DARKFILE', None)
     if not flatfile:
-        guideCmd.fail('guideState="failed"; text=%s' % qstr("No flat image available"))
+        guideCmd.fail('guideState="failed"; text=%s' % qstr('No flat image available'))
         gState.cmd = None
         return frameInfo
 
     if not darkfile:
-        guideCmd.fail('guideState="failed"; text=%s' % qstr("No dark image available"))
+        guideCmd.fail('guideState="failed"; text=%s' % qstr('No dark image available'))
         gState.cmd = None
         return frameInfo
 
     if flatcart != gState.cartridge:
         if False:
-            guideCmd.fail('guideState="failed"; text=%s' % qstr("Guider flat is for cartridge %d but %d is loaded" % (
-                            flatcart, gState.cartridge)))
+            guideCmd.fail('guideState="failed"; text=%s' % qstr('Guider flat is for cartridge '
+                                                                '%d but %d is loaded' % (
+                                                                    flatcart, gState.cartridge)))
             gState.cmd = None
             return frameInfo
         else:
-            guideCmd.warn("text=%s" % qstr("Guider flat is for cartridge %d but %d is loaded" % (
-                flatcart, gState.cartridge)))
+            guideCmd.warn('text=%s' % qstr('Guider flat is for cartridge %d but %d is loaded' % (
+                                           flatcart, gState.cartridge)))
 
     try:
-        setPoint = actorState.models[camera].keyVarDict["cooler"][0]
+        setPoint = actorState.models[camera].keyVarDict['cooler'][0]
         guideCmd.inform('text="guideStep GuiderImageAnalysis.findStars()..."')
-        fibers = guiderImageAnalysis(cmd,inFile,gState.gprobes,setPoint=setPoint,bypassDark=actorState.bypassDark,camera=camera)
+        fibers = guiderImageAnalysis(cmd, inFile, gState.gprobes, setPoint=setPoint,
+                                     bypassDark=actorState.bypassDark, camera=camera)
         guideCmd.inform("text='GuiderImageAnalysis.findStars() got %i fibers'" % len(fibers))
     except GuiderExceptions.BadReadError as e:
-        guideCmd.warn('text=%s' %qstr("Skipping badly formatted image."))
+        guideCmd.warn('text=%s' % qstr('Skipping badly formatted image.'))
         return frameInfo
     except GuiderExceptions.FlatError as e:
-        guideCmd.fail('guideState="failed"; text=%s' %qstr("Error reading/processing %s flat: %s"%(camera,e)))
+        guideCmd.fail('guideState="failed"; text=%s' %
+                      qstr('Error reading/processing %s flat: %s' % (camera, e)))
         gState.cmd = None
         return frameInfo
     except GuiderExceptions.GuiderError as e:
-        guideCmd.fail('guideState="failed"; text=%s' %qstr("Error processing %s image: %s"%(camera,e)))
+        guideCmd.fail('guideState="failed"; text=%s' %
+                      qstr('Error processing %s image: %s' % (camera, e)))
         gState.cmd = None
         return frameInfo
     except Exception as e:
-        guideCmd.fail('guideState="failed"; text=%s' % qstr("Unknown error in processing guide images: %s" % e))
+        guideCmd.fail('guideState="failed"; text=%s' %
+                      qstr('Unknown error in processing guide images: %s' % e))
         gState.cmd = None
-        tback.tback("GuideTest", e)
+        tback.tback('GuideTest', e)
         return frameInfo
 
     # Don't need to do anything else with ecam images.
     if camera == 'ecamera':
         # No more processing needed, so just write the file.
-        guiderImageAnalysis.writeFITS(actorState.models, guideCmd, frameInfo, gState.gprobes, output_verify=output_verify)
+        guiderImageAnalysis.writeFITS(actorState.models, guideCmd, frameInfo, gState.gprobes,
+                                      output_verify=output_verify)
         return frameInfo
 
-    #
     # N.B. fiber.xFocal and fiber.yFocal are the offsets of the stars
     # wrt the center of the plate in mm; fiber.xcen/star.xs are in pixels,
     # so we need a scale for the guide camera.  Nominally the guide camera
     # has the same scale as the plug plate itself, but maybe it doesn't,
     # so we'll include a possible magnification
-    #
 
     # Grab some times for refraction correction
     longitude = -105.82045
     UTC = RO.Astro.Tm.utcFromPySec(time.time() +
-                                   actorState.models["tcc"].keyVarDict["utc_TAI"][0])
+                                   actorState.models['tcc'].keyVarDict['utc_TAI'][0])
     LST = RO.Astro.Tm.lastFromUT1(UTC, longitude)
 
     try:
         # NEWTCC: is there a better keyword than this to get the current RA?
-        RAkey = actorState.models["tcc"].keyVarDict["objNetPos"][0]
+        RAkey = actorState.models['tcc'].keyVarDict['objNetPos'][0]
         RA = RAkey.getPos()
         HA = adiff(LST, RA)     # The corrections are indexed by degrees, happily.
         frameInfo.dHA = adiff(HA, gState.design_ha)
-    except:
-        guideCmd.error('text="Could not determine current RA from TCC objNetPos. Please issue: tcc show object /full"')
-        guideCmd.warn('text="WARNING: refraction corrections to guiding will not work until this is dealt with."')
+    except Exception:
+        guideCmd.error('text="Could not determine current RA from TCC objNetPos. '
+                       'Please issue: tcc show object /full"')
+        guideCmd.warn('text="WARNING: refraction corrections to guiding will not '
+                      'work until this is dealt with."')
         RA = numpy.nan
         HA = numpy.nan
         frameInfo.dHA = 0
+
     guideCmd.diag('text="LST=%0.4f RA=%0.4f HA=%0.4f desHA=%0.4f dHA=%0.4f"' %
-                  (LST, RA, HA, gState.design_ha,frameInfo.dHA))
+                  (LST, RA, HA, gState.design_ha, frameInfo.dHA))
 
     # scale the PID values to function better at high alt.
     scale_pid_with_alt(guideCmd, gState, actorState)
@@ -516,182 +621,172 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
                      'refractionBalance={0.refractionBalance}"'
                      .format(frameInfo))
 
-    haLimWarn = False # so we only warn once about passing the HA limit for refraction balance
-    for fiber in fibers:
-        if _check_fiber(fiber, gState, guideCmd):
-            _do_one_fiber(fiber, gState, guideCmd, frameInfo, haLimWarn)
+    if gState.fitting_algorithm == 'standard':
+        fit_status, fit_values = standard_fitting_algorithm(guideCmd, actorState,
+                                                            gState, fibers, frameInfo)
+    elif gState.fitting_algorithm == 'umeyama':
+        fit_status, fit_values = umeyama_fitting_algorithm(guideCmd, actorState,
+                                                           gState, fibers, frameInfo)
+    else:
+        raise ValueError('invalid fitting algorithm {!r}'.format(gState.fitting_algorithm))
 
-    frameInfo.guideMode(gState)
-
-    nStar = frameInfo.A[0, 0]
-    if nStar == 0 or gState.inMotion:
-        if nStar == 0:
-            guideCmd.warn('text="No stars are available for guiding."')
-        else:
-            guideCmd.warn('text="Telescope moved during exposure -- skipping this image."')
-
-        guiderImageAnalysis.writeFITS(actorState.models, guideCmd, frameInfo, gState.gprobes, output_verify=output_verify)
+    if fit_status is None:
+        guiderImageAnalysis.writeFITS(actorState.models, guideCmd, frameInfo,
+                                      gState.gprobes, output_verify=output_verify)
 
         if oneExposure:
             queues[MASTER].put(Msg(Msg.STATUS, cmd, finish=True))
             gState.cmd = None
             return frameInfo
 
-        #if guidingIsOK(cmd, actorState):
-        #    queues[GCAMERA].put(Msg(Msg.EXPOSE, guideCmd, replyQueue=queues[MASTER],
-        #                            expTime=gState.expTime))
+        # if guidingIsOK(cmd, actorState):
+        #     queues[GCAMERA].put(Msg(Msg.EXPOSE, guideCmd,
+        #                             replyQueue=queues[MASTER],
+        #                             expTime=gState.expTime))
+
         return frameInfo
 
-    frameInfo.A[2, 0] = frameInfo.A[0, 2]
-    frameInfo.A[2, 1] = frameInfo.A[1, 2]
+    # Unpacks the measured errors from the fit.
+    dRA, dDec, dRot, dScale = fit_values
+    nStar = frameInfo.nStar
+
+    # TBD: we are not applying any rotation decentering at present.
+    # PH Kludge add the decenter guiding rotation offset here for now (in degrees)
+
+    # if gState.decenter:
+    #     dRot += gState.decenterRot/3600.0
+
+    frameInfo.dRA = dRA
+    frameInfo.dDec = dDec
+    frameInfo.dRot = dRot
+
+    # directly apply a shift for centerUp and decentering.
+    # otherwise, apply the shift via the usual pid.
+    dt = gState.update_pid_time('raDec', time.time())
+    gState.update_pid_time('rot', time.time())
+    if gState.centerUp or gState.decenterCmd:
+        offsetRa = -dRA
+        offsetDec = -dDec
+        offsetRot = 0
+    else:
+        offsetRa = -gState.pid['raDec'].update(dRA, dt=dt)
+        offsetDec = -gState.pid['raDec'].update(dDec, dt=dt)
+        offsetRot = -gState.pid['rot'].update(dRot, dt=dt) if nStar > 1 else 0
+
+    frameInfo.filtRA = offsetRa
+    frameInfo.filtDec = offsetDec
+    frameInfo.filtRot = offsetRot
+
+    frameInfo.offsetRA = offsetRa if (gState.guideAxes or gState.centerUp) else 0.0
+    frameInfo.offsetDec = offsetDec if (gState.guideAxes or gState.centerUp) else 0.0
+    frameInfo.offsetRot = offsetRot if (gState.guideAxes or gState.centerUp) else 0.0
+
+    guideAxes_status = 'enabled' if gState.guideAxes else 'disabled'
+
+    guideCmd.respond('axisError=%g, %g, %g' % (3600 * dRA, 3600 * dDec, 3600 * dRot))
+    guideCmd.respond('axisChange=%g, %g, %g, %s' % (-3600 * offsetRa,
+                                                    -3600 * offsetDec,
+                                                    -3600 * offsetRot,
+                                                    guideAxes_status))
+
+    # calc FWHM with trimmed mean for 8 in focus fibers
+    nFwhm = len(frameInfo.inFocusFwhm)
+    trimLo = 1 if nFwhm > 4 else 0
+    trimHi = nFwhm - trimLo
+    nKept = nFwhm - 2 * trimLo
+    nReject = nFwhm - nKept
+    meanFwhm = (sum(frameInfo.inFocusFwhm)) / nFwhm if nFwhm > 0 else numpy.nan
+
+    if nKept > 0:
+        tMeanFwhm = (sum(sorted(frameInfo.inFocusFwhm)[trimLo:trimHi])) / nKept
+    else:
+        tMeanFwhm = numpy.nan
+
+    # loKept = frameInfo.inFocusFwhm[trimLo]
+    # hiKept = frameInfo.inFocusFwhm[(trimHi-1)]
+
+    guideCmd.inform('fwhm=%d, %7.2f, %d, %d, %7.2f' % (frameNo, tMeanFwhm,
+                                                       nKept, nReject, meanFwhm))
+
+    frameInfo.meanFwhm = meanFwhm
+    frameInfo.tMeanFwhm = tMeanFwhm
+
+    # RMS position error prior to this frame's correction
     try:
-        if nStar == 1:
-            guideCmd.warn('text="Only one star is usable"')
-            x = frameInfo.b
-            x[2, 0] = 0 # no rotation
-        else:
-            x = numpy.linalg.solve(frameInfo.A, frameInfo.b)
+        nguideRMS = frameInfo.nguideRMS
+        frameInfo.guideRMS = math.sqrt(frameInfo.guideRMS / nguideRMS) * arcsecPerMM
+        frameInfo.guideXRMS = math.sqrt(frameInfo.guideXRMS / nguideRMS) * arcsecPerMM
+        frameInfo.guideYRMS = math.sqrt(frameInfo.guideYRMS / nguideRMS) * arcsecPerMM
+        frameInfo.guideRaRMS = math.sqrt(frameInfo.guideRaRMS / nguideRMS) * arcsecPerMM
+        frameInfo.guideDecRMS = math.sqrt(frameInfo.guideDecRMS / nguideRMS) * arcsecPerMM
+    except Exception:
+        frameInfo.guideRMS = numpy.nan
+        frameInfo.guideXRMS = numpy.nan
+        frameInfo.guideYRMS = numpy.nan
+        frameInfo.guideRaRMS = numpy.nan
+        frameInfo.guideDecRMS = numpy.nan
 
-        # convert from mm to degrees
-        dRA = x[0, 0]/gState.plugPlateScale
-        dDec = x[1, 0]/gState.plugPlateScale
-        dRot = -math.degrees(x[2, 0]) # and from radians to degrees
+    # FIXME PH ---Need to calculate Az and Alt RMS in arcsec
+    # guideAzRMS  = numpy.nan
+    # guideAltRMS = numpy.nan
+    # frameInfo.guideAzRMS = guideAzRMS
+    # frameInfo.guideAltRMS = guideAltRMS
 
-        # TBD: we are not applying any rotation decentering at present.
-        #PH Kludge add the decenter guiding rotation offset here for now (in degrees)
-        #if gState.decenter:
-        #    dRot += gState.decenterRot/3600.0
+    apply_radecrot(cmd, gState, actor, actorState, offsetRa, offsetDec, offsetRot)
 
-        frameInfo.dRA  = dRA
-        frameInfo.dDec = dDec
-        frameInfo.dRot = dRot
+    if nStar > 0 and dScale is not None:
 
-        # directly apply a shift for centerUp and decentering.
-        # otherwise, apply the shift via the usual pid.
-        dt = gState.update_pid_time('raDec', time.time())
-        gState.update_pid_time('rot', time.time())
-        if gState.centerUp or gState.decenterCmd:
-            offsetRa = -dRA
-            offsetDec = -dDec
-            offsetRot = 0
-        else:
-            offsetRa  = -gState.pid["raDec"].update(dRA, dt=dt)
-            offsetDec = -gState.pid["raDec"].update(dDec, dt=dt)
-            offsetRot = -gState.pid["rot"].update(dRot, dt=dt) if nStar > 1 else 0 # don't update I
+        dt = gState.update_pid_time('scale', time.time())
+        offsetScale = -gState.pid['scale'].update(dScale, dt=dt)
 
-        frameInfo.filtRA  = offsetRa
-        frameInfo.filtDec = offsetDec
-        frameInfo.filtRot = offsetRot
+        frameInfo.dScale = dScale
+        frameInfo.filtScale = offsetScale
+        frameInfo.offsetScale = offsetScale if gState.guideScale else 0.0
 
-        frameInfo.offsetRA  = offsetRa  if (gState.guideAxes or gState.centerUp) else 0.0
-        frameInfo.offsetDec = offsetDec if (gState.guideAxes or gState.centerUp) else 0.0
-        frameInfo.offsetRot = offsetRot if (gState.guideAxes or gState.centerUp) else 0.0
+        guideCmd.respond('scaleError=%g' % (dScale))
+        guideCmd.respond('scaleChange=%g, %s' % (offsetScale,
+                                                 'enabled' if gState.guideScale else 'disabled'))
 
-        guideCmd.respond("axisError=%g, %g, %g" % (3600*dRA, 3600*dDec, 3600*dRot))
-        guideCmd.respond("axisChange=%g, %g, %g, %s" % (-3600*offsetRa, -3600*offsetDec, -3600*offsetRot,
-                                                        "enabled" if gState.guideAxes else "disabled"))
-        #calc FWHM with trimmed mean for 8 in focus fibers
-        nFwhm = len(frameInfo.inFocusFwhm)
-        trimLo = 1 if nFwhm > 4 else 0
-        trimHi= nFwhm - trimLo
-        nKept = nFwhm - 2*trimLo
-        nReject = nFwhm - nKept
-        meanFwhm = (sum(frameInfo.inFocusFwhm))/nFwhm if nFwhm>0 else numpy.nan
-        tMeanFwhm = (sum(sorted(frameInfo.inFocusFwhm)[trimLo:trimHi]))/nKept if nKept>0 else numpy.nan
-        #loKept = frameInfo.inFocusFwhm[trimLo]
-        #hiKept = frameInfo.inFocusFwhm[(trimHi-1)]
-        infoString = "fwhm=%d, %7.2f, %d, %d, %7.2f" % (frameNo, tMeanFwhm, nKept, nReject, meanFwhm)
-        guideCmd.inform(infoString)
+        # the below is used by the observers to track the scale deltas.
+        guideCmd.inform('text="delta percentage scale correction = %g"' % (-dScale * 100.))
 
-        frameInfo.meanFwhm = meanFwhm
-        frameInfo.tMeanFwhm = tMeanFwhm
+        # There is (not terribly surprisingly) evidence of crosstalk between scale
+        # and focus adjustements. So for now defer focus changes if we apply a scale change.
+        blockFocusMove = False
 
-        #rms position error prior to this frame's correction
-        try:
-            frameInfo.guideRMS  = math.sqrt(frameInfo.guideRMS/frameInfo.nguideRMS) *arcsecPerMM
-            frameInfo.guideXRMS = math.sqrt(frameInfo.guideXRMS/frameInfo.nguideRMS) *arcsecPerMM
-            frameInfo.guideYRMS = math.sqrt(frameInfo.guideYRMS/frameInfo.nguideRMS) *arcsecPerMM
-            frameInfo.guideRaRMS = math.sqrt(frameInfo.guideRaRMS/frameInfo.nguideRMS) *arcsecPerMM
-            frameInfo.guideDecRMS = math.sqrt(frameInfo.guideDecRMS/frameInfo.nguideRMS) *arcsecPerMM
-        except:
-            frameInfo.guideRMS = numpy.nan
-            frameInfo.guideXRMS = numpy.nan
-            frameInfo.guideYRMS = numpy.nan
-            frameInfo.guideRaRMS = numpy.nan
-            frameInfo.guideDecRMS = numpy.nan
-
-        #FIXME PH ---Need to calculate Az and Alt RMS in arcsec
-        # guideAzRMS  = numpy.nan
-        # guideAltRMS = numpy.nan
-        #frameInfo.guideAzRMS = guideAzRMS
-        #frameInfo.guideAltRMS = guideAltRMS
-
-        apply_radecrot(cmd, gState, actor, actorState, offsetRa, offsetDec, offsetRot)
-
-    except numpy.linalg.LinAlgError:
-        guideCmd.warn("text=%s" % qstr("Unable to solve for axis offsets"))
-
-    # don't bother with focus/scale!
-    if nStar <= 1 or gState.centerUp:
-        guiderImageAnalysis.writeFITS(actorState.models, guideCmd, frameInfo, gState.gprobes, output_verify=output_verify)
-        if oneExposure:
-            queues[MASTER].put(Msg(Msg.STATUS, cmd, finish=True))
-            gState.cmd = None
-        return frameInfo
-
-    #
-    # Scale
-    #
-    dScale = frameInfo.b3/frameInfo.A[2, 2]
-    dt = gState.update_pid_time('scale', time.time())
-    offsetScale = -gState.pid["scale"].update(dScale, dt=dt)
-
-    frameInfo.dScale = dScale
-    frameInfo.filtScale = offsetScale
-    frameInfo.offsetScale = offsetScale if gState.guideScale else 0.0
-
-    guideCmd.respond("scaleError=%g" % (dScale))
-    guideCmd.respond("scaleChange=%g, %s" % (offsetScale,
-                                             "enabled" if gState.guideScale else "disabled"))
-    # the below is used by the observers to track the scale deltas.
-    guideCmd.inform('text="delta percentage scale correction = %g"' % (-dScale*100.))
-
-    # There is (not terribly surprisingly) evidence of crosstalk between scale and focus adjustements.
-    # So for now defer focus changes if we apply a scale change.
-    blockFocusMove = False
-
-    if gState.guideScale:
-        # This should be a tiny bit bigger than one full M1 axial step.
-        if abs(offsetScale) < 3.4e-7:
-            cmd.diag('text="skipping small scale change=%0.8f"' % (offsetScale))
-        else:
-            # Clip to the motion we think is too big to apply at once.
-            offsetScale = 1 + max(min(offsetScale, 2e-6), -2e-6)
-
-            # Last chance to bailout.
-            if offsetScale < 0.9995 or offsetScale > 1.0005:
-                cmd.warn('text="NOT setting scarily large scale=%0.8f"' % (offsetScale))
+        if gState.guideScale:
+            # This should be a tiny bit bigger than one full M1 axial step.
+            if abs(offsetScale) < 3.4e-7:
+                cmd.diag('text="skipping small scale change=%0.8f"' % (offsetScale))
             else:
-                # blockFocusMove = True
-                cmdVar = actor.cmdr.call(actor="tcc", forUserCmd=guideCmd,
-                                         cmdStr="set scale=%.9f /mult" % (offsetScale))
-                if cmdVar.didFail:
-                    guideCmd.warn('text="Failed to issue scale change"')
+                # Clip to the motion we think is too big to apply at once.
+                offsetScale = 1 + max(min(offsetScale, 2e-6), -2e-6)
 
-    #Evaluate RMS on fit over fibers used in fits here
-    #FIXME--PH not calculated yet
+                # Last chance to bailout.
+                if offsetScale < 0.9995 or offsetScale > 1.0005:
+                    cmd.warn('text="NOT setting scarily large scale=%0.8f"' % (offsetScale))
+                else:
+                    # blockFocusMove = True
+                    cmdVar = actor.cmdr.call(actor='tcc', forUserCmd=guideCmd,
+                                             cmdStr='set scale=%.9f /mult' % (offsetScale))
+                    if cmdVar.didFail:
+                        guideCmd.warn('text="Failed to issue scale change"')
+
+    # Evaluate RMS on fit over fibers used in fits here
+    # FIXME--PH not calculated yet
     guideFitRMS = numpy.nan
     nguideFitRMS = 0
     nguideRejectFitRMS = 0
 
-    # RMS guiding error output has to be after scale estimation so the full fit residual can be reported
-    guideCmd.inform("guideRMS=%5d,%4.3f,%4d,%4.3f,%4.3f,%4.3f,%4.3f,%4.3f,%4d,%4d,%4.3f,%4.3f" % (
-        frameInfo.frameNo, frameInfo.guideRMS, frameInfo.nguideRMS,
-        frameInfo.guideAzRMS, frameInfo.guideAltRMS,
-        frameInfo.guideXRMS, frameInfo.guideYRMS, guideFitRMS, nguideFitRMS, nguideRejectFitRMS,
-        frameInfo.guideRaRMS, frameInfo.guideDecRMS))
+    # RMS guiding error output has to be after scale estimation so the full
+    # fit residual can be reported
+    guideCmd.inform(
+        'guideRMS=%5d,%4.3f,%4d,%4.3f,%4.3f,%4.3f,%4.3f,%4.3f,%4d,%4d,%4.3f,%4.3f' % (
+            frameInfo.frameNo, frameInfo.guideRMS, frameInfo.nguideRMS,
+            frameInfo.guideAzRMS, frameInfo.guideAltRMS,
+            frameInfo.guideXRMS, frameInfo.guideYRMS, guideFitRMS, nguideFitRMS,
+            nguideRejectFitRMS, frameInfo.guideRaRMS, frameInfo.guideDecRMS))
 
-    #
     # Now focus. If the ith star is d_i out of focus, and the RMS of an
     # in-focus star would be r0, and we are Delta out of focus, we measure
     # an RMS size R_i
@@ -707,54 +802,62 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
     # RMS^2 = 5/(32 f^2) d^2, i.e. C = 5/(32 f^2)
     #
     focalRatio = 5.0
-    C = 5/(32.0*focalRatio*focalRatio)
+    C = 5 / (32.0 * focalRatio * focalRatio)
 
-    A = numpy.matrix(numpy.zeros(2*2).reshape([2,2]))
-    b = numpy.matrix(numpy.zeros(2).reshape([2,1]))
+    A = numpy.matrix(numpy.zeros(2 * 2).reshape([2, 2]))
+    b = numpy.matrix(numpy.zeros(2).reshape([2, 1]))
 
     for fiber in fibers:
-        _find_focus_one_fiber(fiber,gState,frameInfo,C,A,b)
+        _find_focus_one_fiber(fiber, gState, frameInfo, C, A, b)
 
     A[1, 0] = A[0, 1]
     try:
         x = numpy.linalg.solve(A, b)
 
-        Delta = x[1, 0]/(2*C)
+        Delta = x[1, 0] / (2 * C)
         try:
-            rms0 = math.sqrt(x[0, 0] - C*Delta*Delta)/frameInfo.micronsPerArcsec
+            rms0 = math.sqrt(x[0, 0] - C * Delta * Delta) / frameInfo.micronsPerArcsec
         except ValueError as e:
             rms0 = float("NaN")
 
         # Note sign change here.
-        dFocus = -Delta*gState.dSecondary_dmm # mm to move the secondary
+        dFocus = -Delta * gState.dSecondary_dmm  # mm to move the secondary
         dt = gState.update_pid_time('focus', time.time())
-        offsetFocus = -gState.pid["focus"].update(dFocus, dt=dt)
+        offsetFocus = -gState.pid['focus'].update(dFocus, dt=dt)
 
         frameInfo.dFocus = dFocus
         frameInfo.filtFocus = offsetFocus
         frameInfo.offsetFocus = offsetFocus if gState.guideFocus else 0.0
-        frameInfo.seeing = rms0*frameInfo.sigmaToFWHM   #in arc sec
+        frameInfo.seeing = rms0 * frameInfo.sigmaToFWHM  # in arc sec
 
-        guideCmd.respond("seeing=%g" % (rms0*frameInfo.sigmaToFWHM))
-        guideCmd.respond("focusError=%g" % (dFocus))
-        guideCmd.respond("focusChange=%g, %s" % (offsetFocus, "enabled" if (gState.guideFocus and not blockFocusMove) else "disabled"))
+        guideCmd.respond('seeing=%g' % (rms0 * frameInfo.sigmaToFWHM))
+        guideCmd.respond('focusError=%g' % (dFocus))
+        guideCmd.respond('focusChange=%g, %s' % (offsetFocus, 'enabled'
+                                                 if (gState.guideFocus and not blockFocusMove)
+                                                 else 'disabled'))
+
         if gState.guideFocus and not blockFocusMove:
-            cmdVar = actor.cmdr.call(actor="tcc", forUserCmd=guideCmd,
-                                     cmdStr="set focus=%f/incremental" % (offsetFocus),
+            cmdVar = actor.cmdr.call(actor='tcc', forUserCmd=guideCmd,
+                                     cmdStr='set focus=%f/incremental' % (offsetFocus),
                                      timeLim=20)
 
             if cmdVar.didFail:
                 guideCmd.warn('text="Failed to issue focus offset"')
+
     except numpy.linalg.LinAlgError:
-        guideCmd.respond("focusError=%g" % (numpy.nan))
-        guideCmd.respond("focusChange=%g, %s" % (numpy.nan, "enabled" if (gState.guideFocus and not blockFocusMove) else "disabled"))
-        guideCmd.warn("text=%s" % qstr("Unable to solve for focus offset"))
+
+        guideCmd.respond('focusError=%g' % (numpy.nan))
+        guideCmd.respond('focusChange=%g, %s' % (numpy.nan, 'enabled'
+                         if (gState.guideFocus and not blockFocusMove) else 'disabled'))
+        guideCmd.warn('text=%s' % qstr('Unable to solve for focus offset'))
         x = None
 
     # Write output fits file for TUI
-    guiderImageAnalysis.writeFITS(actorState.models, guideCmd, frameInfo, gState.gprobes, output_verify=output_verify)
+    guiderImageAnalysis.writeFITS(actorState.models, guideCmd, frameInfo,
+                                  gState.gprobes, output_verify=output_verify)
+
     return frameInfo
-#...
+
 
 def loadAllProbes(cmd, gState):
     """
@@ -1483,6 +1586,8 @@ def main(actor, queues):
                 else:
                     cmd.respond('refractionBalance=%0.1f' % (gState.refractionBalance))
                 cmd.diag('text="design_ha=%0.1f"' % (gState.design_ha))
+
+                cmd.diag('fitting_algorithm="{}"'.format(gState.fitting_algorithm))
 
                 if msg.finish:
                     cmd.finish()

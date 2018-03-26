@@ -558,6 +558,7 @@ class FrameInfo(object):
         self.A = numpy.matrix(numpy.zeros(3*3).reshape([3,3]))
         self.b = numpy.matrix(numpy.zeros(3).reshape([3,1]))
         self.b3 = 0
+        self.nStar = 0
 
         self.guideAxes = False
         self.guideFocus = False
