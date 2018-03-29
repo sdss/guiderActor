@@ -46,12 +46,28 @@ class FakeCommand(object):
     def fail(self, text):
         self._respond('f', text)
 
-def processOneFile(gState, guiderFile):
-    queues = dict(MASTER=Queue.Queue())
 
-    guideStep(None, queues, gState.cmd, guiderFile, True)
+def processOneFile(queues, cmd, gState, filename, guiderImageAnalysis):
+
+    guiderActor.myGlobals.actorState.bypassDark = True
+
+    gState.setGuideMode('axes', False)
+    gState.setGuideMode('focus', False)
+    gState.setGuideMode('scale', False)
+
+    if not cmd:
+        cmd = FakeCommand()
+    if not queues:
+        queues = dict(MASTER=Queue.Queue())
+
+    gState.cmd = cmd
+
+    return guideStep(None, queues, cmd, gState, filename, True,
+                     guiderImageAnalysis, output_verify='warn', camera='gcamera')
+
 
 def processOneProcFile(gState, guiderFile, cartFile, plateFile, actor=None, queues=None, cmd=None, guideCmd=None):
+
     gState.setGuideMode('axes', False)
     gState.setGuideMode('focus', False)
     gState.setGuideMode('scale', False)
@@ -1279,7 +1295,7 @@ def main(actor, queues):
                 start_guider(msg.cmd, gState, actorState, queues, camera=camera, stack=stack, expTime=expTime, force=force)
 
             elif msg.type == Msg.REPROCESS_FILE:
-                processOneProcFile(gState, msg.filename, actor, queues, cmd=msg.cmd)
+                frameInfo = processOneFile(queues, msg.cmd, gState, msg.filename, guiderImageAnalysis)
                 msg.cmd.finish('text="I do hope that succeeded."')
 
             elif msg.type == Msg.READ_PLATE_FILES:
