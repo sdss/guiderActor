@@ -24,6 +24,7 @@ Modified
 
 * Using ``X.Y.Z`` instead of ``vX_Y_Z``.
 * Updated ``gcamFiberInfo.par``.
+* Some improvements to the `reprocessFile` command. It may work at APO.
 
 Removed
 ^^^^^^^
