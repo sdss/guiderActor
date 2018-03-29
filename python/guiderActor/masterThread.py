@@ -350,7 +350,7 @@ def standard_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
         if _check_fiber(fiber, gState, guideCmd):
             _do_one_fiber(fiber, gState, guideCmd, frameInfo, haLimWarn)
 
-    frameInfo.guideMode(gState)
+    frameInfo.setGuideMode(gState)
 
     nStar = frameInfo.A[0, 0]
     if nStar == 0 or gState.inMotion:
@@ -402,8 +402,8 @@ def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
 
             fiber.dRA, fiber.dDec = result
 
-            centres += (fiber.xcen, fiber.ycen)
-            deltas += (fiber.dRA, fiber.dDec)
+            centres.append([fiber.xcen, fiber.ycen])
+            deltas.append([fiber.dRA, fiber.dDec])
 
     frameInfo.nStar = len(centres)
 
@@ -427,10 +427,10 @@ def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
             guideCmd.warn('text="failed applying Umeyama: {}"'.format(str(ee)))
             return None, None
 
-            dRA = tt[0] / gState.plugPlateScale
-            dDec = tt[1] / gState.plugPlateScale
-            dRot = -numpy.rad2deg(numpy.arctan2(rot[1, 0], rot[0, 0]))
-            dScale = cc
+        dRA = tt[0] / gState.plugPlateScale
+        dDec = tt[1] / gState.plugPlateScale
+        dRot = -numpy.rad2deg(numpy.arctan2(rot[1, 0], rot[0, 0]))
+        dScale = 1 - cc
 
         return True, (dRA, dDec, dRot, dScale)
 
