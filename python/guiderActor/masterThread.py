@@ -280,6 +280,19 @@ def get_fiber_dra_ddec(fiber, gState, cmd, frameInfo, haLimWarn):
     return dRA, dDec
 
 
+def get_position_error(X, Y, trans, rot, scale):
+    """Position error between two sets of points given a transformation."""
+
+    theta = numpy.deg2rad(rot)
+    rot_matrix = numpy.array([[numpy.cos(theta), -numpy.sin(theta)],
+                              [numpy.sin(theta), numpy.cos(theta)]])
+
+    pos_error = Y - (numpy.matmult((scale * rot_matrix), X.T).T + trans)
+    n_points = X.shape[0]
+
+    return numpy.sqrt((pos_error ** 2).sum(axis=1).sum()) / n_points
+
+
 def _do_one_fiber(fiber, gState, cmd, frameInfo, haLimWarn):
     """Process one single fiber, computing various scales and corrections."""
 
