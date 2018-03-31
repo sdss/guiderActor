@@ -456,7 +456,7 @@ def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
         frameInfo.dRA = tt[0] / gState.plugPlateScale
         frameInfo.dDec = tt[1] / gState.plugPlateScale
         frameInfo.dRot = -numpy.rad2deg(numpy.arctan2(rot[1, 0], rot[0, 0]))
-        frameInfo.dScale = 1 - cc
+        frameInfo.dScale = cc - 1
 
         return True
 
