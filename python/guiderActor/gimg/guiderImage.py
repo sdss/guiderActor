@@ -333,7 +333,9 @@ class GuiderImageAnalysis(object):
             imageHDU.header.update('OBJECT', objectname, '')
             imageHDU.header.update('GCAMSCAL', frameInfo.guideCameraScale, 'guide camera plate scale (mm/pixel)')
             imageHDU.header.update('PLATSCAL', frameInfo.plugPlateScale, 'plug plate scale (mm/degree)')
-                        # Do this first, before we need the models.
+            imageHDU.header.update('FITALG', frameInfo.fittingAlgorithm, 'algorithm used to fit the offsets')
+
+            # Do this first, before we need the models.
             guiderCards = self.getGuideloopCards(cmd, frameInfo)
             actorFits.extendHeader(cmd, imageHDU.header, guiderCards)
             self.addPixelWcs(imageHDU.header)
@@ -385,7 +387,6 @@ class GuiderImageAnalysis(object):
                 ('decenterScale', 'dcnScle', 'applied user supplied scale offset, %' ),
                 ('wavelength', 'wavelgth', 'wavelength at which guiding has been optimised, Angstrom'),
                 ('refractionBalance','refrBal','specified refraction balance between (0,1)'),
-                ('fittingAlgorithm', 'fitAlg', 'algorithm used to fit the offsets')
                 )
                 #TBD: FIXME PH --- do we change to 1e6 units for scale
         cards = []
