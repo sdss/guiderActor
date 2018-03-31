@@ -664,6 +664,7 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
                      .format(frameInfo))
 
     guideCmd.inform('text="using algorithm {!r}"'.format(gState.fitting_algorithm))
+    frameInfo.fittingAlgorithm = gState.fitting_algorithm
 
     if gState.fitting_algorithm == 'standard':
         fit_status = standard_fitting_algorithm(guideCmd, actorState,

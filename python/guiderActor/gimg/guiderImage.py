@@ -385,6 +385,7 @@ class GuiderImageAnalysis(object):
                 ('decenterScale', 'dcnScle', 'applied user supplied scale offset, %' ),
                 ('wavelength', 'wavelgth', 'wavelength at which guiding has been optimised, Angstrom'),
                 ('refractionBalance','refrBal','specified refraction balance between (0,1)'),
+                ('fittingAlgorithm', 'fitAlg', 'algorithm used to fit the offsets')
                 )
                 #TBD: FIXME PH --- do we change to 1e6 units for scale
         cards = []
