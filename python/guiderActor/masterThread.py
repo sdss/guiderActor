@@ -424,6 +424,13 @@ def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
             centres.append([fiber.gProbe.xFocal, fiber.gProbe.yFocal])
             deltas.append([fiber.dRA, fiber.dDec])
 
+            frameInfo.guideRMS += fiber.dx**2 + fiber.dy**2
+            frameInfo.guideXRMS += fiber.dx**2
+            frameInfo.guideYRMS += fiber.dy**2
+            frameInfo.nguideRMS += 1
+            frameInfo.guideRaRMS += fiber.dRA**2
+            frameInfo.guideDecRMS += fiber.dDec**2
+
     frameInfo.nStar = len(centres)
 
     if frameInfo.nStar == 0:
