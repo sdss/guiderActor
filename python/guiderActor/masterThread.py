@@ -372,7 +372,7 @@ def standard_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
         else:
             guideCmd.warn('text="Telescope moved during exposure -- skipping this image."')
 
-        return None, None
+        return False
 
     frameInfo.A[2, 0] = frameInfo.A[0, 2]
     frameInfo.A[2, 1] = frameInfo.A[1, 2]
@@ -393,9 +393,15 @@ def standard_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
     except numpy.linalg.LinAlgError:
         guideCmd.warn('text=%s' % qstr('Unable to solve for axis offsets'))
 
-        return None, None
+        return False
 
-    return True, (dRA, dDec, dRot, dScale)
+    frameInfo.dRA = dRA
+    frameInfo.dDec = dDec
+    frameInfo.dRot = dRot
+    frameInfo.dScale = dScale
+    frameInfo.nStar = nStar
+
+    return True
 
 
 def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
@@ -421,12 +427,12 @@ def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
     frameInfo.nStar = len(centres)
 
     if frameInfo.nStar == 0:
-        return None, None
+        return False
     elif frameInfo.nStar == 1:
-        dRA, dDec = deltas[0]
-        dRot = 0
-        dScale = None
-        return None, (dRA, dDec, dRot, dScale)
+        frameInfo.dRA, frameInfo.dDec = deltas[0]
+        frameInfo.dRot = 0
+        frameInfo.dScale = None
+        return False
     else:
         centres = numpy.array(centres).T
         deltas = numpy.array(deltas).T
@@ -438,14 +444,14 @@ def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
             cc, rot, tt = umeyama(p0, p1)
         except ValueError as ee:
             guideCmd.warn('text="failed applying Umeyama: {}"'.format(str(ee)))
-            return None, None
+            return False
 
-        dRA = tt[0] / gState.plugPlateScale
-        dDec = tt[1] / gState.plugPlateScale
-        dRot = -numpy.rad2deg(numpy.arctan2(rot[1, 0], rot[0, 0]))
-        dScale = 1 - cc
+        frameInfo.dRA = tt[0] / gState.plugPlateScale
+        frameInfo.dDec = tt[1] / gState.plugPlateScale
+        frameInfo.dRot = -numpy.rad2deg(numpy.arctan2(rot[1, 0], rot[0, 0]))
+        frameInfo.dScale = 1 - cc
 
-        return True, (dRA, dDec, dRot, dScale)
+        return True
 
 
 def _find_focus_one_fiber(fiber, gState, frameInfo, C, A, b):
@@ -653,15 +659,15 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
     guideCmd.inform('text="using algorithm {!r}"'.format(gState.fitting_algorithm))
 
     if gState.fitting_algorithm == 'standard':
-        fit_status, fit_values = standard_fitting_algorithm(guideCmd, actorState,
-                                                            gState, fibers, frameInfo)
+        fit_status = standard_fitting_algorithm(guideCmd, actorState,
+                                                gState, fibers, frameInfo)
     elif gState.fitting_algorithm == 'umeyama':
-        fit_status, fit_values = umeyama_fitting_algorithm(guideCmd, actorState,
-                                                           gState, fibers, frameInfo)
+        fit_status = umeyama_fitting_algorithm(guideCmd, actorState,
+                                               gState, fibers, frameInfo)
     else:
         raise ValueError('invalid fitting algorithm {!r}'.format(gState.fitting_algorithm))
 
-    if fit_status is None:
+    if fit_status is False:
         guiderImageAnalysis.writeFITS(actorState.models, guideCmd, frameInfo,
                                       gState.gprobes, output_verify=output_verify)
 
@@ -677,8 +683,6 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
 
         return frameInfo
 
-    # Unpacks the measured errors from the fit.
-    dRA, dDec, dRot, dScale = fit_values
     nStar = frameInfo.nStar
 
     # TBD: we are not applying any rotation decentering at present.
@@ -687,9 +691,9 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
     # if gState.decenter:
     #     dRot += gState.decenterRot/3600.0
 
-    frameInfo.dRA = dRA
-    frameInfo.dDec = dDec
-    frameInfo.dRot = dRot
+    dRA = frameInfo.dRA
+    dDec = frameInfo.dDec
+    dRot = frameInfo.dRot
 
     # directly apply a shift for centerUp and decentering.
     # otherwise, apply the shift via the usual pid.
@@ -765,12 +769,13 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
 
     apply_radecrot(cmd, gState, actor, actorState, offsetRa, offsetDec, offsetRot)
 
+    dScale = frameInfo.dScale
+
     if nStar > 0 and dScale is not None:
 
         dt = gState.update_pid_time('scale', time.time())
         offsetScale = -gState.pid['scale'].update(dScale, dt=dt)
 
-        frameInfo.dScale = dScale
         frameInfo.filtScale = offsetScale
         frameInfo.offsetScale = offsetScale if gState.guideScale else 0.0
 
