@@ -452,7 +452,12 @@ def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
 
     frameInfo.nStar = len(centres)
 
+    if gState.inMotion:
+        guideCmd.warn('text="Telescope moved during exposure -- skipping this image."')
+        return False
+
     if frameInfo.nStar == 0:
+        guideCmd.warn('text="No stars are available for guiding."')
         return False
     elif frameInfo.nStar == 1:
         frameInfo.dRA = deltas[0][0] / gState.plugPlateScale
