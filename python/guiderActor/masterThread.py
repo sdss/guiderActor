@@ -452,7 +452,7 @@ def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
         frameInfo.dRA, frameInfo.dDec = deltas[0]
         frameInfo.dRot = 0
         frameInfo.dScale = None
-        return False
+        return True
     else:
         centres = numpy.array(centres).T
         deltas = numpy.array(deltas).T
