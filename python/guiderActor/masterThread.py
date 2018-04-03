@@ -802,44 +802,52 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
 
     apply_radecrot(cmd, gState, actor, actorState, offsetRa, offsetDec, offsetRot)
 
+    if nStar <= 1 or frameInfo.dScale is None or gState.centerUp:
+        guiderImageAnalysis.writeFITS(actorState.models, guideCmd,
+                                      frameInfo, gState.gprobes, output_verify=output_verify)
+
+        if oneExposure:
+            queues[MASTER].put(Msg(Msg.STATUS, cmd, finish=True))
+            gState.cmd = None
+
+        return frameInfo
+
     dScale = frameInfo.dScale
 
-    if nStar > 0 and dScale is not None:
+    dt = gState.update_pid_time('scale', time.time())
+    offsetScale = -gState.pid['scale'].update(dScale, dt=dt)
 
-        dt = gState.update_pid_time('scale', time.time())
-        offsetScale = -gState.pid['scale'].update(dScale, dt=dt)
+    frameInfo.filtScale = offsetScale
+    frameInfo.offsetScale = offsetScale if gState.guideScale else 0.0
 
-        frameInfo.filtScale = offsetScale
-        frameInfo.offsetScale = offsetScale if gState.guideScale else 0.0
+    guideCmd.respond('scaleError=%g' % (dScale))
+    guideCmd.respond('scaleChange=%g, %s' % (offsetScale,
+                                             'enabled' if gState.guideScale else 'disabled'))
 
-        guideCmd.respond('scaleError=%g' % (dScale))
-        guideCmd.respond('scaleChange=%g, %s' % (offsetScale,
-                                                 'enabled' if gState.guideScale else 'disabled'))
+    # the below is used by the observers to track the scale deltas.
+    guideCmd.inform('text="delta percentage scale correction = %g"' % (-dScale * 100.))
 
-        # the below is used by the observers to track the scale deltas.
-        guideCmd.inform('text="delta percentage scale correction = %g"' % (-dScale * 100.))
+    # There is (not terribly surprisingly) evidence of crosstalk between scale
+    # and focus adjustments. So for now defer focus changes if we apply a scale change.
+    blockFocusMove = False
 
-        # There is (not terribly surprisingly) evidence of crosstalk between scale
-        # and focus adjustements. So for now defer focus changes if we apply a scale change.
-        blockFocusMove = False
+    if gState.guideScale:
+        # This should be a tiny bit bigger than one full M1 axial step.
+        if abs(offsetScale) < 3.4e-7:
+            cmd.diag('text="skipping small scale change=%0.8f"' % (offsetScale))
+        else:
+            # Clip to the motion we think is too big to apply at once.
+            offsetScale = 1 + max(min(offsetScale, 2e-6), -2e-6)
 
-        if gState.guideScale:
-            # This should be a tiny bit bigger than one full M1 axial step.
-            if abs(offsetScale) < 3.4e-7:
-                cmd.diag('text="skipping small scale change=%0.8f"' % (offsetScale))
+            # Last chance to bailout.
+            if offsetScale < 0.9995 or offsetScale > 1.0005:
+                cmd.warn('text="NOT setting scarily large scale=%0.8f"' % (offsetScale))
             else:
-                # Clip to the motion we think is too big to apply at once.
-                offsetScale = 1 + max(min(offsetScale, 2e-6), -2e-6)
-
-                # Last chance to bailout.
-                if offsetScale < 0.9995 or offsetScale > 1.0005:
-                    cmd.warn('text="NOT setting scarily large scale=%0.8f"' % (offsetScale))
-                else:
-                    # blockFocusMove = True
-                    cmdVar = actor.cmdr.call(actor='tcc', forUserCmd=guideCmd,
-                                             cmdStr='set scale=%.9f /mult' % (offsetScale))
-                    if cmdVar.didFail:
-                        guideCmd.warn('text="Failed to issue scale change"')
+                # blockFocusMove = True
+                cmdVar = actor.cmdr.call(actor='tcc', forUserCmd=guideCmd,
+                                            cmdStr='set scale=%.9f /mult' % (offsetScale))
+                if cmdVar.didFail:
+                    guideCmd.warn('text="Failed to issue scale change"')
 
     # Evaluate RMS on fit over fibers used in fits here
     # FIXME--PH not calculated yet
