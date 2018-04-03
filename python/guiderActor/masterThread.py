@@ -458,7 +458,7 @@ def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
         frameInfo.dRA = deltas[0][0] / gState.plugPlateScale
         frameInfo.dDec = deltas[0][1] / gState.plugPlateScale
         frameInfo.dRot = 0
-        frameInfo.dScale = None
+        frameInfo.dScale = numpy.nan
         return True
     else:
         centres = numpy.array(centres).T
@@ -802,7 +802,7 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
 
     apply_radecrot(cmd, gState, actor, actorState, offsetRa, offsetDec, offsetRot)
 
-    if nStar <= 1 or frameInfo.dScale is None or gState.centerUp:
+    if nStar <= 1 or numpy.isnan(frameInfo.dScale) or gState.centerUp:
         guiderImageAnalysis.writeFITS(actorState.models, guideCmd,
                                       frameInfo, gState.gprobes, output_verify=output_verify)
 
