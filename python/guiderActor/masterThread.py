@@ -359,9 +359,15 @@ def standard_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
 
     haLimWarn = False  # So we only warn once about passing the HA limit for refraction balance
 
+    centres = []
+    deltas = []
+
     for fiber in fibers:
         if _check_fiber(fiber, gState, guideCmd):
             _do_one_fiber(fiber, gState, guideCmd, frameInfo, haLimWarn)
+
+            centres.append([fiber.gProbe.xFocal, fiber.gProbe.yFocal])
+            deltas.append([fiber.dRA, fiber.dDec])
 
     frameInfo.setGuideMode(gState)
 
@@ -400,6 +406,13 @@ def standard_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
     frameInfo.dRot = dRot
     frameInfo.dScale = dScale
     frameInfo.nStar = nStar
+
+    p0 = numpy.array(centres)
+    p1 = p0 + numpy.array(deltas)
+
+    pos_error = get_position_error(p0, p1, [x[0, 0], x[1, 0]], -dRot, dScale + 1)
+    pos_error /= gState.plugPlateScale
+    frameInfo.pos_error = pos_error
 
     return True
 
@@ -457,6 +470,11 @@ def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
         frameInfo.dDec = tt[1] / gState.plugPlateScale
         frameInfo.dRot = -numpy.rad2deg(numpy.arctan2(rot[1, 0], rot[0, 0]))
         frameInfo.dScale = cc - 1
+
+        pos_error = get_position_error(p0.T, p1.T, [tt[0], tt[1]],
+                                       -frameInfo.dRot, frameInfo.dScale + 1)
+        pos_error /= gState.plugPlateScale
+        frameInfo.pos_error = pos_error
 
         return True
 

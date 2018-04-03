@@ -360,6 +360,7 @@ class GuiderImageAnalysis(object):
                 ('dRot', 'DRot', 'measured rotator offset, deg'),
                 ('dFocus', 'DFocus', 'measured focus offset, um '),
                 ('dScale', 'DScale', 'measured scale offset, %'),
+                ('pos_error', 'poserror', 'position error of the fit, deg'),
                 ('filtRA', 'FILTRA', 'filtered offset in RA, deg'),
                 ('filtDec', 'FILTDec', 'filtered offset in Dec, deg'),
                 ('filtRot', 'FILTRot', 'filtered rotator offset, deg'),
