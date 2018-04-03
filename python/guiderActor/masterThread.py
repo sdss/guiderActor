@@ -456,9 +456,8 @@ def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
     if frameInfo.nStar == 0:
         return False
     elif frameInfo.nStar == 1:
-        frameInfo.dRA, frameInfo.dDec = deltas[0]
-        frameInfo.dRA /= gState.plugPlateScale
-        frameInfo.dDec /= gState.plugPlateScale
+        frameInfo.dRA = deltas[0][0] / gState.plugPlateScale
+        frameInfo.dDec = deltas[0][1] / gState.plugPlateScale
         frameInfo.dRot = 0
         frameInfo.dScale = None
         return True
