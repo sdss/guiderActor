@@ -293,14 +293,13 @@ def get_position_error(X, Y, trans, rot, scale):
     """Position error between two sets of points given a transformation."""
 
     theta = numpy.deg2rad(rot)
-    sin_t = numpy.sin(theta)
-    cos_t = numpy.sin(theta)
 
-    # We expand the matrix because the version of Numpy at APO doesn't have matmult
-    rot_matrix = numpy.array([cos_t * X[0] - sin_t * X[1],
-                              sin_t * X[0] + cos_t * X[1]])
+    rot_matrix = numpy.matrix([[numpy.cos(theta), -numpy.sin(theta)],
+                               [numpy.sin(theta), numpy.cos(theta)]])
 
-    pos_error = Y - (rot_matrix + trans)
+    rotated = numpy.array((scale * rot_matrix) * numpy.matrix(X).T)
+
+    pos_error = Y - (rotated.T + trans)
     n_points = X.shape[0]
 
     return numpy.sqrt((pos_error ** 2).sum(axis=1).sum()) / n_points
@@ -366,15 +365,15 @@ def standard_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
 
     haLimWarn = False  # So we only warn once about passing the HA limit for refraction balance
 
-    # centres = []
-    # deltas = []
+    centres = []
+    deltas = []
 
     for fiber in fibers:
         if _check_fiber(fiber, gState, guideCmd):
             _do_one_fiber(fiber, gState, guideCmd, frameInfo, haLimWarn)
 
-            # centres.append([fiber.gProbe.xFocal, fiber.gProbe.yFocal])
-            # deltas.append([fiber.dRA, fiber.dDec])
+            centres.append([fiber.gProbe.xFocal, fiber.gProbe.yFocal])
+            deltas.append([fiber.dRA, fiber.dDec])
 
     frameInfo.setGuideMode(gState)
 
@@ -414,12 +413,12 @@ def standard_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
     frameInfo.dScale = dScale
     frameInfo.nStar = nStar
 
-    # p0 = numpy.array(centres)
-    # p1 = p0 + numpy.array(deltas)
+    p0 = numpy.array(centres)
+    p1 = p0 + numpy.array(deltas)
 
-    # pos_error = get_position_error(p0, p1, [x[0, 0], x[1, 0]], -dRot, dScale + 1)
-    # pos_error /= gState.plugPlateScale
-    # frameInfo.pos_error = pos_error
+    pos_error = get_position_error(p0, p1, [x[0, 0], x[1, 0]], -dRot, dScale + 1)
+    pos_error /= gState.plugPlateScale
+    frameInfo.pos_error = pos_error
 
     return True
 
@@ -479,10 +478,10 @@ def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
         frameInfo.dRot = -numpy.rad2deg(numpy.arctan2(rot[1, 0], rot[0, 0]))
         frameInfo.dScale = cc - 1
 
-        # pos_error = get_position_error(p0.T, p1.T, [tt[0], tt[1]],
-        #                                -frameInfo.dRot, frameInfo.dScale + 1)
-        # pos_error /= gState.plugPlateScale
-        # frameInfo.pos_error = pos_error
+        pos_error = get_position_error(p0.T, p1.T, [tt[0], tt[1]],
+                                       -frameInfo.dRot, frameInfo.dScale + 1)
+        pos_error /= gState.plugPlateScale
+        frameInfo.pos_error = pos_error
 
         return True
 
