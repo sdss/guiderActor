@@ -277,6 +277,15 @@ def get_fiber_dra_ddec(fiber, gState, cmd, frameInfo, haLimWarn):
         dDec += gState.decenterDec / frameInfo.arcsecPerMM
         # decenterRot applied after guide solution
 
+    fiber.dRA = dRA
+    fiber.dDec = dDec
+
+    cmd.inform('probe=%d,%2d,0x%02x, %7.2f,%7.2f, %7.3f,%4.0f, %7.2f,%6.2f,%6.2f, %7.2f,%6.2f' %
+               (frameInfo.frameNo, fiber.fiberid, gProbe.gprobebits,
+                fiber.dRA * frameInfo.arcsecPerMM, fiber.dDec * frameInfo.arcsecPerMM,
+                fiber.fwhm, gProbe.focusOffset,
+                fiber.flux, fiber.mag, gProbe.ref_mag, fiber.sky, fiber.skymag))
+
     return dRA, dDec
 
 
@@ -308,12 +317,6 @@ def _do_one_fiber(fiber, gState, cmd, frameInfo, haLimWarn):
     fiber.dDec = dDec
     raCenter = gProbe.xFocal
     decCenter = gProbe.yFocal
-
-    cmd.inform('probe=%d,%2d,0x%02x, %7.2f,%7.2f, %7.3f,%4.0f, %7.2f,%6.2f,%6.2f, %7.2f,%6.2f' %
-               (frameInfo.frameNo, fiber.fiberid, gProbe.gprobebits,
-                fiber.dRA * frameInfo.arcsecPerMM, fiber.dDec * frameInfo.arcsecPerMM,
-                fiber.fwhm, gProbe.focusOffset,
-                fiber.flux, fiber.mag, gProbe.ref_mag, fiber.sky, fiber.skymag))
 
     if gProbe.tooFaint:
         return
