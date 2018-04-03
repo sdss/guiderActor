@@ -750,6 +750,7 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
     frameInfo.offsetRot = offsetRot if (gState.guideAxes or gState.centerUp) else 0.0
 
     guideAxes_status = 'enabled' if gState.guideAxes else 'disabled'
+    frameInfo.guideAxes = gState.guideAxes
 
     guideCmd.respond('axisError=%g, %g, %g' % (3600 * dRA, 3600 * dDec, 3600 * dRot))
     guideCmd.respond('axisChange=%g, %g, %g, %s' % (-3600 * offsetRa,
@@ -823,6 +824,8 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
     guideCmd.respond('scaleError=%g' % (dScale))
     guideCmd.respond('scaleChange=%g, %s' % (offsetScale,
                                              'enabled' if gState.guideScale else 'disabled'))
+
+    frameInfo.guideScale = gState.guideScale
 
     # the below is used by the observers to track the scale deltas.
     guideCmd.inform('text="delta percentage scale correction = %g"' % (-dScale * 100.))
@@ -912,6 +915,8 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
         guideCmd.respond('focusChange=%g, %s' % (offsetFocus, 'enabled'
                                                  if (gState.guideFocus and not blockFocusMove)
                                                  else 'disabled'))
+
+        frameInfo.guideFocus = gState.guideFocus and not blockFocusMove
 
         if gState.guideFocus and not blockFocusMove:
             cmdVar = actor.cmdr.call(actor='tcc', forUserCmd=guideCmd,
