@@ -293,10 +293,14 @@ def get_position_error(X, Y, trans, rot, scale):
     """Position error between two sets of points given a transformation."""
 
     theta = numpy.deg2rad(rot)
-    rot_matrix = numpy.array([[numpy.cos(theta), -numpy.sin(theta)],
-                              [numpy.sin(theta), numpy.cos(theta)]])
+    sin_t = numpy.sin(theta)
+    cos_t = numpy.sin(theta)
 
-    pos_error = Y - (numpy.matmult((scale * rot_matrix), X.T).T + trans)
+    # We expand the matrix because the version of Numpy at APO doesn't have matmult
+    rot_matrix = numpy.array([cos_t * X[0] - sin_t * X[1],
+                              sin_t * X[0] + cos_t * X[1]])
+
+    pos_error = Y - (rot_matrix + trans)
     n_points = X.shape[0]
 
     return numpy.sqrt((pos_error ** 2).sum(axis=1).sum()) / n_points
