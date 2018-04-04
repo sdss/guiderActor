@@ -8,27 +8,29 @@ This document records the main changes to the guiderActor code.
 
 .. _changelog-3.8.0:
 
-3.8.0 (unreleased)
------------------
+3.8.0 (2018-04-04)
+------------------
 
 Added
 ^^^^^
-
 * Implemented use of ``bumpversion``.
 * Implemented ``GuiderActor.version`` (needs ``actorcore >= v4_1_3``).
 * Ticket `#2030 <https://trac.sdss.org/ticket/2030>`_: proc-gimg shows parameters we are guiding on.
 * Allows to choose the fitting algorithm between the default, traditional one, and Umeyama. The fitting algorithm can be defined in the configuration file and overridden via de `setFittingAlgorithm` command.
+* Added ``POSERROR`` keyword to the header to show the goodness of the fit.
 
 Modified
 ^^^^^^^^
-
 * Using ``X.Y.Z`` instead of ``vX_Y_Z``.
 * Updated ``gcamFiberInfo.par``.
 * Some improvements to the `reprocessFile` command. It may work at APO.
 
+Fixed
+^^^^^
+* ``GUIDEAXE``, ``GUIDEFOC``, and ``GUIDESCL`` in the ``proc-gimg`` headers now should be updated correctly (for MJD >= 58212).
+
 Removed
 ^^^^^^^
-
 * ``python/guiderActor/obsolete`` (as for ticket `#2596 <https://trac.sdss.org/ticket/2596>`_).
 
 
