@@ -532,13 +532,14 @@ def apply_radecrot(cmd, gState, actor, actorState, offsetRa, offsetDec, offsetRo
     """Finish the calculation for the ra/dec/rot corrections and apply them."""
     if gState.guideAxes:
         cmdVar = actor.cmdr.call(actor="tcc", forUserCmd=cmd,
-                                 cmdStr="offset arc %f, %f"%(-offsetRa, -offsetDec))
+                                 cmdStr="offset arc %f, %f /computed" % (-offsetRa, -offsetDec))
         if cmdVar.didFail:
             cmd.warn('text="Failed to issue offset"')
 
         if offsetRot:
             cmdVar = actor.cmdr.call(actor="tcc", forUserCmd=cmd,
-                                     cmdStr="offset guide %f, %f, %g"%(0.0, 0.0, -offsetRot))
+                                     cmdStr="offset guide %f, %f, %g" %
+                                     (0.0, 0.0, -offsetRot))
         if cmdVar.didFail:
             cmd.warn('text="Failed to issue offset in rotator"')
 

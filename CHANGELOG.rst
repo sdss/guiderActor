@@ -8,6 +8,16 @@ This document records the main changes to the guiderActor code.
 
 .. _changelog-3.8.0:
 
+3.8.1 (unreleased)
+------------------
+
+Modified
+^^^^^^^^
+* Sends offsets to TCC using ``/computed``.
+
+
+.. _changelog-3.8.0:
+
 3.8.0 (2018-04-04)
 ------------------
 
