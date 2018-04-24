@@ -459,10 +459,11 @@ def umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
     if frameInfo.nStar == 0:
         guideCmd.warn('text="No stars are available for guiding."')
         return False
-    elif frameInfo.nStar == 1:
-        guideCmd.warn('text="only one star found."')
-        frameInfo.dRA = deltas[0][0] / gState.plugPlateScale
-        frameInfo.dDec = deltas[0][1] / gState.plugPlateScale
+    elif frameInfo.nStar <= 2:
+        guideCmd.warn('text="only {0:d} star(s) found."'.format(frameInfo.nStar))
+        dRA_mean, dDec_mean = numpy.mean(deltas, axis=0)
+        frameInfo.dRA = dRA_mean / gState.plugPlateScale
+        frameInfo.dDec = dDec_mean / gState.plugPlateScale
         frameInfo.dRot = 0
         frameInfo.dScale = numpy.nan
         return True
