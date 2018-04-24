@@ -6,7 +6,7 @@ Change Log
 
 This document records the main changes to the guiderActor code.
 
-.. _changelog-3.8.0:
+.. _changelog-3.8.1:
 
 3.8.1 (unreleased)
 ------------------
