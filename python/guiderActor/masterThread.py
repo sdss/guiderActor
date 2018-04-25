@@ -91,6 +91,7 @@ def scale_pid_with_alt(cmd, gState, actorState):
     """Change the PID coefficients with altitude, to deal with high-alt tracking."""
     alt = actorState.models["tcc"].keyVarDict['axePos'][1]
     if gState.scale_pid_with_alt(alt):
+        cmd.inform('text="scaled PID with altitude={0:.2f}"'.format(alt))
         gState.output_pid()
 
 def _check_fiber(fiber, gState, guideCmd):
