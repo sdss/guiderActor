@@ -390,9 +390,9 @@ def standard_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo):
     frameInfo.A[2, 0] = frameInfo.A[0, 2]
     frameInfo.A[2, 1] = frameInfo.A[1, 2]
     try:
-        if nStar == 1:
+        if nStar <= 2:
             guideCmd.warn('text="Only one star is usable"')
-            x = frameInfo.b
+            x = frameInfo.b / nStar
             x[2, 0] = 0  # no rotation
         else:
             x = numpy.linalg.solve(frameInfo.A, frameInfo.b)
