@@ -555,6 +555,8 @@ class FrameInfo(object):
         self.wavelength = numpy.nan
         self.dHA = numpy.nan
 
+        self.fittingAlgorithm = 'NA'
+
         self.A = numpy.matrix(numpy.zeros(3*3).reshape([3,3]))
         self.b = numpy.matrix(numpy.zeros(3).reshape([3,1]))
         self.b3 = 0

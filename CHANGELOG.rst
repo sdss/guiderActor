@@ -14,7 +14,11 @@ This document records the main changes to the guiderActor code.
 Modified
 ^^^^^^^^
 * Sends offsets to TCC using ``/computed``.
-* ticket `#2325 https://trac.sdss.org/ticket/2325`_: if the number of valid stars is <= 2 (e.g., during centre-up), does not apply the fitting algorithm. Instead, uses the mean of the dRA and dDec offsets.
+* ticket `#2325 <https://trac.sdss.org/ticket/2325>`_: if the number of valid stars is <= 2 (e.g., during centre-up), does not apply the fitting algorithm. Instead, uses the mean of the dRA and dDec offsets.
+
+Fixed
+^^^^^
+* Sets ``fittingAlgorithm='NA'`` when ``FrameInfo`` is instantiated. Fixes `#2866 <https://trac.sdss.org/ticket/2866>`_
 
 
 .. _changelog-3.8.0:
