@@ -8,13 +8,11 @@ This document records the main changes to the guiderActor code.
 
 .. _changelog-3.8.1:
 
-<<<<<<< HEAD
-3.8.1 (unreleased)
+3.8.1 (2018-05-03)
 ------------------
 
 Modified
 ^^^^^^^^
-* Sends offsets to TCC using ``/computed``.
 * ticket `#2325 <https://trac.sdss.org/ticket/2325>`_: if the number of valid stars is <= 2 (e.g., during centre-up), does not apply the fitting algorithm. Instead, uses the mean of the dRA and dDec offsets.
 
 Fixed
@@ -24,8 +22,6 @@ Fixed
 
 .. _changelog-3.8.0:
 
-=======
->>>>>>> parent of d8ba325... Using /computed offsets
 3.8.0 (2018-04-04)
 ------------------
 
