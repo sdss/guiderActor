@@ -8,6 +8,7 @@ This document records the main changes to the guiderActor code.
 
 .. _changelog-3.8.1:
 
+<<<<<<< HEAD
 3.8.1 (unreleased)
 ------------------
 
@@ -23,6 +24,8 @@ Fixed
 
 .. _changelog-3.8.0:
 
+=======
+>>>>>>> parent of d8ba325... Using /computed offsets
 3.8.0 (2018-04-04)
 ------------------
 
