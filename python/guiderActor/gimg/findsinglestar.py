@@ -1,10 +1,8 @@
 # wget "http://antwrp.gsfc.nasa.gov/apod/image/1007/FourPlanetSunset_hao.jpg"
 # jpegtopnm FourPlanetSunset_hao.jpg | pnmcut -height 500 | ppmtopgm | pnmtofits > cut.fits
 
-import sys
-
 import pyfits
-from numpy import arange, argsort, array, flatnonzero, median, meshgrid, ones, sum
+from numpy import arange, array, flatnonzero, median, ones, sum
 from scipy.ndimage.filters import gaussian_filter, median_filter
 from scipy.ndimage.measurements import find_objects, label
 from scipy.ndimage.morphology import binary_dilation
@@ -94,8 +92,8 @@ def find_single_star(img,
     while True:
         iters += 1
         if iters > 100:
-            print 'Failed to find a threshold that yielded exactly one object with %i pixels above threshold.' % (
-                min_npix)
+            print('Failed to find a threshold that yielded exactly one object '
+                  'with %i pixels above threshold.' % (min_npix))
             return None
         nsigma = (siglo + sighi) / 2.
         thresh = nsigma * noise
@@ -108,25 +106,25 @@ def find_single_star(img,
         npix = array(
             [sum((labels[s] == i + 1).ravel()) for i, s in enumerate(slices)])
         # Find components with more than min_npix pixels above threshold
-        I = (npix >= min_npix)
+        II = (npix >= min_npix)
         print(
-            'Trying nsigma=%g, threshold=%g ==> detected %i objects, %i with more than %i pixels above threshold'
-            % (nsigma, thresh, nobjs, sum(I), min_npix))
+            'Trying nsigma=%g, threshold=%g ==> detected %i objects, %i with more than %i pixels '
+            'above threshold' % (nsigma, thresh, nobjs, sum(II), min_npix))
 
-        if sum(I) == 0:
+        if sum(II) == 0:
             # No objects detected -- lower threshold.
             sighi = nsigma
-        elif sum(I) == 1:
+        elif sum(II) == 1:
             # just right.
             break
         else:
             # raise threshold.
             siglo = nsigma
 
-    print 'N sigma:', nsigma
+    print('N sigma:', nsigma)
 
     # Which component is it?
-    i = flatnonzero(I)[0]
+    i = flatnonzero(II)[0]
     # Pull out the region of interest.
     slc = slices[i]
     (sy, sx) = slc
@@ -146,8 +144,8 @@ def find_single_star(img,
     norm = sum(subobj * subimg)
     mx = sum(sum(subobj * subimg, axis=0) * arange(SW)) / norm
     my = sum(sum(subobj * subimg, axis=1) * arange(SH)) / norm
-    ox = x0 + mx
-    oy = y0 + my
+    # ox = x0 + mx
+    # oy = y0 + my
 
     # Starting at the centroid position, find the peak of the paraboloid
     # using Blanton's dcen3x3.
@@ -183,25 +181,25 @@ if __name__ == '__main__':
     print 'Flux', flux
     print 'Background', bg
 
-    from pylab import *
+    import matplotlib.pyplot as plt
 
-    clf()
-    subplot(1, 2, 1)
-    imshow(subimg, interpolation='nearest', origin='lower')
-    a = axis()
-    plot([xc - x0], [yc - y0], 'r.')
-    axis(a)
-    subplot(1, 2, 2)
-    imshow(subobj, interpolation='nearest', origin='lower')
-    savefig('sub.png')
+    plt.clf()
+    plt.subplot(1, 2, 1)
+    plt.imshow(subimg, interpolation='nearest', origin='lower')
+    a = plt.axis()
+    plt.plot([xc - x0], [yc - y0], 'r.')
+    plt.axis(a)
+    plt.subplot(1, 2, 2)
+    plt.imshow(subobj, interpolation='nearest', origin='lower')
+    plt.savefig('sub.png')
 
-    clf()
-    imshow(img, interpolation='nearest', origin='lower')
-    a = axis()
-    plot([xc], [yc], 'r.')
-    axis(a)
-    colorbar()
-    savefig('obj.png')
+    plt.clf()
+    plt.imshow(img, interpolation='nearest', origin='lower')
+    a = plt.axis()
+    plt.plot([xc], [yc], 'r.')
+    plt.axis(a)
+    plt.colorbar()
+    plt.savefig('obj.png')
 
-    axis([xc - 10, xc + 10, yc - 10, yc + 10])
-    savefig('obj2.png')
+    plt.axis([xc - 10, xc + 10, yc - 10, yc + 10])
+    plt.savefig('obj2.png')
