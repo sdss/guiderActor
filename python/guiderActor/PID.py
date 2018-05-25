@@ -19,7 +19,7 @@ class PID(object):
         # NOTE: TBD: Imax is currently unused!
         self.Imax = Imax  # limit to abs(.Ix)
         self.tfilt = tfilt
-        if tfilt != None:
+        if tfilt is not None:
             self.nfilt = tfilt / self.dt
         else:
             self.nfilt = nfilt  # number of inputs to smooth over.
@@ -29,7 +29,7 @@ class PID(object):
         self._x = None  # previous value of the error, x
 
     def __str__(self):
-        return "K_P=%g T_i=%g T_d=%g tfilt=%s nfilt=%d" % (self.Kp, self.Ti,
+        return 'K_P=%g T_i=%g T_d=%g tfilt=%s nfilt=%d' % (self.Kp, self.Ti,
                                                            self.Td, self.tfilt,
                                                            self.nfilt)
 
@@ -82,25 +82,25 @@ class PID(object):
             if self.tfilt:
                 self.nfilt = self.tfilt / dt
 
-    def ZieglerNichols(self, Kpc, Pc, loopType="PID"):
+    def ZieglerNichols(self, Kpc, Pc, loopType='PID'):
         """Perform Ziegler-Nichols tuning of a PID loop; Kpc is the critical proportional
         gain that just starts to oscillate with period Pc"""
 
         Pc = float(Pc)
 
-        if loopType == "P":
+        if loopType == 'P':
             self.Kp = 0.50 * Kpc
             self.Ti = self.Td = 0
-        elif loopType == "PI":
+        elif loopType == 'PI':
             self.Kp = 0.45 * Kpc
             self.Ti = Pc / 1.2
             self.Td = 0
-        elif loopType == "PID":
+        elif loopType == 'PID':
             self.Kp = 0.60 * Kpc
             self.Ti = Pc / 2
             self.Td = Pc / 8
         else:
-            raise RuntimeError, (
+            raise RuntimeError(
                 "I don't know how to tune a %s loop" % loopType)
 
     def setPID(self,
@@ -112,13 +112,13 @@ class PID(object):
                nfilt=None,
                tfilt=None):
 
-        needReset = dt != None or Imax != None or nfilt != None or tfilt != None
+        needReset = dt is not None or Imax is not None or nfilt is not None or tfilt is not None
 
         if dt is not None:
             try:
                 1 / dt
             except ZeroDivisionError:
-                raise RuntimeError, "You may not specify a time sample of 0s"
+                raise RuntimeError('You may not specify a time sample of 0s')
 
             self.dt = dt
 
