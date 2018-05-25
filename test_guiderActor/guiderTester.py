@@ -24,7 +24,6 @@ from guiderActor import GuiderState
 from guiderActor.gimg import guiderImage
 from guiderActor.GuiderActor import set_default_pids, set_pid_scaling
 
-
 gprobeKey = {}
 guideInfoKey = {}
 

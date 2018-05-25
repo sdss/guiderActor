@@ -3,7 +3,6 @@
 
 from guiderActor import GuiderActor, Msg
 
-
 # start a new actor
 if __name__ == "__main__":
     guider = GuiderActor.GuiderActor.newActor()

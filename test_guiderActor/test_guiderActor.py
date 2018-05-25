@@ -8,7 +8,6 @@ from actorcore import Actor, TestHelper
 from guiderActor import GuiderActor
 from opscore.actor import KeyVarDispatcher, Model
 
-
 logDirBase = 'temp/'
 
 # NOTE: for this particular set of unittests, you need unittest.TestCase as the

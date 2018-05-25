@@ -7,8 +7,6 @@ import sys
 import numpy
 
 import opscore.utility.YPF as YPF
-
-
 """
 typedef struct {
    int objId[5];

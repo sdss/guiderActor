@@ -1102,10 +1102,11 @@ def loadAllProbes(cmd, gState):
         # very useful for testing.
         # TBD: we'll probably need a new type here for MaNGA.
         keep0 = pm[numpy.where((
-            (pm.holeType == "GUIDE") & (pm.objType == "NA"))
-                               | (pm.holeType == "OBJECT"))]
-        keep = pm[numpy.where(((pm.holeType == "GUIDE") & (pm.objType == "NA"))
-                              | (pm.holeType == "MANGA"))]
+            (pm.holeType == "GUIDE") & (pm.objType == "NA")) |
+                               (pm.holeType == "OBJECT"))]
+        keep = pm[numpy.where((
+            (pm.holeType == "GUIDE") & (pm.objType == "NA")) |
+                              (pm.holeType == "MANGA"))]
         cmd.diag('text="kept %d probes"' % (len(keep)))
         cmd.diag('text="original was %d probes"' % (len(keep0)))
         gState.allProbes = keep

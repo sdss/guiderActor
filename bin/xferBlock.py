@@ -4,7 +4,6 @@ import os
 import sys
 from ftplib import FTP
 
-
 tcc = 'tcc25m-p.apo.nmsu.edu'
 
 

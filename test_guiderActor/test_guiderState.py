@@ -10,7 +10,6 @@ import guiderTester
 from actorcore import TestHelper
 from guiderActor import GuiderState
 
-
 gprobeKey = {}
 gprobeKey['good'] = [10, 1, True, 100, 100, 10, 0, -.1, -.1, 0, 'GUIDE']
 gprobeKey['acquire'] = [10, 2, True, 200, 200, 10, 0, -.1, -.1, 0, 'ACQUIRE']

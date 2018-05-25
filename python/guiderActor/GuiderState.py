@@ -9,7 +9,6 @@ import numpy
 import PID
 from guiderActor import myGlobals
 
-
 # gprobebits
 # To help manage the guide probe status bits.
 # WARNING: ensure the usage in guiderActor, platedbActor, STUI are consistent with this!

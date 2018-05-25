@@ -17,7 +17,6 @@ from matplotlib import cm
 
 from opscore.utility import assembleImage
 
-
 matplotlib.use('agg')
 
 gimgbase = 'proc-gimg-%04d.fits.gz'
