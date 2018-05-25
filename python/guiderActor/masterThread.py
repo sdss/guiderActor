@@ -37,7 +37,7 @@ def adiff(a1, a2):
 class FakeCommand(object):
 
     def _respond(self, tag, text):
-        print "%s %s" % (tag, text)
+        print '%s %s' % (tag, text)
 
     def warn(self, text):
         self._respond('w', text)
@@ -111,16 +111,16 @@ def processOneProcFile(gState,
 
 def send_decenter_status(cmd, gState, frameNo):
     """Output the decenter status keywords, including the most recent frame number."""
-    cmd.inform("decenter=%d, %s, %7.3f, %7.3f, %7.3f, %7.3f, %7.3f" %
-               (frameNo, ("enabled" if gState.decenter else "disabled"),
+    cmd.inform('decenter=%d, %s, %7.3f, %7.3f, %7.3f, %7.3f, %7.3f' %
+               (frameNo, ('enabled' if gState.decenter else 'disabled'),
                 gState.decenterRA, gState.decenterDec, gState.decenterRot,
                 gState.decenterFocus, gState.decenterScale))
-    cmd.inform("mangaDither=%s" % (gState.mangaDither))
+    cmd.inform('mangaDither=%s' % (gState.mangaDither))
 
 
 def scale_pid_with_alt(cmd, gState, actorState):
     """Change the PID coefficients with altitude, to deal with high-alt tracking."""
-    alt = actorState.models["tcc"].keyVarDict['axePos'][1]
+    alt = actorState.models['tcc'].keyVarDict['axePos'][1]
     if gState.scale_pid_with_alt(alt):
         cmd.inform('text="scaled PID with altitude={0:.2f}"'.format(alt))
         gState.output_pid()
@@ -135,7 +135,7 @@ def _check_fiber(fiber, gState, guideCmd):
         return False
 
     # Center up on acquisition fibers only.
-    if gState.centerUp and fiber.gProbe.fiber_type != "ACQUIRE":
+    if gState.centerUp and fiber.gProbe.fiber_type != 'ACQUIRE':
         guideCmd.diag(
             'text="Gprobe %d is disabled during Center Up."' % fiber.fiberid)
         return False
@@ -586,30 +586,30 @@ def apply_radecrot(cmd, gState, actor, actorState, offsetRa, offsetDec,
     """Finish the calculation for the ra/dec/rot corrections and apply them."""
     if gState.guideAxes:
         cmdVar = actor.cmdr.call(
-            actor="tcc",
+            actor='tcc',
             forUserCmd=cmd,
-            cmdStr="offset arc %f, %f" % (-offsetRa, -offsetDec))
+            cmdStr='offset arc %f, %f' % (-offsetRa, -offsetDec))
         if cmdVar.didFail:
             cmd.warn('text="Failed to issue offset"')
 
         if offsetRot:
             cmdVar = actor.cmdr.call(
-                actor="tcc",
+                actor='tcc',
                 forUserCmd=cmd,
-                cmdStr="offset guide %f, %f, %g" % (0.0, 0.0, -offsetRot))
+                cmdStr='offset guide %f, %f, %g' % (0.0, 0.0, -offsetRot))
         if cmdVar.didFail:
             cmd.warn('text="Failed to issue offset in rotator"')
 
     elif gState.centerUp:
         # If we are in the middle of an fk5InFiber (or other TCC track/pterr),
         # adjust the calibration offsets
-        doCalibOffset = actorState.models["tcc"].keyVarDict["objName"][
-            0] == "position reference star"
+        doCalibOffset = actorState.models['tcc'].keyVarDict['objName'][
+            0] == 'position reference star'
         if doCalibOffset:
             cmd.warn('text="using arc offsets at a pointing star"')
 
-        cmdVar = actor.cmdr.call(actor="tcc", forUserCmd=cmd,
-                                 cmdStr="offset arc %f, %f" % (-offsetRa, -offsetDec))
+        cmdVar = actor.cmdr.call(actor='tcc', forUserCmd=cmd,
+                                 cmdStr='offset arc %f, %f' % (-offsetRa, -offsetDec))
         if cmdVar.didFail:
             cmd.warn('text="Failed to issue centering offset"')
         else:
@@ -651,7 +651,7 @@ def guideStep(actor,
 
     actorState = guiderActor.myGlobals.actorState
     guideCmd = gState.cmd
-    guideCmd.respond("processing=%s" % inFile)
+    guideCmd.respond('processing=%s' % inFile)
 
     h = pyfits.getheader(inFile)
     flatfile = h.get('FLATFILE', None)
@@ -1011,7 +1011,7 @@ def guideStep(actor,
             rms0 = math.sqrt(
                 x[0, 0] - C * Delta * Delta) / frameInfo.micronsPerArcsec
         except ValueError as e:
-            rms0 = float("NaN")
+            rms0 = float('NaN')
 
         # Note sign change here.
         dFocus = -Delta * gState.dSecondary_dmm  # mm to move the secondary
@@ -1073,7 +1073,7 @@ def loadAllProbes(cmd, gState):
     gState.allProbes = None
     try:
         path = 'catPlPlugMapM'
-        cmd1 = "%s -c %s -m %s -p %s -f %s %s" % (path, gState.cartridge,
+        cmd1 = '%s -c %s -m %s -p %s -f %s %s' % (path, gState.cartridge,
                                                   gState.fscanMJD,
                                                   gState.pointing,
                                                   gState.fscanID, gState.plate)
@@ -1101,14 +1101,14 @@ def loadAllProbes(cmd, gState):
         # very useful for testing.
         # TBD: we'll probably need a new type here for MaNGA.
         keep0 = pm[numpy.where((
-            (pm.holeType == "GUIDE") & (pm.objType == "NA")) | (pm.holeType == "OBJECT"))]
+            (pm.holeType == 'GUIDE') & (pm.objType == 'NA')) | (pm.holeType == 'OBJECT'))]
         keep = pm[numpy.where((
-            (pm.holeType == "GUIDE") & (pm.objType == "NA")) | (pm.holeType == "MANGA"))]
+            (pm.holeType == 'GUIDE') & (pm.objType == 'NA')) | (pm.holeType == 'MANGA'))]
         cmd.diag('text="kept %d probes"' % (len(keep)))
         cmd.diag('text="original was %d probes"' % (len(keep0)))
         gState.allProbes = keep
     except Exception as e:
-        cmd.warn('text=%s' % (qstr("could not load all probe info: %s" % (e))))
+        cmd.warn('text=%s' % (qstr('could not load all probe info: %s' % (e))))
 
 
 def loadTccBlock(cmd, actorState, gState):
@@ -1125,31 +1125,31 @@ def loadTccBlock(cmd, actorState, gState):
     !!!!!!!!!!!!!!!!!!11
     """
     try:
-        cmd1 = "catPlPlugMapM -c %s -m %s -p %s -f %s %s" % (gState.cartridge,
+        cmd1 = 'catPlPlugMapM -c %s -m %s -p %s -f %s %s' % (gState.cartridge,
                                                              gState.fscanMJD,
                                                              gState.pointing,
                                                              gState.fscanID,
                                                              gState.plate)
         # plate10k
         scratchFile = '/tmp/v_ca1_%04d.dat' % (gState.plate)
-        cmd1 += " | %s /dev/stdin > %s" % (os.path.join(
+        cmd1 += ' | %s /dev/stdin > %s' % (os.path.join(
             os.environ['GUIDERACTOR_DIR'], 'bin', 'convertPlPlugMap.py'), scratchFile)
         cmd.diag('text=%s' % (qstr('running: %s' % (cmd1))))
 
-        cmd2 = " %s %s" % (
+        cmd2 = ' %s %s' % (
             os.path.join(os.environ['GUIDERACTOR_DIR'], 'bin', 'xferBlock.py'),
             scratchFile)
         cmd.diag('text=%s' % (qstr('running: %s' % (cmd2))))
         ret = subprocess.call(cmd1, shell=True)
         if ret < 0:
-            raise RuntimeError("cat and convert job failed with %s" % (-ret))
+            raise RuntimeError('cat and convert job failed with %s' % (-ret))
         ret = subprocess.call(cmd2, shell=True)
         if ret < 0:
-            raise RuntimeError("xfer job failed with %s" % (-ret))
+            raise RuntimeError('xfer job failed with %s' % (-ret))
 
     except Exception as e:
         cmd.warn('text=%s' %
-                 (qstr("could not load a per-cartridge instrument block: %s" %
+                 (qstr('could not load a per-cartridge instrument block: %s' %
                        (e))))
 
 
@@ -1180,14 +1180,14 @@ def make_movie(actorState, cmd, start):
 
     # callCommand produces a movie command that is not connected to the current command.
     # This will prevent "This command has already finished" complaints.
-    actorState.actor.callCommand("makeMovie start=%d end=%d" % (start, end))
+    actorState.actor.callCommand('makeMovie start=%d end=%d' % (start, end))
     return True
 
 
 def cal_finished(msg, name, guiderImageAnalysis, actorState, gState):
     """Generic handling of finished dark/flat frame."""
     cmd = msg.cmd
-    cmd.respond("processing=%s" % msg.filename)
+    cmd.respond('processing=%s' % msg.filename)
     # need ".*" in the regex, because we may or may not have gzipped files.
     # frameNo = int(re.search(r"([0-9]+)\.fits.*", msg.filename).group(1))
 
@@ -1200,11 +1200,11 @@ def cal_finished(msg, name, guiderImageAnalysis, actorState, gState):
 
     cmd.diag('text="cal_finished guiderImageAnalysis.analyze%s()..."' % name)
     try:
-        func = ''.join(("analyze", name[0].upper(), name[1:]))
+        func = ''.join(('analyze', name[0].upper(), name[1:]))
         # Always read the setPoint, so that it is as up-to-date as possible.
         camera = 'ecamera' if gState.plateType == 'ecamera' else 'gcamera'
         guiderImageAnalysis.camera = camera
-        setPoint = actorState.models[camera].keyVarDict["cooler"][0]
+        setPoint = actorState.models[camera].keyVarDict['cooler'][0]
         if name == 'flat':
             guiderImageAnalysis.analyzeFlat(msg.filename, gState.gprobes, cmd,
                                             setPoint)
@@ -1214,13 +1214,13 @@ def cal_finished(msg, name, guiderImageAnalysis, actorState, gState):
             raise ValueError(
                 "Don't know how to finish a %s guider cal." % name)
     except GuiderExceptions.GuiderError as e:
-        cmd.error("text=%s" % qstr(e))
+        cmd.error('text=%s' % qstr(e))
         cmd.fail('guideState="failed"; text=%s' % qstr(
-            "%s failed. Error reading/processing guider %s." % (func, name)))
+            '%s failed. Error reading/processing guider %s.' % (func, name)))
         gState.cmd = None
         return
     except Exception as e:
-        tback.tback("cal_finished", e)
+        tback.tback('cal_finished', e)
         cmd.fail('text="%s failed for an unknown reason: %s' % (func, e))
         return
 
@@ -1230,7 +1230,7 @@ def cal_finished(msg, name, guiderImageAnalysis, actorState, gState):
         cmd.inform('file=%s/,%s' % (dirname, filename))
         cmd.finish('text="%s image processing done"' % name)
     except Exception as e:
-        tback.tback("cal_finished", e)
+        tback.tback('cal_finished', e)
         cmd.fail('text="failed to save flat: %s"' % (e))
 
 
@@ -1244,7 +1244,7 @@ def flat_finished(msg, guiderImageAnalysis, actorState, gState):
     header = pyfits.getheader(msg.filename)
     darkfile = header.get('DARKFILE', None)
     if not darkfile:
-        msg.cmd.fail("text=%s" % qstr("No dark image listed in flat header!!"))
+        msg.cmd.fail('text=%s' % qstr('No dark image listed in flat header!!'))
         return
     cal_finished(msg, 'flat', guiderImageAnalysis, actorState, gState)
 
@@ -1307,7 +1307,7 @@ def set_decenter(cmd, decenters, gState, enable):
     # if we didn't get an enable message, don't allow the position to be changed.
     if enable is None:
         if not gState.decenter:
-            failMsg = "Decentered guiding must be enabled before location can be specified."
+            failMsg = 'Decentered guiding must be enabled before location can be specified.'
             cmd.fail("text='%s'" % failMsg)
             return
 
@@ -1351,7 +1351,7 @@ def start_guider(cmd,
     """Start taking and processing exposures with either guider or engineering camera."""
 
     if gState.cmd:
-        errMsg = "The guider appears to already be running"
+        errMsg = 'The guider appears to already be running'
         if force:
             cmd.warn('text="%s; restarting"' % (errMsg))
         else:
@@ -1359,11 +1359,11 @@ def start_guider(cmd,
             return
 
     if gState.cartridge <= 0:
-        failMsg = "No cart/plate information: please load cartridge and try again."
+        failMsg = 'No cart/plate information: please load cartridge and try again.'
         cmd.fail('guideState=failed; text="%s"' % failMsg)
         return
     if not guidingIsOK(cmd, actorState, force=force):
-        failMsg = "Not ok to guide in current state."
+        failMsg = 'Not ok to guide in current state.'
         cmd.fail('guideState=failed; text="%s"' % failMsg)
         return
 
@@ -1388,9 +1388,9 @@ def start_guider(cmd,
             # we need to get gcamera status first.
         except TypeError:
             cmdVar = actorState.actor.cmdr.call(
-                actor="gcamera", forUserCmd=cmd, cmdStr="status")
+                actor='gcamera', forUserCmd=cmd, cmdStr='status')
             if cmdVar.didFail:
-                failMsg = "Cannot get gcamera status to determine nextSeqNo!"
+                failMsg = 'Cannot get gcamera status to determine nextSeqNo!'
                 cmd.fail('guideState=failed; text="%s"' % failMsg)
                 return
             # now we can do this safely.
@@ -1401,7 +1401,7 @@ def start_guider(cmd,
             gState.startFrame = simulating[2]
 
     gState.reset_pid_terms()
-    gState.cmd.respond("guideState=on")
+    gState.cmd.respond('guideState=on')
 
     if gState.guideWavelength == -1:
         cmd.inform('text="guiding begins."')
@@ -1435,7 +1435,7 @@ def stop_guider(cmd, gState, actorState, queues, frameNo, success):
         return
 
     if success:
-        cmd.respond("guideState=stopping")
+        cmd.respond('guideState=stopping')
         # cleanup any pending decenter commands (e.g. decenter off)
         send_decenter_status(gState.cmd, gState, frameNo)
         gState.finish_decenter()
@@ -1443,24 +1443,24 @@ def stop_guider(cmd, gState, actorState, queues, frameNo, success):
         queues[GCAMERA].put(
             Msg(Msg.ABORT_EXPOSURE, cmd, quiet=True, priority=Msg.MEDIUM))
         if gState.cmd != cmd:
-            cmd.finish("guideState=off")
+            cmd.finish('guideState=off')
 
-        gState.cmd.finish("guideState=off")
+        gState.cmd.finish('guideState=off')
         gState.cmd = None
     else:
         queues[GCAMERA].put(
             Msg(Msg.ABORT_EXPOSURE, cmd, quiet=True, priority=Msg.MEDIUM))
         if gState.cmd != cmd:
-            cmd.fail("guideState=failed")
+            cmd.fail('guideState=failed')
 
-        gState.cmd.fail("guideState=failed")
+        gState.cmd.fail('guideState=failed')
         gState.cmd = None
 
 
 def main(actor, queues):
     """Main loop for master thread"""
 
-    threadName = "master"
+    threadName = 'master'
 
     actorState = guiderActor.myGlobals.actorState
     timeout = actorState.timeout
@@ -1470,7 +1470,7 @@ def main(actor, queues):
     gState = actorState.gState
     # need to wait a couple seconds to let the models sync up.
     time.sleep(3)
-    setPoint = actorState.models["gcamera"].keyVarDict["cooler"][0]
+    setPoint = actorState.models['gcamera'].keyVarDict['cooler'][0]
     print 'Initial gcamera setPoint:', setPoint
     guiderImageAnalysis = GuiderImageAnalysis(setPoint)
 
@@ -1480,7 +1480,7 @@ def main(actor, queues):
 
             qlen = queues[MASTER].qsize()
             if qlen > 0 and msg.cmd:
-                msg.cmd.diag("text=master thread has %d items after a .get()" %
+                msg.cmd.diag('text=master thread has %d items after a .get()' %
                              (qlen))
 
             if msg.type == Msg.EXIT:
@@ -1614,7 +1614,7 @@ def main(actor, queues):
                     Msg(Msg.EXPOSE,
                         msg.cmd,
                         replyQueue=queues[MASTER],
-                        expType="flat",
+                        expType='flat',
                         expTime=msg.expTime,
                         cartridge=gState.cartridge,
                         camera=camera))
@@ -1625,7 +1625,7 @@ def main(actor, queues):
                     Msg(Msg.EXPOSE,
                         msg.cmd,
                         replyQueue=queues[MASTER],
-                        expType="dark",
+                        expType='dark',
                         expTime=msg.expTime,
                         stack=msg.stack,
                         camera=camera))
@@ -1755,9 +1755,9 @@ def main(actor, queues):
                               (dstX - srcX)))
                 if True:
                     cmdVar = actorState.actor.cmdr.call(
-                        actor="tcc",
+                        actor='tcc',
                         forUserCmd=msg.cmd,
-                        cmdStr="offset bore %g,%g /pabs/computed" % (dx, dy))
+                        cmdStr='offset bore %g,%g /pabs/computed' % (dx, dy))
                     if cmdVar.didFail:
                         if guidingIsOK(msg.cmd, actorState):
                             msg.cmd.warn(
@@ -1796,21 +1796,21 @@ def main(actor, queues):
 
                 cmd = msg.cmd
 
-                scale = actorState.models["tcc"].keyVarDict["scaleFac"][0]
-                if "delta" in cmd.cmd.keywords:
-                    delta = float(cmd.cmd.keywords["delta"].values[0])
+                scale = actorState.models['tcc'].keyVarDict['scaleFac'][0]
+                if 'delta' in cmd.cmd.keywords:
+                    delta = float(cmd.cmd.keywords['delta'].values[0])
 
                     newScale = (1 + 0.01 * delta) * scale
                 else:
-                    newScale = float(cmd.cmd.keywords["scale"].values[0])
+                    newScale = float(cmd.cmd.keywords['scale'].values[0])
 
                 gState.inMotion = True  # Alert the end of exposure processing to skip one.
                 cmd.inform('text="currentScale=%g  newScale=%g"' % (scale,
                                                                     newScale))
                 cmdVar = actorState.actor.cmdr.call(
-                    actor="tcc",
+                    actor='tcc',
                     forUserCmd=cmd,
-                    cmdStr="set scale=%.8f" % (newScale))
+                    cmdStr='set scale=%.8f' % (newScale))
                 if cmdVar.didFail:
                     gState.inMotion = False
                     cmd.fail('text="Failed to set scale"')
@@ -1853,10 +1853,10 @@ def main(actor, queues):
                 # Try to generate status even after we have failed.
                 cmd = msg.cmd if msg.cmd.alive else actor.bcast
 
-                cmd.respond("cartridgeLoaded=%d, %d, %s, %d, %d" %
+                cmd.respond('cartridgeLoaded=%d, %d, %s, %d, %d' %
                             (gState.cartridge, gState.plate, gState.pointing,
                              gState.fscanMJD, gState.fscanID))
-                cmd.respond("survey=%s, %s" % (qstr(gState.plateType),
+                cmd.respond('survey=%s, %s' % (qstr(gState.plateType),
                                                qstr(gState.surveyMode)))
                 # Announce that a this is was a requested cartridge load.
                 if getattr(msg, 'loadedNewCartridge', False):
@@ -1870,11 +1870,11 @@ def main(actor, queues):
                 except AttributeError:
                     pass
 
-                cmd.respond("guideState=%s" % ("on" if gState.cmd else "off"))
+                cmd.respond('guideState=%s' % ('on' if gState.cmd else 'off'))
                 cmd.inform('text="The guider is %s"' %
-                           ("running" if gState.cmd else "off"))
+                           ('running' if gState.cmd else 'off'))
                 cmd.inform('text="Decentering is %s"' %
-                           ("off" if not gState.decenter else "on"))
+                           ('off' if not gState.decenter else 'on'))
                 if gState.decenter:
                     frameNo = getattr(frameInfo, 'frameNo', -2)
                     send_decenter_status(cmd, gState, frameNo)
@@ -1889,15 +1889,15 @@ def main(actor, queues):
                     for gProbe in gState.gprobes.values():
                         if gProbe:
                             gprobeBits[
-                                gProbe.id] = "0x%02x" % gProbe.gprobebits
-                    cmd.respond("gprobeBits=%s" % ", ".join(gprobeBits[1:]))
+                                gProbe.id] = '0x%02x' % gProbe.gprobebits
+                    cmd.respond('gprobeBits=%s' % ', '.join(gprobeBits[1:]))
 
-                cmd.respond("guideEnable=%s, %s, %s" %
+                cmd.respond('guideEnable=%s, %s, %s' %
                             (gState.guideAxes, gState.guideFocus,
                              gState.guideScale))
-                cmd.respond("expTime=%g" % (gState.expTime))
-                cmd.respond("stack=%g" % (gState.stack))
-                cmd.respond("scales=%g, %g, %g, %g" % (
+                cmd.respond('expTime=%g' % (gState.expTime))
+                cmd.respond('stack=%g' % (gState.stack))
+                cmd.respond('scales=%g, %g, %g, %g' % (
                     gState.plugPlateScale,
                     gState.gcameraMagnification,
                     gState.gcameraPixelSize,
@@ -1919,11 +1919,11 @@ def main(actor, queues):
                 if msg.finish:
                     cmd.finish()
             else:
-                raise ValueError("Unknown message type %s" % msg.type)
+                raise ValueError('Unknown message type %s' % msg.type)
         except Queue.Empty:
             actor.bcast.diag('text="%s alive"' % threadName)
         except Exception as e:
-            errMsg = "Unexpected exception %s in guider %s thread" % (
+            errMsg = 'Unexpected exception %s in guider %s thread' % (
                 e, threadName)
             if gState.cmd:
                 gState.cmd.error('text="%s"' % errMsg)
@@ -1936,7 +1936,7 @@ def main(actor, queues):
 
             # import pdb; pdb.set_trace()
             try:
-                print "\n".join(tback.tback(
+                print '\n'.join(tback.tback(
                     errMsg, e)[0])  # old versions of tback return None
             except Exception:
                 pass
@@ -1953,9 +1953,9 @@ def guidingIsOK(cmd, actorState, force=False):
     if force:
         return True
 
-    bypassedNames = actorState.models["sop"].keyVarDict["bypassedNames"]
+    bypassedNames = actorState.models['sop'].keyVarDict['bypassedNames']
 
-    ffsStatus = actorState.models["mcp"].keyVarDict["ffsStatus"]
+    ffsStatus = actorState.models['mcp'].keyVarDict['ffsStatus']
     open, closed = 0, 0
     for s in ffsStatus:
         if s is None:
@@ -1981,9 +1981,9 @@ def guidingIsOK(cmd, actorState, force=False):
 
     #   should we allow guiding with lamps on if axes are disabled
     #   check if lamps are actually ON
-    ffLamp = actorState.models["mcp"].keyVarDict["ffLamp"]
-    hgCdLamp = actorState.models["mcp"].keyVarDict["hgCdLamp"]
-    neLamp = actorState.models["mcp"].keyVarDict["neLamp"]
+    ffLamp = actorState.models['mcp'].keyVarDict['ffLamp']
+    hgCdLamp = actorState.models['mcp'].keyVarDict['hgCdLamp']
+    neLamp = actorState.models['mcp'].keyVarDict['neLamp']
     if (any(ffLamp) and 'lamp_ff' not in bypassedNames) or \
        (any(hgCdLamp) and 'lamp_hgcd' not in bypassedNames) or \
        (any(neLamp) and 'lamp_ne' not in bypassedNames):
@@ -1992,8 +1992,8 @@ def guidingIsOK(cmd, actorState, force=False):
 
 
 #   check if non sensed lamps are commanded ON
-    uvLamp = actorState.models["mcp"].keyVarDict["uvLampCommandedOn"]
-    whtLamp = actorState.models["mcp"].keyVarDict["whtLampCommandedOn"]
+    uvLamp = actorState.models['mcp'].keyVarDict['uvLampCommandedOn']
+    whtLamp = actorState.models['mcp'].keyVarDict['whtLampCommandedOn']
     if uvLamp.getValue() or whtLamp.getValue():
         cmd.warn('text="Calibration lamp commanded on; aborting guiding"')
         return False
