@@ -12,7 +12,7 @@ import threading
 
 import guiderActor.myGlobals
 import opscore.utility.tback as tback
-from guiderActor import *
+from guiderActor import MOVIE, Msg
 
 
 class MovieMaker(object):
@@ -20,7 +20,8 @@ class MovieMaker(object):
 
     def __init__(self, actorState=None):
         self.popenMovie = None
-        self.actorState = actorState if actorState is not None else guiderActor.myGlobals.actorState
+        self.actorState = actorState if actorState is not None else \
+            guiderActor.myGlobals.actorState
 
     def __call__(self, msg):
         """
@@ -37,7 +38,7 @@ class MovieMaker(object):
             mjd = os.path.split(filedir)[-1]
         else:
             basedir = self.actorState.models['guider'].keyVarDict['file'][0]
-            if basedir == None:
+            if basedir is None:
                 basedir = '/data/gcam/'
             filedir = os.path.join(basedir, mjd)
 
@@ -45,11 +46,12 @@ class MovieMaker(object):
         end = msg.end
 
         # jkp TBD: how to get the real output filename?
-        #filename = # parse from stdout of subprocess?
+        # filename = # parse from stdout of subprocess?
         self.filename = os.path.join(filedir, '%s-%04d-%04d.mp4' % (mjd, start,
                                                                     end))
-        # Takes about 1 second per frame to make the images, plus a bit more per frame to make the movie from them.
-        timeLim = (end - start) * 2 + 30
+        # Takes about 1 second per frame to make the images, plus a bit more per
+        # frame to make the movie from them.
+        # timeLim = (end - start) * 2 + 30
 
         cmdParts = ['guider_movie.py', filedir, str(start), str(end)]
         cmdAll = r' '.join(cmdParts)
@@ -84,7 +86,7 @@ class MovieMaker(object):
 def main(actor, queues):
     """Main for guider movie making thread."""
 
-    threadName = "movie"
+    threadName = 'movie'
 
     actorState = guiderActor.myGlobals.actorState
     timeout = guiderActor.myGlobals.actorState.timeout
@@ -94,7 +96,7 @@ def main(actor, queues):
             msg = queues[MOVIE].get(timeout=timeout)
             qlen = queues[MOVIE].qsize()
             if qlen > 0 and msg.cmd:
-                msg.cmd.diag("movie thread has %d items after a .get()" %
+                msg.cmd.diag('movie thread has %d items after a .get()' %
                              (qlen))
 
             if msg.type == Msg.EXIT:
@@ -109,25 +111,28 @@ def main(actor, queues):
                 except subprocess.CalledProcessError as e:
                     msg.cmd.fail('text="Failed to create guider movie."')
                 else:
-                    # jkp: I don't think we need to send a Msg when we're done, since nothing needs to happen???
-                    #msg.replyQueue.put(Msg(responseMsg, cmd=msg.cmd, filename=filename, success=True))
+                    # jkp: I don't think we need to send a Msg when we're done,
+                    # since nothing needs to happen???
+                    # msg.replyQueue.put(Msg(responseMsg, cmd=msg.cmd,
+                    #                        filename=filename, success=True))
+
                     doneText = 'text="Created: %s"' % filename
                     if msg.finish:
                         msg.cmd.finish(doneText)
                     else:
                         msg.cmd.inform(doneText)
 
-            #elif msg.type == Msg.ABORT_MOVIE:
+            # elif msg.type == Msg.ABORT_MOVIE:
             #    # Do something to cancel the currently running movie.
             #    guiderActor.flushQueue(queues[MOVIE])
             else:
-                raise ValueError, ("Unknown message type %s" % msg.type)
+                raise ValueError('Unknown message type %s' % msg.type)
 
         except Queue.Empty:
             actor.bcast.diag('text="guider movie alive"')
         except Exception as e:
             actor.bcast.diag(
                 'text="movie thread got unexpected exception: %s"' % (e))
-            errMsg = "Unexpected exception %s in guider %s thread" % (
+            errMsg = 'Unexpected exception %s in guider %s thread' % (
                 e, threadName)
             tback.tback(errMsg, e)
