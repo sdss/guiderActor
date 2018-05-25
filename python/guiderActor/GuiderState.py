@@ -15,7 +15,8 @@ from guiderActor import myGlobals
 GOOD = 0x00  # A happy, working, in-use probe has all bits set to 0.
 BROKEN = 0x01  # a known broken probe, labeled as such in plPlugMap
 NOSTAR = 0x02  # probe with no star in plPlugMap (e.g. tritium)
-DISABLED = 0x04  # probe that has been disabled by the observers (e.g. no star present, double star, wrong position)
+# probe that has been disabled by the observers (e.g. no star present, double star, wrong position)
+DISABLED = 0x04
 ABOVEFOCUS = 0x08  # fiber is above the focal plane
 BELOWFOCUS = 0x10  # fiber is below the focal plane
 TOOFAINT = 0x20  # observed star is too faint to be reliably used for guiding
@@ -35,7 +36,7 @@ class GProbe(object):
     """
 
     def __init__(self, id=-9999, gprobeKey=None, guideInfoKey=None):
-        """Pass the contents of the platedb.gprobe and/or platedb.guideInfo keyword to initialize"""
+        """Pass the contents of platedb.gprobe and/or platedb.guideInfo keyword to initialize"""
         self.id = id
         self._bits = GOOD
         self._ugriz = [
@@ -111,7 +112,7 @@ class GProbe(object):
             self.id = id
         elif id != self.id:
             raise ValueError(
-                "%s id does not match current probe id!" % fromName)
+                '%s id does not match current probe id!' % fromName)
         else:
             # otherwise, everything's fine.
             pass
@@ -214,7 +215,7 @@ class GProbe(object):
     @gprobebits.setter
     def gprobebits(self, value):
         if not isinstance(value, int):
-            raise ValueError("gprobebits must be set as an integer!")
+            raise ValueError('gprobebits must be set as an integer!')
         else:
             self._bits = value
 
@@ -242,7 +243,8 @@ class GProbe(object):
 
         Color terms for transformation from r + a1 + a2*(g-r) + a3*(g-r)**2 = ref_mag
         a1=0.535, a2=0.506, a3=-0.0312
-        Coefficient are from Masayuki, Gunn&Strkyer stds observed through modeled guider & g,r passbands
+        Coefficient are from Masayuki, Gunn&Strkyer stds observed through modeled
+        guider & g,r passbands
         """
         self._ugriz = value
         actorState = myGlobals.actorState
@@ -252,9 +254,9 @@ class GProbe(object):
         a2 = 0.506
         a3 = -0.0312
 
-        #get airmass from tcc only gives alt = tcc.axePos[2]
+        # get airmass from tcc only gives alt = tcc.axePos[2]
         try:
-            zd = 90. - actorState.models["tcc"].keyVarDict["axePos"][1]
+            zd = 90. - actorState.models['tcc'].keyVarDict['axePos'][1]
         except TypeError:
             zd = 90.  # if the tcc doesn't return a proper position.
         # TBD: zd=0 never occurs for tracking, but need to test for zd=0 for simulate
@@ -262,7 +264,7 @@ class GProbe(object):
         gobs = value[1] + airmass * k0_g
         robs = value[2] + airmass * k0_r
         self.ref_mag = robs + a1 + a2 * (gobs - robs) + a3 * (gobs - robs)**2
-        #self.ref_mag = (gobs+robs)/2. #jkp TBD: placeholder
+        # self.ref_mag = (gobs+robs)/2. #jkp TBD: placeholder
 
 
 class GuiderState(object):
@@ -278,9 +280,9 @@ class GuiderState(object):
     def __init__(self):
         self.cartridge = -1
         self.plate = -1
-        self.pointing = "?"
-        self.plateType = "?"
-        self.surveyMode = "?"
+        self.pointing = '?'
+        self.plateType = '?'
+        self.surveyMode = '?'
         self.expTime = 0
         self.readTime = 0
         self.stack = 1
@@ -298,9 +300,9 @@ class GuiderState(object):
         self.gcameraMagnification = numpy.nan
 
         # Start with all fibers
-        self.setGuideMode("axes")
-        self.setGuideMode("focus")
-        self.setGuideMode("scale")
+        self.setGuideMode('axes')
+        self.setGuideMode('focus')
+        self.setGuideMode('scale')
         self.refractionBalance = 0
         self.guideWavelength = -1
 
@@ -311,7 +313,7 @@ class GuiderState(object):
         self.pid = {}
         self.pid_defaults = {}
         self.pid_time = {}  # times that each pid is updated, to track delta-t.
-        for axis in ["raDec", "rot", "scale", "focus"]:
+        for axis in ['raDec', 'rot', 'scale', 'focus']:
             self.pid[axis] = PID.PID(self.expTime, 0, 0, 0)
             self.pid_defaults[axis] = {}
             self.pid_time[axis] = None
@@ -338,7 +340,7 @@ class GuiderState(object):
         fiber types: ACQUIRE GUIDE TRITIUM
         If an integer, must refer to a currently loaded probe.
         """
-        if fiber in ("ACQUIRE", "GUIDE", "TRITIUM"):
+        if fiber in ('ACQUIRE', 'GUIDE', 'TRITIUM'):
             fiber_type = fiber
             for gp in self.gprobes.values():
                 if gp.info.fiber_type == fiber_type:
@@ -348,14 +350,14 @@ class GuiderState(object):
 
     def setGuideMode(self, mode, enabled=True):
         """Enable a guide mode, from "axes", "focus", or "scale"."""
-        if mode == "axes":
+        if mode == 'axes':
             self.guideAxes = enabled
-        elif mode == "focus":
+        elif mode == 'focus':
             self.guideFocus = enabled
-        elif mode == "scale":
+        elif mode == 'scale':
             self.guideScale = enabled
         else:
-            raise RuntimeError, ("Unknown guide mode %s" % mode)
+            raise RuntimeError('Unknown guide mode %s' % mode)
 
     def setRefractionBalance(self, plateType, surveyMode):
         """Set the refraction balance based on the survey name."""
@@ -380,10 +382,8 @@ class GuiderState(object):
         newRot = decenters.get('decenterRot', 0)
         # Store the cmd, if we'll have to actually apply a new location,
         # or just finish if the decenter is identical to the current one.
-        if self.decenterRA != newRA or \
-           self.decenterDec != newDec or \
-           self.decenterRot != newRot or \
-           enable is not None:
+        if (self.decenterRA != newRA or self.decenterDec != newDec or
+                self.decenterRot != newRot or enable is not None):
             self.decenterCmd.append(cmd)
         else:
             cmd.finish()
@@ -423,13 +423,13 @@ class GuiderState(object):
                   gcameraPixelSize=None,
                   gcameraMagnification=None):
 
-        if plugPlateScale != None:
+        if plugPlateScale is not None:
             self.plugPlateScale = plugPlateScale
-        if dSecondary_dmm != None:
+        if dSecondary_dmm is not None:
             self.dSecondary_dmm = dSecondary_dmm
-        if gcameraPixelSize != None:
+        if gcameraPixelSize is not None:
             self.gcameraPixelSize = gcameraPixelSize
-        if gcameraMagnification != None:
+        if gcameraMagnification is not None:
             self.gcameraMagnification = gcameraMagnification
 
     def set_pid_defaults(self, axis, **kwargs):
@@ -452,7 +452,7 @@ class GuiderState(object):
 
     def reset_pid_terms(self, terms=None):
         """Reset all PID terms, or just those listed."""
-        if terms == None:
+        if terms is None:
             terms = self.pid.keys()
         for key in terms:
             self.pid[key].reset()
@@ -499,7 +499,7 @@ class GuiderState(object):
         if cmd is None:
             cmd = self.cmd
         for axis in self.pid.keys():
-            cmd.respond("pid=%s,%g,%g,%g,%g,%d" %
+            cmd.respond('pid=%s,%g,%g,%g,%g,%d' %
                         (axis, self.pid[axis].Kp, self.pid[axis].Ti,
                          self.pid[axis].Td, self.pid[axis].Imax,
                          self.pid[axis].nfilt))
@@ -539,10 +539,11 @@ class FrameInfo(object):
         self.seeing = numpy.nan
 
         # conversion for a Gaussian, use this eveywhere but in ipGguide.c
-        # conversion from sigma to FWHM for a JEG double Gaussian is done in ipGguide.c (sigmaToFWHMJEG = 2.468)
+        # conversion from sigma to FWHM for a JEG double Gaussian is done in
+        # ipGguide.c (sigmaToFWHMJEG = 2.468)
         self.sigmaToFWHM = 2.354
-        #ADU, avoid guiding on noise spikes during acquisitions
-        #should be in photons, based on RON, Dark residual, SKY
+        # ADU, avoid guiding on noise spikes during acquisitions
+        # should be in photons, based on RON, Dark residual, SKY
         self.minStarFlux = 500
 
         self.guideRMS = 0.
@@ -553,10 +554,10 @@ class FrameInfo(object):
         self.guideDecRMS = 0.
         self.inFocusFwhm = []
 
-        self.guideAzRMS = numpy.nan  #not implemented yet
+        self.guideAzRMS = numpy.nan  # not implemented yet
         self.guideAltRMS = numpy.nan
 
-        self.guideFitRMS = numpy.nan  #not implemented yet
+        self.guideFitRMS = numpy.nan  # not implemented yet
         self.nguideFitRMS = numpy.nan
         self.nrejectFitRMS = numpy.nan
 
