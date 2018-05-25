@@ -15,7 +15,7 @@ This document records the main changes to the guiderActor code.
 
 Refactored
 ^^^^^^^^^^
-* Applied recursive YAPF and isort formatting.
+* Applied recursive autoformatting and isort.
 * Removed references to LCO in files and functions.
 * Rewritten ``setup.py``. Now it does not use ``sdss3tools`` and the link to ``build/lib.XXX`` is created when building.
 
