@@ -9,7 +9,6 @@ import sys
 import tempfile
 
 import matplotlib
-import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import pyfits
@@ -31,9 +30,9 @@ def asinh(inputArray, scale_min=None, scale_max=None, non_linear=2.0):
     """
 
     imageData = np.array(inputArray, copy=True)
-    if scale_min == None:
+    if scale_min is None:
         scale_min = imageData.min()
-    if scale_max == None:
+    if scale_max is None:
         scale_max = imageData.max()
     factor = np.arcsinh((scale_max - scale_min) / non_linear)
     indices0 = np.where(imageData < scale_min)
@@ -76,8 +75,8 @@ class ImageMaker(object):
         self.cmap2 = 'gist_ncar'
         self.aspect = 'auto'  # normal vs. equal?
 
-        ErrPixPerArcSec = 40  # pixels per arcsec of error on the plug plate
-        scale_min = 5.
+        # ErrPixPerArcSec = 40  # pixels per arcsec of error on the plug plate
+        # scale_min = 5.
         scale_max = 30000.
 
         self.width = 512 * 2.  # 10px buffer
@@ -287,7 +286,7 @@ class ImageMaker(object):
                 color='green',
                 horizontalalignment='center',
                 fontsize=10)
-            if label[4] != None:
+            if label[4] is not None:
                 ax1.plot(label[4][0][0], label[4][0][1], color='red')
                 ax1.plot(label[4][1][0], label[4][1][1], color='red')
 
@@ -369,9 +368,11 @@ class ImageMaker(object):
                 loc = label[0]
                 ax2.text(loc[0], loc[1], label[1], color='white', fontsize=10)
                 # jkp: skip the vertical lines for fwhm, as they are distracting.
-                #loc = label[2]
-                #ax2.quiver(loc[0],loc[1],0,label[3],color='green',width=0.003,edgecolor='none',headwidth=0,units='width',scale=self.qscale)
-                if label[4] != None:
+                # loc = label[2]
+                # ax2.quiver(loc[0], loc[1], 0, label[3], color='green',
+                #            width=0.003, edgecolor='none', headwidth=0,
+                #            units='width', scale=self.qscale)
+                if label[4] is not None:
                     ax2.plot(label[4][0][0], label[4][0][1], color='red')
                     ax2.plot(label[4][1][0], label[4][1][1], color='red')
             except IndexError:
@@ -444,10 +445,10 @@ def do_work(opts, gimgdir, start, end):
         import time
         time0 = time.time()
         # uncomment these lines and comment out the normal call to get a profile dump
-        #import cProfile
-        #prof = cProfile.Profile()
-        #count,files = prof.runcall(make_images,gimgdir,start,end,tempdir,cmap=opts.cmap)
-        #prof.dump_stats('images.profile')
+        # import cProfile
+        # prof = cProfile.Profile()
+        # count,files = prof.runcall(make_images,gimgdir,start,end,tempdir,cmap=opts.cmap)
+        # prof.dump_stats('images.profile')
         count, files = make_images(
             gimgdir, start, end, tempdir, cmap=opts.cmap, verbose=opts.verbose)
         time1 = time.time()
@@ -495,14 +496,13 @@ def main(argv=None):
         dest='framerate',
         default='10',
         help='Frame rate of output video (%default).')
-    #parser.add_option('--raw',dest='raw',default='""',
+    # parser.add_option('--raw',dest='raw',default='""',
     #                  help='Raw commands to pass on to ffmpeg directly (%default)')
     parser.add_option(
         '--cmap',
         dest='cmap',
         default='hsv',
-        help=
-        'Colormap used to make the images (log10 scaled) from the fits data (%default).'
+        help='Colormap used to make the images (log10 scaled) from the fits data (%default).'
     )
     parser.add_option(
         '--outdir',
@@ -523,7 +523,7 @@ def main(argv=None):
         gimgdir = args[0]
         start = int(args[1])
         end = int(args[2])
-    except IndexError, ValueError:
+    except (IndexError, ValueError):
         parser.error(
             'Need DIR STARTNUM ENDNUM. Pass -h or --help for more information.'
         )
@@ -532,5 +532,5 @@ def main(argv=None):
     return do_work(opts, gimgdir, start, end)
 
 
-if __name__ == "__main__":
+if __name__ == '__mainå__':
     sys.exit(main())
