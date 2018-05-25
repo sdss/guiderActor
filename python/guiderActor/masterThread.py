@@ -609,8 +609,7 @@ def apply_radecrot(cmd, gState, actor, actorState, offsetRa, offsetDec,
             cmd.warn('text="using arc offsets at a pointing star"')
 
         cmdVar = actor.cmdr.call(actor="tcc", forUserCmd=cmd,
-                                 cmdStr="offset arc %f, %f" % \
-                                 (-offsetRa, -offsetDec))
+                                 cmdStr="offset arc %f, %f" % (-offsetRa, -offsetDec))
         if cmdVar.didFail:
             cmd.warn('text="Failed to issue centering offset"')
         else:
@@ -1093,20 +1092,18 @@ def loadAllProbes(cmd, gState):
         # jkp TBD: may need to conver these to strings in some way
         # to catch ["marvels","apogee"], but I need to see how lists are
         # handled in the YPF, which requires an example...
-        #instruments = ypm['instruments'].value
-        #platetype = ypm['platetype'].value
-        #cmd.info('scienceProgram=%s,%s'%(instruments,platetype))
+        # instruments = ypm['instruments'].value
+        # platetype = ypm['platetype'].value
+        # cmd.info('scienceProgram=%s,%s'%(instruments,platetype))
 
         # It is useful to keep the object information as well,
         # so that we can put "any star down any hole". This is potentially
         # very useful for testing.
         # TBD: we'll probably need a new type here for MaNGA.
         keep0 = pm[numpy.where((
-            (pm.holeType == "GUIDE") & (pm.objType == "NA")) |
-                               (pm.holeType == "OBJECT"))]
+            (pm.holeType == "GUIDE") & (pm.objType == "NA")) | (pm.holeType == "OBJECT"))]
         keep = pm[numpy.where((
-            (pm.holeType == "GUIDE") & (pm.objType == "NA")) |
-                              (pm.holeType == "MANGA"))]
+            (pm.holeType == "GUIDE") & (pm.objType == "NA")) | (pm.holeType == "MANGA"))]
         cmd.diag('text="kept %d probes"' % (len(keep)))
         cmd.diag('text="original was %d probes"' % (len(keep0)))
         gState.allProbes = keep
@@ -1133,11 +1130,10 @@ def loadTccBlock(cmd, actorState, gState):
                                                              gState.pointing,
                                                              gState.fscanID,
                                                              gState.plate)
-        #plate10k
+        # plate10k
         scratchFile = '/tmp/v_ca1_%04d.dat' % (gState.plate)
         cmd1 += " | %s /dev/stdin > %s" % (os.path.join(
-            os.environ['GUIDERACTOR_DIR'], 'bin', 'convertPlPlugMap.py'),
-                                           scratchFile)
+            os.environ['GUIDERACTOR_DIR'], 'bin', 'convertPlPlugMap.py'), scratchFile)
         cmd.diag('text=%s' % (qstr('running: %s' % (cmd1))))
 
         cmd2 = " %s %s" % (
@@ -1282,10 +1278,11 @@ def load_cartridge(msg, queues, gState, actorState):
     # loadTccBlock(msg.cmd, actorState, gState)
 
     # newtcc NOTE: We still need to "set inst=spectro", but the rest of it we probably don't need.
-    #cmdVar = actorState.actor.cmdr.call(actor="tcc", forUserCmd=msg.cmd,
-    #                                    cmdStr="set inst=spectro")#/gcview=%s/keep=(scaleFac)" % (gState.plate))
-    #if cmdVar.didFail:
-    #    msg.cmd.fail('text="Failed to set inst!"')
+    # cmdVar = actorState.actor.cmdr.call(
+    #     actor="tcc", forUserCmd=msg.cmd,
+    #     cmdStr="set inst=spectro")  # /gcview=%s/keep=(scaleFac)" % (gState.plate))
+    # if cmdVar.didFail:
+    #     msg.cmd.fail('text="Failed to set inst!"')
 
     loadAllProbes(msg.cmd, gState)
     for id, gProbe in gState.gprobes.items():
@@ -1674,21 +1671,21 @@ def main(actor, queues):
                     queues[MASTER].put(Msg(Msg.STATUS, msg.cmd, finish=True))
 
             elif msg.type == Msg.STAR_IN_FIBER:
-                if gState.allProbes == None:
+                if gState.allProbes is None:
                     msg.cmd.fail(
                         'text="the probes for this plate are not available, allProbes=None"'
                     )
                     continue
                 w = None
                 if msg.probe:
-                    #w = numpy.where((gState.allProbes.spectrographId == 2) &
-                    #                (gState.allProbes.fiberId == msg.probe) &
-                    #                (gState.allProbes.holeType == 'OBJECT'))
-                    #cmd.warn(text="dmbiz all matching fibers %d"' % (len(w))
+                    # w = numpy.where((gState.allProbes.spectrographId == 2) &
+                    #                 (gState.allProbes.fiberId == msg.probe) &
+                    #                 (gState.allProbes.holeType == 'OBJECT'))
+                    # cmd.warn(text="dmbiz all matching fibers %d"' % (len(w))
                     w = numpy.where((gState.allProbes.holeType == 'MANGA') &
                                     (gState.allProbes.fiberId == msg.probe))
                     w = w[0]
-                    cmd.warn(
+                    msg.cmd.warn(
                         'text="dmbiz_probe all matching fibers %d %s %s"' %
                         (len(w), gState.allProbes[w].fiberId,
                          gState.allProbes[w].holeType))
@@ -1696,7 +1693,7 @@ def main(actor, queues):
                     w = numpy.where((gState.allProbes.fiberId == msg.gprobe) &
                                     (gState.allProbes.holeType == 'GUIDE'))
                     w = w[0]
-                if w == None or len(w) != 1:
+                if w is None or len(w) != 1:
                     msg.cmd.fail(
                         'text="no unique destination probe was specified"')
                     continue
@@ -1706,13 +1703,13 @@ def main(actor, queues):
 
                 w = None
                 if msg.fromProbe:
-                    #w = numpy.where((gState.allProbes.holeType == 'OBJECT') &
-                    #                (gState.allProbes.fiberId == msg.fromProbe) &
-                    #                (gState.allProbes.spectrographId == 2))
+                    # w = numpy.where((gState.allProbes.holeType == 'OBJECT') &
+                    #                 (gState.allProbes.fiberId == msg.fromProbe) &
+                    #                 (gState.allProbes.spectrographId == 2))
                     w = numpy.where((gState.allProbes.holeType == 'MANGA') & (
                         gState.allProbes.fiberId == msg.fromProbe))
                     w = w[0]
-                    cmd.warn(
+                    msg.cmd.warn(
                         'text="dmbiz_fromProbe all matching fibers %d %s %s"' %
                         (len(w), gState.allProbes[w].fiberId,
                          gState.allProbes[w].holeType))
@@ -1729,7 +1726,7 @@ def main(actor, queues):
                         msg.cmd.fail(
                             'text="no unique source probe was specified"')
                         continue
-                if w != None:
+                if w is not None:
                     srcProbe = gState.allProbes[w]
                     srcX = srcProbe.xFocal
                     srcY = srcProbe.yFocal
@@ -1882,7 +1879,8 @@ def main(actor, queues):
                     frameNo = getattr(frameInfo, 'frameNo', -2)
                     send_decenter_status(cmd, gState, frameNo)
 
-                # Some fiber IDs may be absent from gprobeBits.keys(), so start them all with UNKNOWN
+                # Some fiber IDs may be absent from gprobeBits.keys(),
+                # so start them all with UNKNOWN
                 liveProbes = gState.gprobes.keys()
                 if liveProbes:
                     gprobeBits = [
@@ -1936,11 +1934,11 @@ def main(actor, queues):
             # guiderActor isn't built correctly (missing lib/libguide.so)
             tback.tback(errMsg, e)
 
-            #import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             try:
                 print "\n".join(tback.tback(
                     errMsg, e)[0])  # old versions of tback return None
-            except:
+            except Exception:
                 pass
 
             try:
@@ -1960,7 +1958,7 @@ def guidingIsOK(cmd, actorState, force=False):
     ffsStatus = actorState.models["mcp"].keyVarDict["ffsStatus"]
     open, closed = 0, 0
     for s in ffsStatus:
-        if s == None:
+        if s is None:
             cmd.warn(
                 'text="Failed to get state of flat field screen from MCP"')
             break
