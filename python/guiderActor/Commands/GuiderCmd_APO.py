@@ -8,14 +8,7 @@
 # @Last modified by:   Brian
 # @Last Modified time: 2016-06-10 22:53:20
 
-from __future__ import print_function, division, absolute_import
-
-import opscore.protocols.keys as keys
-import opscore.protocols.types as types
-from opscore.utility.qstr import qstr
-import opscore.utility.YPF as YPF
-
-from guiderActor.Commands import GuiderCmd
+from __future__ import absolute_import, division, print_function
 
 
 class GuiderCmd_APO(GuiderCmd.GuiderCmd):
@@ -28,5 +21,3 @@ class GuiderCmd_APO(GuiderCmd.GuiderCmd):
 
         # Define new commands for APO
         pass
-
-
