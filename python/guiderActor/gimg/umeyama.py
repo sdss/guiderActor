@@ -4,10 +4,7 @@
 # @Date: Feb 22, 2018
 # @Filename: ralign.py
 
-
-from __future__ import division
-from __future__ import print_function
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
@@ -83,8 +80,8 @@ def umeyama(X, Y):
 if __name__ == '__main__':
 
     p_A = np.random.rand(3, 10)
-    R_BA = np.array([[0.9689135, -0.0232753, 0.2463025],
-                     [0.0236362, 0.9997195, 0.0014915],
+    R_BA = np.array([[0.9689135, -0.0232753,
+                      0.2463025], [0.0236362, 0.9997195, 0.0014915],
                      [-0.2462682, 0.0043765, 0.9691918]])
     B_t_BA = np.array([[1], [2], [3]])
     p_B = np.dot(R_BA, p_A) + B_t_BA

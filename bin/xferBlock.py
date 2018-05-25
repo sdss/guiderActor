@@ -6,6 +6,7 @@ from ftplib import FTP
 
 tcc = 'tcc25m-p.apo.nmsu.edu'
 
+
 def xferFile(pathname):
     dir, fname = os.path.split(pathname)
     os.chdir(dir)
@@ -19,11 +20,11 @@ def xferFile(pathname):
     except:
         print("failed to copy %s to %s" % (fname, tcc))
 
+
 def main():
     fname = sys.argv[-1]
     xferFile(fname)
-#...
+
 
 if __name__ == "__main__":
     main()
-

@@ -3,13 +3,10 @@
 
 import unittest
 
-from actorcore import Actor
-from opscore.actor import Model, KeyVarDispatcher
-from actorcore import TestHelper
-
 import guiderTester
-
+from actorcore import Actor, TestHelper
 from guiderActor import GuiderActor
+from opscore.actor import KeyVarDispatcher, Model
 
 logDirBase = 'temp/'
 
@@ -21,6 +18,7 @@ logDirBase = 'temp/'
 
 class GuiderActorTester(unittest.TestCase):
     """Parent class for tests that actually need a proper guiderActor instance."""
+
     @classmethod
     def setUpClass(cls):
         # can only configure the dispatcher once.
@@ -48,47 +46,58 @@ class GuiderActorTester(unittest.TestCase):
 
 
 class TestGuiderActor(GuiderActorTester):
+
     def test_init_fails(self):
         with self.assertRaises(KeyError):
-            self.guider = GuiderActor.GuiderActor.newActor(location='nonsense', makeCmdrConnection=False)
+            self.guider = GuiderActor.GuiderActor.newActor(
+                location='nonsense', makeCmdrConnection=False)
 
     def test_init_apo(self):
-        self.guider = GuiderActor.GuiderActor.newActor(location='apo', makeCmdrConnection=False)
+        self.guider = GuiderActor.GuiderActor.newActor(
+            location='apo', makeCmdrConnection=False)
         self.assertIsInstance(self.guider, GuiderActor.GuiderActorAPO)
-        self.assertEqual(TestHelper.logBuffer.basedir, '/data/logs/actors/guider')
+        self.assertEqual(TestHelper.logBuffer.basedir,
+                         '/data/logs/actors/guider')
         logged = TestHelper.logBuffer.getvalue()
         self.assertIsInstance(self.guider.actorState, Actor.ActorState)
         self.assertIn('attaching command set GuiderCmd', logged)
         self.assertIn('attaching command set GuiderCmd_APO', logged)
 
     def test_init_lco(self):
-        self.guider = GuiderActor.GuiderActor.newActor(location='lco', makeCmdrConnection=False)
+        self.guider = GuiderActor.GuiderActor.newActor(
+            location='lco', makeCmdrConnection=False)
         self.assertIsInstance(self.guider, GuiderActor.GuiderActorLCO)
         self.assertIsInstance(self.guider.actorState, Actor.ActorState)
-        self.assertEqual(TestHelper.logBuffer.basedir, '/data/logs/actors/guider')
+        self.assertEqual(TestHelper.logBuffer.basedir,
+                         '/data/logs/actors/guider')
         logged = TestHelper.logBuffer.getvalue()
         self.assertIn('attaching command set GuiderCmd', logged)
         self.assertIn('attaching command set GuiderCmd_LCO', logged)
 
     def test_init_local(self):
-        self.guider = GuiderActor.GuiderActor.newActor(location='local', makeCmdrConnection=False)
+        self.guider = GuiderActor.GuiderActor.newActor(
+            location='local', makeCmdrConnection=False)
         self.assertIsInstance(self.guider, GuiderActor.GuiderActorLocal)
         self.assertIsInstance(self.guider.actorState, Actor.ActorState)
-        self.assertEqual(TestHelper.logBuffer.basedir, '/data/logs/actors/guider')
+        self.assertEqual(TestHelper.logBuffer.basedir,
+                         '/data/logs/actors/guider')
         logged = TestHelper.logBuffer.getvalue()
         self.assertIn('attaching command set GuiderCmd', logged)
         self.assertIn('attaching command set GuiderCmd_LOCAL', logged)
 
 
 class TestGuidingIsOK_APO(GuiderActorTester, guiderTester.GuiderTester):
+
     def setUp(self):
-        self.guider = GuiderActor.GuiderActor.newActor(location='apo', makeCmdrConnection=False)
+        self.guider = GuiderActor.GuiderActor.newActor(
+            location='apo', makeCmdrConnection=False)
         super(TestGuidingIsOK_APO, self).setUp()
         # need to explicitly call this, to get cmd,actorState,etc. set up.
         guiderTester.GuiderTester.setUp(self)
 
     def _guidingIsOK(self, expect, nWarn=0, force=False):
-        result = self.guider.guidingIsOK(self.cmd, self.actorState, force=force)
+        result = self.guider.guidingIsOK(
+            self.cmd, self.actorState, force=force)
         self.assertEqual(result, expect)
         self._check_levels(0, 0, nWarn, 0)
 
@@ -118,7 +127,8 @@ class TestGuidingIsOK_APO(GuiderActorTester, guiderTester.GuiderTester):
 
     def test_fflamp_on_bypassed(self):
         guiderTester.updateModel('mcp', TestHelper.mcpState['flats'])
-        self.actorState.models['sop'].keyVarDict['bypassedNames'].set(['ffs', 'lamp_ff'])
+        self.actorState.models['sop'].keyVarDict['bypassedNames'].set(
+            ['ffs', 'lamp_ff'])
         guiderTester.updateModel('tcc', TestHelper.tccState['tracking'])
         self._guidingIsOK(True, 1)
 
@@ -130,7 +140,8 @@ class TestGuidingIsOK_APO(GuiderActorTester, guiderTester.GuiderTester):
     def test_arclamps_on_bypassed(self):
         guiderTester.updateModel('mcp', TestHelper.mcpState['arcs'])
         guiderTester.updateModel('tcc', TestHelper.tccState['tracking'])
-        self.actorState.models['sop'].keyVarDict['bypassedNames'].set(['ffs', 'lamp_hgcd', 'lamp_ne'])
+        self.actorState.models['sop'].keyVarDict['bypassedNames'].set(
+            ['ffs', 'lamp_hgcd', 'lamp_ne'])
         self._guidingIsOK(True, 1)
 
     def test_tcc_halted(self):
@@ -149,4 +160,3 @@ if __name__ == '__main__':
     verbosity = 2
 
     unittest.main(verbosity=verbosity)
-

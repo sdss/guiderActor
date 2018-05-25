@@ -2,8 +2,9 @@
 Classes related to the current state of the guider.
 """
 
-import numpy
 import math
+
+import numpy
 
 import PID
 from guiderActor import myGlobals
@@ -11,14 +12,15 @@ from guiderActor import myGlobals
 # gprobebits
 # To help manage the guide probe status bits.
 # WARNING: ensure the usage in guiderActor, platedbActor, STUI are consistent with this!
-GOOD   =  0x00     # A happy, working, in-use probe has all bits set to 0.
-BROKEN =  0x01     # a known broken probe, labeled as such in plPlugMap
-NOSTAR =  0x02     # probe with no star in plPlugMap (e.g. tritium)
-DISABLED = 0x04     # probe that has been disabled by the observers (e.g. no star present, double star, wrong position)
+GOOD = 0x00  # A happy, working, in-use probe has all bits set to 0.
+BROKEN = 0x01  # a known broken probe, labeled as such in plPlugMap
+NOSTAR = 0x02  # probe with no star in plPlugMap (e.g. tritium)
+DISABLED = 0x04  # probe that has been disabled by the observers (e.g. no star present, double star, wrong position)
 ABOVEFOCUS = 0x08  # fiber is above the focal plane
 BELOWFOCUS = 0x10  # fiber is below the focal plane
-TOOFAINT = 0x20    # observed star is too faint to be reliably used for guiding
-UNKNOWN = 0xff     # shouldn't ever happen
+TOOFAINT = 0x20  # observed star is too faint to be reliably used for guiding
+UNKNOWN = 0xff  # shouldn't ever happen
+
 
 class GProbe(object):
     """
@@ -31,11 +33,14 @@ class GProbe(object):
         broken, disabled (enabled), noStar, notExist, atFocus (aboveFocus,belowFocus), toofaint
     and gProbe.good will tell you if all bits are in the OK state.
     """
-    def __init__(self,id=-9999,gprobeKey=None,guideInfoKey=None):
+
+    def __init__(self, id=-9999, gprobeKey=None, guideInfoKey=None):
         """Pass the contents of the platedb.gprobe and/or platedb.guideInfo keyword to initialize"""
         self.id = id
         self._bits = GOOD
-        self._ugriz = [numpy.nan,]*5
+        self._ugriz = [
+            numpy.nan,
+        ] * 5
         self.ref_mag = numpy.nan
         if gprobeKey is not None:
             self.from_platedb_gprobe(gprobeKey)
@@ -56,14 +61,14 @@ class GProbe(object):
     def checkTritium(self):
         """If this probe is labeled a tritium star, disable it."""
         if self.fiber_type == 'TRITIUM':
-            self.disabled =True
+            self.disabled = True
 
-    def from_platedb_gprobe(self,gprobeKey):
+    def from_platedb_gprobe(self, gprobeKey):
         """
         Fill in data from the platedb.gprobe key.
         Expects a list, as output by CmdVar.getKeyVarData()
         """
-        self._check_id(gprobeKey[1],'platedb.gprobe')
+        self._check_id(gprobeKey[1], 'platedb.gprobe')
         self.broken = False if gprobeKey[2] else True
         if self.broken:
             self.disabled = True
@@ -81,23 +86,21 @@ class GProbe(object):
         self.haXOffsets = {}
         self.haYOffsets = {}
         self.checkFocus()
-    #...
 
-    def from_platedb_guideInfo(self,guideInfoKey):
+    def from_platedb_guideInfo(self, guideInfoKey):
         """
         Fill in data from the platedb.guideInfo keyword.
         Expects a list, as output by CmdVar.getKeyVarData()
         """
-        self._check_id(guideInfoKey[0],'platedb.guideInfo')
+        self._check_id(guideInfoKey[0], 'platedb.guideInfo')
         self.ra = guideInfoKey[1]
         self.dec = guideInfoKey[2]
         self.xFocal = guideInfoKey[3]
         self.yFocal = guideInfoKey[4]
         self.phi = guideInfoKey[5]
         self.throughput = guideInfoKey[6]
-    #...
 
-    def _check_id(self,id,fromName):
+    def _check_id(self, id, fromName):
         """
         Verify that the id is correct for this probe,
         or set it if it hasn't been set yet.
@@ -107,17 +110,17 @@ class GProbe(object):
         if self.id == -9999:
             self.id = id
         elif id != self.id:
-            raise ValueError("%s id does not match current probe id!"%fromName)
+            raise ValueError(
+                "%s id does not match current probe id!" % fromName)
         else:
             # otherwise, everything's fine.
             pass
-    #...
 
-    def _unset(self,bit):
+    def _unset(self, bit):
         """Set bit to 0."""
         self._bits = self._bits & (~bit)
 
-    def _set(self,bit):
+    def _set(self, bit):
         """Set bit to 1."""
         self._bits = self._bits | bit
 
@@ -135,32 +138,36 @@ class GProbe(object):
     def disabled(self):
         """True if this probe is disabled (negation of enabled)."""
         return True if (self._bits & DISABLED) else False
+
     @disabled.setter
-    def disabled(self,value):
+    def disabled(self, value):
         self._set(DISABLED) if value else self._unset(DISABLED)
 
     @property
     def enabled(self):
         """True if this probe is enabled (negation of disabled)."""
         return False if (self._bits & DISABLED) else True
+
     @enabled.setter
-    def enabled(self,value):
+    def enabled(self, value):
         self._unset(DISABLED) if value else self._set(DISABLED)
 
     @property
     def broken(self):
         """True if this probe is broken."""
         return True if (self._bits & BROKEN) else False
+
     @broken.setter
-    def broken(self,value):
+    def broken(self, value):
         self._set(BROKEN) if value else self._unset(BROKEN)
 
     @property
     def noStar(self):
         """True if this probe has no star defined in the plugmap."""
         return True if (self._bits & NOSTAR) else False
+
     @noStar.setter
-    def noStar(self,value):
+    def noStar(self, value):
         self._set(NOSTAR) if value else self._unset(NOSTAR)
 
     @property
@@ -172,37 +179,41 @@ class GProbe(object):
     def aboveFocus(self):
         """True if this fiber is above the focal plane."""
         return True if (self._bits & ABOVEFOCUS) else False
+
     @aboveFocus.setter
-    def aboveFocus(self,value):
+    def aboveFocus(self, value):
         if value:
-            self._unset(BELOWFOCUS) # can't be both above and below focus!
+            self._unset(BELOWFOCUS)  # can't be both above and below focus!
         self._set(ABOVEFOCUS) if value else self._unset(ABOVEFOCUS)
 
     @property
     def belowFocus(self):
         """True if this fiber is below the focal plane."""
         return True if (self._bits & BELOWFOCUS) else False
+
     @belowFocus.setter
-    def belowFocus(self,value):
+    def belowFocus(self, value):
         if value:
-            self._unset(ABOVEFOCUS) # can't be both above and below focus!
+            self._unset(ABOVEFOCUS)  # can't be both above and below focus!
         self._set(BELOWFOCUS) if value else self._unset(BELOWFOCUS)
 
     @property
     def tooFaint(self):
         """True if this star in this fiber is too faint to use for guiding."""
         return True if (self._bits & TOOFAINT) else False
+
     @tooFaint.setter
-    def tooFaint(self,value):
+    def tooFaint(self, value):
         self._set(TOOFAINT) if value else self._unset(TOOFAINT)
 
     @property
     def gprobebits(self):
         """The bits for this probe's status (int)."""
         return self._bits
+
     @gprobebits.setter
-    def gprobebits(self,value):
-        if not isinstance(value,int):
+    def gprobebits(self, value):
+        if not isinstance(value, int):
             raise ValueError("gprobebits must be set as an integer!")
         else:
             self._bits = value
@@ -214,8 +225,9 @@ class GProbe(object):
         Computes the synthetic predicted reference magnitude (self.ref_mag) when set.
         '''
         return self._ugriz
+
     @ugriz.setter
-    def ugriz(self,value):
+    def ugriz(self, value):
         """
         Compute the reference magnitude for this probe's target.
 
@@ -244,14 +256,14 @@ class GProbe(object):
         try:
             zd = 90. - actorState.models["tcc"].keyVarDict["axePos"][1]
         except TypeError:
-            zd = 90. # if the tcc doesn't return a proper position.
+            zd = 90.  # if the tcc doesn't return a proper position.
         # TBD: zd=0 never occurs for tracking, but need to test for zd=0 for simulate
-        airmass = 1./math.cos(math.radians(zd))
-        gobs = value[1] + airmass*k0_g
-        robs = value[2] + airmass*k0_r
-        self.ref_mag = robs + a1 + a2*(gobs-robs) + a3*(gobs-robs)**2
+        airmass = 1. / math.cos(math.radians(zd))
+        gobs = value[1] + airmass * k0_g
+        robs = value[2] + airmass * k0_r
+        self.ref_mag = robs + a1 + a2 * (gobs - robs) + a3 * (gobs - robs)**2
         #self.ref_mag = (gobs+robs)/2. #jkp TBD: placeholder
-#...
+
 
 class GuiderState(object):
     """
@@ -275,7 +287,7 @@ class GuiderState(object):
         self.inMotion = False
         self.centerUp = False
         self.cmd = None
-        self.startFrame = None # guider frame number to start movie at.
+        self.startFrame = None  # guider frame number to start movie at.
 
         self.fscanMJD = self.fscanID = -1
         self.design_ha = numpy.nan
@@ -314,7 +326,6 @@ class GuiderState(object):
 
         # reset the decenter positions.
         self.clearDecenter()
-    #...
 
     def deleteAllGprobes(self):
         """Delete all fibers """
@@ -364,9 +375,9 @@ class GuiderState(object):
         if enable is not None:
             self.decenter = enable
 
-        newRA = decenters.get('decenterRA',0)
-        newDec = decenters.get('decenterDec',0)
-        newRot = decenters.get('decenterRot',0)
+        newRA = decenters.get('decenterRA', 0)
+        newDec = decenters.get('decenterDec', 0)
+        newRot = decenters.get('decenterRot', 0)
         # Store the cmd, if we'll have to actually apply a new location,
         # or just finish if the decenter is identical to the current one.
         if self.decenterRA != newRA or \
@@ -386,7 +397,7 @@ class GuiderState(object):
             default = 'C'
         else:
             default = '?'
-        self.mangaDither = decenters.get('mangaDither',default)
+        self.mangaDither = decenters.get('mangaDither', default)
 
     def finish_decenter(self):
         """Finish any pending decenter cmds."""
@@ -406,7 +417,8 @@ class GuiderState(object):
         self.decenterFocus = numpy.nan
         self.decenterScale = numpy.nan
 
-    def setScales(self, plugPlateScale=None,
+    def setScales(self,
+                  plugPlateScale=None,
                   dSecondary_dmm=None,
                   gcameraPixelSize=None,
                   gcameraMagnification=None):
@@ -451,15 +463,16 @@ class GuiderState(object):
         Ti as altitude increases.
         Return True if we changed the PID values.
         """
-        def twoPointForm(x0,y0,x1,y1,x):
+
+        def twoPointForm(x0, y0, x1, y1, x):
             """Equation of a line from two points"""
-            return (y1-y0)/(x1-x0) * (x-x0) + y0
+            return (y1 - y0) / (x1 - x0) * (x - x0) + y0
 
         old_Ti = self.pid['raDec'].Ti
 
         # use .get() with a reasonable value incase set_pid_defaults wasn't called.
-        Ti_low = self.pid_defaults['raDec'].get('Ti_min',200)
-        Ti_high = self.pid_defaults['raDec'].get('Ti_max',200)
+        Ti_low = self.pid_defaults['raDec'].get('Ti_min', 200)
+        Ti_high = self.pid_defaults['raDec'].get('Ti_max', 200)
         if alt < self.alt_min:
             Ti = Ti_low
         elif alt > self.alt_max:
@@ -486,16 +499,18 @@ class GuiderState(object):
         if cmd is None:
             cmd = self.cmd
         for axis in self.pid.keys():
-            cmd.respond("pid=%s,%g,%g,%g,%g,%d" % (axis,
-                        self.pid[axis].Kp, self.pid[axis].Ti, self.pid[axis].Td,
-                        self.pid[axis].Imax, self.pid[axis].nfilt))
+            cmd.respond("pid=%s,%g,%g,%g,%g,%d" %
+                        (axis, self.pid[axis].Kp, self.pid[axis].Ti,
+                         self.pid[axis].Td, self.pid[axis].Imax,
+                         self.pid[axis].nfilt))
 
 
 class FrameInfo(object):
     """
     Holds data about the most recently read image frame.
     """
-    def __init__(self,frameNo,arcsecPerMM,guideCameraScale,plugPlateScale):
+
+    def __init__(self, frameNo, arcsecPerMM, guideCameraScale, plugPlateScale):
         """Sets all parameters to NaN, so that they at least exist."""
         self.frameNo = frameNo
 
@@ -520,7 +535,7 @@ class FrameInfo(object):
         self.guideCameraScale = guideCameraScale
         self.plugPlateScale = plugPlateScale
         self.arcsecPerMM = arcsecPerMM
-        self.micronsPerArcsec = 1/3600.0*plugPlateScale*1e3 # convert arcsec to microns
+        self.micronsPerArcsec = 1 / 3600.0 * plugPlateScale * 1e3  # convert arcsec to microns
         self.seeing = numpy.nan
 
         # conversion for a Gaussian, use this eveywhere but in ipGguide.c
@@ -538,10 +553,10 @@ class FrameInfo(object):
         self.guideDecRMS = 0.
         self.inFocusFwhm = []
 
-        self.guideAzRMS = numpy.nan      #not implemented yet
+        self.guideAzRMS = numpy.nan  #not implemented yet
         self.guideAltRMS = numpy.nan
 
-        self.guideFitRMS = numpy.nan     #not implemented yet
+        self.guideFitRMS = numpy.nan  #not implemented yet
         self.nguideFitRMS = numpy.nan
         self.nrejectFitRMS = numpy.nan
 
@@ -557,8 +572,8 @@ class FrameInfo(object):
 
         self.fittingAlgorithm = 'NA'
 
-        self.A = numpy.matrix(numpy.zeros(3*3).reshape([3,3]))
-        self.b = numpy.matrix(numpy.zeros(3).reshape([3,1]))
+        self.A = numpy.matrix(numpy.zeros(3 * 3).reshape([3, 3]))
+        self.b = numpy.matrix(numpy.zeros(3).reshape([3, 1]))
         self.b3 = 0
         self.nStar = 0
         self.pos_error = numpy.nan
@@ -573,10 +588,10 @@ class FrameInfo(object):
         self.guideFocus = gState.guideFocus
         self.guideScale = gState.guideScale
 
-    def setDecenter(self,gState=None):
+    def setDecenter(self, gState=None):
         """Fill the decenter values from gState, or reset them to 0."""
         if gState:
-            self.decenterRA  = gState.decenterRA
+            self.decenterRA = gState.decenterRA
             self.decenterDec = gState.decenterDec
             self.decenterRot = gState.decenterRot
             self.decenterFocus = gState.decenterFocus
@@ -587,4 +602,3 @@ class FrameInfo(object):
             self.decenterRot = 0.0
             self.decenterFocus = 0.0
             self.decenterScale = 0.0
-#...
