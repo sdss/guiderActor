@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 Search a list of directories on hub25m for examples of bad gimg frames.
-Assumes any gimg frame with a mean value > 20,000 counts and a 
+Assumes any gimg frame with a mean value > 20,000 counts and a
 standard deviation < 2000 counts is potentially bad.
 Dumps the list of potential bad frames to a specified file.
 """
@@ -30,11 +30,9 @@ def do_one_dir(directory, outfile):
             outfile.flush()
 
 
-#...
-
-
 def main(argv=None):
-    if argv is None: argv = sys.argv[1:]
+    if argv is None:
+        argv = sys.argv[1:]
 
     usage = '%prog [OPTIONS] DIR1 [DIR2 [DIR3 ...]]'
     usage += '\n\nDIR example: /data/gcam/5623*'
@@ -58,8 +56,6 @@ def main(argv=None):
         print 'processing:', directory
         do_one_dir(directory, outfile)
 
-
-#...
 
 if __name__ == "__main__":
     sys.exit(main())

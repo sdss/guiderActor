@@ -76,14 +76,9 @@ class MovieMaker(object):
                                     'guider_movie.py STDERR WAS:', stderr))
             print dbg_output
 
-    #...
-
     def check_movie(self, msg):
         """Check on the status of a currently processing movie generation."""
         pass
-
-
-#...
 
 
 def main(actor, queues):
@@ -136,7 +131,3 @@ def main(actor, queues):
             errMsg = "Unexpected exception %s in guider %s thread" % (
                 e, threadName)
             tback.tback(errMsg, e)
-    #...
-
-
-#...

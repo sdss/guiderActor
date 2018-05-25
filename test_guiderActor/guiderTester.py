@@ -106,7 +106,10 @@ class GuiderTester(TestHelper.ActorTester):
 
     def _call_gi(self, filename, setpoint=None, args=[]):
         """Use this to simplify calls to guiderImageAnalysis."""
-        if setpoint is None: setpoint = self.setPoint_good
+
+        if setpoint is None:
+            setpoint = self.setPoint_good
+
         return self.gi(self.cmd, filename, self.gState.gprobes, setpoint,
                        *args)
 

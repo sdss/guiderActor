@@ -98,9 +98,12 @@ def processOneProcFile(gState,
     gState.setGuideMode('focus', False)
     gState.setGuideMode('scale', False)
 
-    if not cmd: cmd = FakeCommand()
-    if not guideCmd: guideCmd = FakeCommand()
-    if not queues: queues = dict(MASTER=Queue.Queue())
+    if not cmd:
+        cmd = FakeCommand()
+    if not guideCmd:
+        guideCmd = FakeCommand()
+    if not queues:
+        queues = dict(MASTER=Queue.Queue())
 
     gState.cmd = guideCmd
     guideStep(None, queues, cmd, gState, guiderFile, True)
@@ -1153,9 +1156,6 @@ def loadTccBlock(cmd, actorState, gState):
                        (e))))
 
 
-#...
-
-
 def make_movie(actorState, cmd, start):
     """Make a movie from guider frames, from start to the most recent."""
     if start is None or start <= 0:
@@ -1185,9 +1185,6 @@ def make_movie(actorState, cmd, start):
     # This will prevent "This command has already finished" complaints.
     actorState.actor.callCommand("makeMovie start=%d end=%d" % (start, end))
     return True
-
-
-#...
 
 
 def cal_finished(msg, name, guiderImageAnalysis, actorState, gState):
@@ -1240,9 +1237,6 @@ def cal_finished(msg, name, guiderImageAnalysis, actorState, gState):
         cmd.fail('text="failed to save flat: %s"' % (e))
 
 
-#...
-
-
 def dark_finished(msg, guiderImageAnalysis, actorState, gState):
     """Process a finished dark frame."""
     cal_finished(msg, 'dark', guiderImageAnalysis, actorState, gState)
@@ -1256,9 +1250,6 @@ def flat_finished(msg, guiderImageAnalysis, actorState, gState):
         msg.cmd.fail("text=%s" % qstr("No dark image listed in flat header!!"))
         return
     cal_finished(msg, 'flat', guiderImageAnalysis, actorState, gState)
-
-
-#...
 
 
 #
@@ -1313,9 +1304,6 @@ def load_cartridge(msg, queues, gState, actorState):
         Msg(Msg.STATUS, msg.cmd, finish=True, loadedNewCartridge=True))
 
 
-#...
-
-
 def set_decenter(cmd, decenters, gState, enable):
     """Enable/disable decentered guiding, and set offset coordinates."""
     # if we didn't get an enable message, don't allow the position to be changed.
@@ -1326,9 +1314,6 @@ def set_decenter(cmd, decenters, gState, enable):
             return
 
     gState.setDecenter(decenters, cmd, enable)
-
-
-#...
 
 
 def set_refraction(cmd,

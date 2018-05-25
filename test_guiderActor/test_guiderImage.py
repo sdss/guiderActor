@@ -173,7 +173,5 @@ class TestGuiderImage(guiderTester.GuiderTester, unittest.TestCase):
         self.assertEqual(hdu.header['MGDPOS'], 'N')
 
 
-#...
-
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -4,7 +4,7 @@
 ##  open_shutter_search.py 56376 56379 -o "dd.txt"
 """
 Search a list of directories on hub25m or sos3  for examples of bad gimg frames.
-Assumes any gimg frame with a mean value > 20,000 counts and a 
+Assumes any gimg frame with a mean value > 20,000 counts and a
 standard deviation < 2000 counts is potentially bad.
 Dumps the list of potential bad frames to a specified file.
 """
@@ -173,12 +173,13 @@ if __name__ == "__main__":
         nbadTot = nbadTot + nbad
     print line
 
-    if nflatsTot == 0: pers = "n/a"
-    else: pers = "%s" % int(nbadTot * 100.0 / nflatsTot) + '%'
+    if nflatsTot == 0:
+        pers = "n/a"
+    else:
+        pers = "%s" % int(nbadTot * 100.0 / nflatsTot) + '%'
     print "Image type:  %s" % args.imtype
     print "MJDs : %s - %s,  cutoff=%s" % (args.mjd1, args.mjd2, args.cutoff)
     print "Sum:  %s = %s,   bad = %s,  percent = %s" % (args.imtype, nflatsTot,
                                                         nbadTot, pers)
     print line
     print ""
-#...

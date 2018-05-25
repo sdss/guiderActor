@@ -71,9 +71,6 @@ class Fiber(object):
         return np.isnan(self.xcen)
 
 
-#...
-
-
 # The following are ctypes classes for interaction with the ipGguide.c code.
 class REGION(ctypes.Structure):
     _fields_ = [("nrow", ctypes.c_int), ("ncol", ctypes.c_int),
@@ -217,8 +214,6 @@ class GuiderImageAnalysis(object):
         # Masayuki zero average point 25.70 for use for his color transform
         self.zeropoint = 25.70
 
-    #...
-
     def __call__(self,
                  cmd,
                  gimgfn,
@@ -246,8 +241,6 @@ class GuiderImageAnalysis(object):
         self.camera = camera
 
         return self.findStars(gprobes)
-
-    #...
 
     def pixels2arcsec(self, pix):
         """Convert pix to arcseconds, using the pixelscale."""
@@ -286,8 +279,6 @@ class GuiderImageAnalysis(object):
             I = np.argsort(ir)
             bias = ir[I[int(0.3 * len(ir))]]
         self.imageBias = bias
-
-    #...
 
     def ensureLibraryLoaded(self):
         """
@@ -788,8 +779,6 @@ class GuiderImageAnalysis(object):
 
         return image, hdr, sat
 
-    #...
-
     def _find_stars_ecam(self, image, mask):
         """Find the stars in a processed ecamera image."""
         # TBD: readnoise and ccd gain should be set in the config file,
@@ -1090,8 +1079,6 @@ class GuiderImageAnalysis(object):
 
         self.processedDark = image
         self.currentDarkName = darkFileName
-
-    #...
 
     def _find_fibers_in_flat(self, image, flatFileName, gprobes, hdr):
         """Identify the fibers in a flat image."""

@@ -88,8 +88,6 @@ class GProbe(object):
         self.haYOffsets = {}
         self.checkFocus()
 
-    #...
-
     def from_platedb_guideInfo(self, guideInfoKey):
         """
         Fill in data from the platedb.guideInfo keyword.
@@ -102,8 +100,6 @@ class GProbe(object):
         self.yFocal = guideInfoKey[4]
         self.phi = guideInfoKey[5]
         self.throughput = guideInfoKey[6]
-
-    #...
 
     def _check_id(self, id, fromName):
         """
@@ -120,8 +116,6 @@ class GProbe(object):
         else:
             # otherwise, everything's fine.
             pass
-
-    #...
 
     def _unset(self, bit):
         """Set bit to 0."""
@@ -272,9 +266,6 @@ class GProbe(object):
         #self.ref_mag = (gobs+robs)/2. #jkp TBD: placeholder
 
 
-#...
-
-
 class GuiderState(object):
     """
     The current state of the guider.
@@ -336,8 +327,6 @@ class GuiderState(object):
 
         # reset the decenter positions.
         self.clearDecenter()
-
-    #...
 
     def deleteAllGprobes(self):
         """Delete all fibers """
@@ -614,6 +603,3 @@ class FrameInfo(object):
             self.decenterRot = 0.0
             self.decenterFocus = 0.0
             self.decenterScale = 0.0
-
-
-#...

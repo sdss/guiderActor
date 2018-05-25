@@ -20,7 +20,6 @@ from opscore.utility import assembleImage
 
 matplotlib.use('agg')
 
-
 gimgbase = 'proc-gimg-%04d.fits.gz'
 tempbase = 'temp-gimg-%04d.png'
 
@@ -49,12 +48,9 @@ def asinh(inputArray, scale_min=None, scale_max=None, non_linear=2.0):
     return imageData
 
 
-#...
-
-
 def makeGProbeName(gprobeNum, gprobeBits):
     """Construct a guide probe name from its number and gProbeBits
-    
+
     Inputs:
     gprobeNum: guide probe number (an integer, though a string will do)
     gprobeBits: guide probe bits; if None then the above/below focus suffix is not added
@@ -124,8 +120,6 @@ class ImageMaker(object):
         self._guide_locations()
         # dictionaries to hold information about the probes in each view
         self._labels(self.plateInfo.stampList)
-
-    #...
 
     def _labels(self, stampList):
         """Make the labels for each guide probe for both plots."""
@@ -388,11 +382,6 @@ class ImageMaker(object):
         plt.savefig(outfile, pad_inches=0, dpi=self.dpi)
         plt.close()  # close it, so we don't eat too much RAM.
 
-    #...
-
-
-#...
-
 
 def make_images(gimgdir, start, end, tempdir, cmap=None, verbose=False):
     """Generate all jpegs from the processed guider files in gimgdir from start to end."""
@@ -410,9 +399,6 @@ def make_images(gimgdir, start, end, tempdir, cmap=None, verbose=False):
             files.append(outfile)
             count += 1
     return count, files
-
-
-#...
 
 
 def make_movie(indir, outfile, framerate, verbose=False):
@@ -439,9 +425,6 @@ def make_movie(indir, outfile, framerate, verbose=False):
     ]
     print 'Running:', r' '.join(cmd)
     subprocess.check_call(r' '.join(cmd), shell=True)
-
-
-#...
 
 
 def do_work(opts, gimgdir, start, end):
@@ -496,12 +479,10 @@ def do_work(opts, gimgdir, start, end):
         return retval
 
 
-#...
-
-
 def main(argv=None):
     from optparse import OptionParser
-    if argv is None: argv = sys.argv[1:]
+    if argv is None:
+        argv = sys.argv[1:]
 
     usage = '%prog [OPTIONS] DIR STARTNUM ENDNUM'
     usage += '\n\nGenerate a movie of the guider images in DIR from STARTNUM to ENDNUM.'
@@ -551,8 +532,6 @@ def main(argv=None):
 
     return do_work(opts, gimgdir, start, end)
 
-
-#...
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -72,9 +72,6 @@ class TestGuiderStep(guiderTester.GuiderTester, unittest.TestCase):
                 self.assertTrue(result, name)
 
 
-#...
-
-
 class TestDecenter(guiderTester.GuiderTester, unittest.TestCase):
 
     def test_set_decenter_enable(self):

@@ -230,7 +230,5 @@ class TestGuiderState(guiderTester.GuiderTester, unittest.TestCase):
         self._check_cmd(0, 4, 0, 0, False)
 
 
-#...
-
 if __name__ == '__main__':
     unittest.main(verbosity=2)

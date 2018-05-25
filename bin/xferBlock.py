@@ -27,7 +27,5 @@ def main():
     xferFile(fname)
 
 
-#...
-
 if __name__ == "__main__":
     main()
