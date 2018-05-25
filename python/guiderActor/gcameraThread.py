@@ -22,13 +22,13 @@ def expose(cmd,
            camera='gcamera'):
     """Take an exposure with the e/gcamera, and succeed/fail as appropriate."""
     cmd.respond('text="starting %s exposure"' % camera)
-    filenameKey = actorState.models[camera].keyVarDict["filename"]
+    filenameKey = actorState.models[camera].keyVarDict['filename']
 
-    cmdStr = "{0} time={1} stack={2}".format(expType, expTime, stack)
-    if expType == "flat":
-        cmdStr += " cartridge={0}".format(cartridge)
+    cmdStr = '{0} time={1} stack={2}'.format(expType, expTime, stack)
+    if expType == 'flat':
+        cmdStr += ' cartridge={0}'.format(cartridge)
         responseMsg = Msg.FLAT_FINISHED
-    elif expType == "dark":
+    elif expType == 'dark':
         responseMsg = Msg.DARK_FINISHED
     else:
         responseMsg = Msg.EXPOSURE_FINISHED
@@ -46,13 +46,13 @@ def expose(cmd,
             forUserCmd=cmd)
         cmd.diag('text="{0} {1} didFail={2}"'.format(camera, cmdStr,
                                                      cmdVar.didFail))
-    except Exception, e:
+    except Exception as e:
         cmd.warn('text="{0} {1} raised {2}"'.format(camera, cmdStr, e))
         return
 
     if cmdVar.didFail:
         cmd.warn('text="Failed to take {0} exposure"'.format(camera))
-        if cmdVar.lastReply and "Timeout" in cmdVar.lastReply.keywords:
+        if cmdVar.lastReply and 'Timeout' in cmdVar.lastReply.keywords:
             cmd.warn(
                 'text="{0} expose command exceeded time limit: {1}."'.format(
                     camera, timeLim))
@@ -78,7 +78,7 @@ def main(actor, queues):
             msg = queues[GCAMERA].get(timeout=timeout)
             qlen = queues[GCAMERA].qsize()
             if qlen > 0 and msg.cmd:
-                msg.cmd.diag("gcamera thread has %d items after a .get()" %
+                msg.cmd.diag('gcamera thread has %d items after a .get()' %
                              (qlen))
 
             if msg.type == Msg.EXIT:
@@ -110,10 +110,10 @@ def main(actor, queues):
                     )
                 guiderActor.flushQueue(queues[GCAMERA])
             else:
-                raise ValueError, ("Unknown message type %s" % msg.type)
+                raise ValueError('Unknown message type %s' % msg.type)
 
         except Queue.Empty:
             actor.bcast.diag('text="gcamera alive"')
-        except Exception, e:
+        except Exception as e:
             actor.bcast.error(
                 'text="gcamera thread got unexpected exception: %s"' % (e))
