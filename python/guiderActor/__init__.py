@@ -1,14 +1,9 @@
 import Queue
 
-#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#
 # Queue names
-#
 MASTER = 0
 GCAMERA = 1
 MOVIE = 2
-
-#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 
 class Msg(object):
@@ -111,10 +106,9 @@ class Msg(object):
     def __repr__(self):
         values = []
         for k in self.__data:
-            values.append("%s : %s" % (k, self.__getattribute__(k)))
+            values.append('%s : %s' % (k, self.__getattribute__(k)))
 
-        return "%s, %s: {%s}" % (self.type.__name__, self.cmd,
-                                 ", ".join(values))
+        return '%s, %s: {%s}' % (self.type.__name__, self.cmd, ', '.join(values))
 
     def __cmp__(self, rhs):
         """Used when sorting the messages in a priority queue"""
@@ -126,11 +120,11 @@ def flushQueue(queue):
 
     while True:
         try:
-            msg = queue.get(timeout=0)
+            queue.get(timeout=0)
         except Queue.Empty:
             return
 
 
-__all__ = ["MASTER", "GCAMERA", "MOVIE", "Msg"]
+__all__ = ['MASTER', 'GCAMERA', 'MOVIE', 'Msg']
 
 __version__ = '3.9.0dev'
