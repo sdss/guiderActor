@@ -1,33 +1,37 @@
-import distutils
-import distutils.command.install as distInstall
-import glob
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# @Author: José Sánchez-Gallego (gallegoj@uw.edu)
+# @Date: 2018-05-24
+# @Filename: setup.py
+# @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
+# @Copyright: José Sánchez-Gallego
+
 import os
+from distutils.command.build import build
 from distutils.core import Extension, setup
 
-import sdss3tools
+
+module_libguide = Extension('libguide',
+                            sources=['src/gimg/ipGguide.c',
+                                     'src/gimg/gutils.c',
+                                     'src/gimg/shUtils.c'],
+                            include_dirs=['include'])
 
 
-# jkp: This is a hack, but it should work to get the lib symlink installed.
-# there may be a better way, if we can just get everything put into lib automatically.
-class my_install(distInstall.install):
+class GuiderActorBuild(build):
+    """Custom build command."""
 
     def run(self):
-        distInstall.install.run(self)
-        basedir = self.install_lib.replace('/python', '')
-        os.symlink('python', os.path.join(basedir, 'lib'))
+        build.run(self)
+        os.symlink(self.build_lib, os.path.join(os.path.dirname(__file__), 'lib'))
 
 
-sdss3tools.setup(
-    ext_modules=[
-        Extension(
-            'libguide',
-            sources=[
-                'src/gimg/ipGguide.c', 'src/gimg/gutils.c',
-                'src/gimg/shUtils.c'
-            ],
-            include_dirs=['include'],
-        )
-    ],
-    description="SDSS-3 guider actor.",
-    cmdclass=dict(install=my_install),
-)
+setup(name='guiderActor',
+      version='3.9.0dev',
+      description='The SDSS guider actor',
+      maintainer='Jose Sanchez-Gallego',
+      maintainer_email='gallegoj@uw.edu',
+      url='https://github.com/sdss/guiderActor',
+      ext_modules=[module_libguide],
+      cmdclass={'build': GuiderActorBuild})

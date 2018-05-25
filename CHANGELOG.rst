@@ -11,10 +11,13 @@ This document records the main changes to the guiderActor code.
 3.9.0 (unreleased)
 ------------------
 
+[View commits](https://github.com/sdss/guiderActor/compare/3.9.0...3.8.1)
+
 Refactored
 ^^^^^^^^^^
 * Applied recursive YAPF and isort formatting.
 * Removed references to LCO in files and functions.
+* Rewritten ``setup.py``. Now it does not use ``sdss3tools`` and the link to ``build/lib.XXX`` is created when building.
 
 
 .. _changelog-3.8.1:
