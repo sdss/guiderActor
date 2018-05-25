@@ -10,11 +10,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-import opscore.protocols.keys as keys
-import opscore.protocols.types as types
-import opscore.utility.YPF as YPF
 from guiderActor.Commands import GuiderCmd
-from opscore.utility.qstr import qstr
 
 
 class GuiderCmd_LOCAL(GuiderCmd.GuiderCmd):

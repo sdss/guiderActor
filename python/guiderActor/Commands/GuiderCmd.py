@@ -14,188 +14,222 @@ from sdss.utilities import yanny
 
 
 class GuiderCmd(object):
-    """ Wrap commands to the guider actor"""
+    """Wrap commands to the guider actor"""
 
     def __init__(self, actor):
-        """
-        Declares keys that this actor uses, and available commands that can be sent to it.
+        """Declares keys that this actor uses, and available commands that can be sent to it.
 
         actor is the actor that this is part of (guiderActor, in this case).
+
         """
+
         self.actor = actor
-        #
+
         # Declare keys that we're going to use
-        #
         self.keys = keys.KeysDictionary(
-            "guider_guider",
-            (2, 1),
-            keys.Key("cartridge", types.Int(), help="A cartridge ID"),
+            'guider_guider', (2, 1),
             keys.Key(
-                "fscanId",
+                'cartridge',
                 types.Int(),
-                help="The fscanId identifying a plate scanning"),
+                help='A cartridge ID'),
             keys.Key(
-                "mjd", types.Int(), help="The MJD when a plate was scanned"),
-            keys.Key("plate", types.Int(), help="A plugplate ID"),
+                'fscanId',
+                types.Int(),
+                help='The fscanId identifying a plate scanning'),
             keys.Key(
-                "guideWavelength",
+                'mjd',
+                types.Int(),
+                help='The MJD when a plate was scanned'),
+            keys.Key(
+                'plate',
+                types.Int(),
+                help='A plugplate ID'),
+            keys.Key(
+                'guideWavelength',
                 types.Float(),
-                help="The wavelength at which to guide"),
+                help='The wavelength at which to guide'),
             keys.Key(
-                "fibers", types.Int() * (1, None), help="A list of fibers"),
-            keys.Key("probe", types.Int(), help="A probe ID, 1-indexed"),
-            keys.Key("gprobe", types.Int(), help="A probe ID, 1-indexed"),
-            keys.Key("fromProbe", types.Int(), help="A probe ID, 1-indexed"),
-            keys.Key("fromGprobe", types.Int(), help="A probe ID, 1-indexed"),
+                'fibers',
+                types.Int() * (1, None),
+                help='A list of fibers'),
             keys.Key(
-                "pointing",
+                'probe',
+                types.Int(),
+                help='A probe ID, 1-indexed'),
+            keys.Key(
+                'gprobe',
+                types.Int(),
+                help='A probe ID, 1-indexed'),
+            keys.Key(
+                'fromProbe',
+                types.Int(),
+                help='A probe ID, 1-indexed'),
+            keys.Key(
+                'fromGprobe',
+                types.Int(),
+                help='A probe ID, 1-indexed'),
+            keys.Key(
+                'pointing',
                 types.String(),
-                help="A pointing for the given plugplate"),
-            keys.Key("time", types.Float(), help="Exposure time for guider"),
-            keys.Key("force", help="Force requested action to happen"),
+                help='A pointing for the given plugplate'),
             keys.Key(
-                "gprobes",
-                types.Enum("acquire", "guide"),
-                help="Type of gprobe"),
-            keys.Key("oneExposure", help="Take just one exposure"),
-            keys.Key("Kp", types.Float(), help="Proportional gain"),
-            keys.Key("Ti", types.Float(), help="Integral time"),
-            keys.Key("Td", types.Float(), help="Derivative time"),
-            keys.Key(
-                "Imax",
+                'time',
                 types.Float(),
-                help="|maximum value of I| (-ve to disable)"),
+                help='Exposure time for guider'),
+            keys.Key(
+                'force',
+                help='Force requested action to happen'),
+            keys.Key(
+                'gprobes',
+                types.Enum('acquire', 'guide'),
+                help='Type of gprobe'),
+            keys.Key(
+                'oneExposure',
+                help='Take just one exposure'),
+            keys.Key(
+                'Kp',
+                types.Float(),
+                help='Proportional gain'),
+            keys.Key(
+                'Ti',
+                types.Float(),
+                help='Integral time'),
+            keys.Key(
+                'Td',
+                types.Float(),
+                help='Derivative time'),
+            keys.Key(
+                'Imax',
+                types.Float(),
+                help='|maximum value of I| (-ve to disable)'),
             keys.Key(
                 "nfilt",
                 types.Int(),
-                help="number of input readings to filter with."),
-            keys.Key("geek", help="Show things that only some of us love"),
-            keys.Key("cartfile", types.String(), help="cartridge file"),
-            keys.Key("plugfile", types.String(), help="plugmap file"),
-            keys.Key("file", types.String(), help="guider file"),
+                help='number of input readings to filter with.'),
             keys.Key(
-                "decenterRA",
-                types.Float(),
-                help="Telescope absolute offset for guiding in RA arcsec"),
+                "geek",
+                help='Show things that only some of us love'),
             keys.Key(
-                "decenterDec",
-                types.Float(),
-                help="Telescope absolute offset for guiding in Dec arcsec"),
-            keys.Key(
-                "decenterRot",
-                types.Float(),
-                help="Telescope absolute offset for guiding in Rot"),
-            keys.Key(
-                "ditherPos",
+                'cartfile',
                 types.String(),
-                help="Named MaNGA guider dither position"),
+                help='cartridge file'),
             keys.Key(
-                "scale",
+                'plugfile',
+                types.String(),
+                help='plugmap file'),
+            keys.Key(
+                'file',
+                types.String(),
+                help='guider file'),
+            keys.Key(
+                'decenterRA',
                 types.Float(),
-                help="Current scale from \"tcc show scale\""),
-            keys.Key("delta", types.Float(), help="Delta scale (percent)"),
+                help='Telescope absolute offset for guiding in RA arcsec'),
             keys.Key(
-                "stack",
+                'decenterDec',
+                types.Float(),
+                help='Telescope absolute offset for guiding in Dec arcsec'),
+            keys.Key(
+                'decenterRot',
+                types.Float(),
+                help='Telescope absolute offset for guiding in Rot'),
+            keys.Key(
+                'ditherPos',
+                types.String(),
+                help='Named MaNGA guider dither position'),
+            keys.Key(
+                'scale',
+                types.Float(),
+                help='Current scale from \"tcc show scale\"'),
+            keys.Key(
+                'delta',
+                types.Float(),
+                help='Delta scale (percent)'),
+            keys.Key(
+                'stack',
                 types.Int(),
-                help=
-                "number of itime gcamera integrations to request per exposure."
-            ),
+                help='number of itime gcamera integrations to request per exposure.'),
             keys.Key(
-                "corrRatio",
+                'corrRatio',
                 types.Float(),
-                help="How much refraction correction to apply (0..)"),
+                help='How much refraction correction to apply (0..)'),
             keys.Key(
-                "plateType",
+                'plateType',
                 types.String(),
-                help="Name of the current plateType (survey concatenation)"),
+                help='Name of the current plateType (survey concatenation)'),
             keys.Key(
-                "surveyMode",
+                'surveyMode',
                 types.String(),
-                help="Name of the current surveyMode"),
+                help='Name of the current surveyMode'),
             keys.Key(
-                "movieMJD",
+                'movieMJD',
                 types.String(),
-                help="The MJD that we want to generate the movie for."),
+                help='The MJD that we want to generate the movie for.'),
             keys.Key(
-                "start",
+                'start',
                 types.Int(),
-                help="Guider frame number to start the movie at."),
+                help='Guider frame number to start the movie at.'),
             keys.Key(
-                "end",
+                'end',
                 types.Int(),
-                help="Guider frame number to end the movie at."),
-            keys.Key("bin", types.Int(), help="bin factor for exposure"),
+                help='Guider frame number to end the movie at.'),
             keys.Key(
-                'algorithm',
+                'bin',
+                types.Int(),
+                help='bin factor for exposure'),
+            keys.Key(
+                "algorithm",
                 types.String(),
-                help='The fitting algorithm to use.'),
+                help="The fitting algorithm to use."),
         )
-        #
+
         # Declare commands
-        #
         self.vocab = [
-            ("on", "[<time>] [force] [oneExposure] [<stack>]",
-             self.guideOn), ("off", "",
-                             self.guideOff), ("setExpTime", "<time> [<stack>]",
-                                              self.setExpTime),
-            ("setPID",
-             "(raDec|rot|focus|scale) <Kp> [<Ti>] [<Td>] [<Imax>] [nfilt]",
-             self.setPID), ('resetPID', '[(raDec|rot|focus|scale)]',
-                            self.resetPID), ("disable", "<fibers>|<gprobes>",
-                                             self.disableFibers),
-            ("enable", "<fibers>|<gprobes>", self.enableFibers),
-            ("loadCartridge",
-             "[<cartridge>] [<pointing>] [<plate>] [<mjd>] [<fscanId>] [<guideWavelength>] [force]",
-             self.loadCartridge), ("showCartridge", "", self.showCartridge),
-            ("loadPlateFiles", "<cartfile> <plugfile>",
-             self.loadPlateFiles), ("reprocessFile", "<file>",
-                                    self.reprocessFile), ("flat", "[<time>]",
-                                                          self.flat),
-            ("dark", "[<time>] [<stack>]",
-             self.dark), ('ping', '', self.ping), ('restart', '',
-                                                   self.restart),
-            ('axes', '(on|off)',
-             self.axes), ('focus', '(on|off)',
-                          self.focus), ('scale', '(on|off)',
-                                        self.scale), ('status', "[geek]",
-                                                      self.status),
-            ('centerUp', "",
-             self.centerUp), ('fk5InFiber', "[<probe>] [<time>]",
-                              self.fk5InFiber),
-            ('starInFiber',
-             "[<probe>] [<gprobe>] [<fromProbe>] [<fromGprobe>]",
-             self.starInFiber), ("setScale", "<delta>|<scale>",
-                                 self.setScale), ("scaleChange",
-                                                  "<delta>|<scale>",
-                                                  self.scaleChange),
-            ('decenter', '(on|off)',
-             self.decenter), ('setDecenter',
-                              "[<decenterRA>] [<decenterDec>] [<decenterRot>]",
-                              self.setDecenter), ('mangaDither', "<ditherPos>",
-                                                  self.mangaDither),
-            ('setRefractionBalance',
-             '[<corrRatio>] [<plateType>] [<surveyMode>]',
-             self.setRefractionBalance),
-            ('makeMovie', '[<movieMJD>] <start> <end>',
-             self.makeMovie), ('findstar', '[<time>] [<bin>]',
-                               self.ecam_findstar), ('setFittingAlgorithm',
-                                                     '<algorithm>',
-                                                     self.setFittingAlgorithm)
+            ('on', '[<time>] [force] [oneExposure] [<stack>]', self.guideOn),
+            ('off', '', self.guideOff),
+            ('setExpTime', '<time> [<stack>]', self.setExpTime),
+            ('setPID', '(raDec|rot|focus|scale) <Kp> [<Ti>] [<Td>] [<Imax>] [nfilt]', self.setPID),
+            ('resetPID', '[(raDec|rot|focus|scale)]', self.resetPID),
+            ('disable', '<fibers>|<gprobes>', self.disableFibers),
+            ('enable', '<fibers>|<gprobes>', self.enableFibers),
+            ('loadCartridge', '[<cartridge>] [<pointing>] [<plate>] [<mjd>] '
+             '[<fscanId>] [<guideWavelength>] [force]', self.loadCartridge),
+            ('showCartridge', '', self.showCartridge),
+            ('loadPlateFiles', '<cartfile> <plugfile>', self.loadPlateFiles),
+            ('reprocessFile', '<file>', self.reprocessFile),
+            ('flat', '[<time>]', self.flat),
+            ('dark', '[<time>] [<stack>]', self.dark),
+            ('ping', '', self.ping),
+            ('restart', '', self.restart),
+            ('axes', '(on|off)', self.axes),
+            ('focus', '(on|off)', self.focus),
+            ('scale', '(on|off)', self.scale),
+            ('status', '[geek]', self.status),
+            ('centerUp', '', self.centerUp),
+            ('fk5InFiber', '[<probe>] [<time>]', self.fk5InFiber),
+            ('starInFiber', '[<probe>] [<gprobe>] [<fromProbe>] [<fromGprobe>]', self.starInFiber),
+            ('setScale', '<delta>|<scale>', self.setScale),
+            ('scaleChange', '<delta>|<scale>', self.scaleChange),
+            ('decenter', '(on|off)', self.decenter),
+            ('setDecenter', '[<decenterRA>] [<decenterDec>] [<decenterRot>]', self.setDecenter),
+            ('mangaDither', '<ditherPos>', self.mangaDither),
+            ('setRefractionBalance', '[<corrRatio>] [<plateType>] [<surveyMode>]', self.setRefractionBalance),  # noqa
+            ('makeMovie', '[<movieMJD>] <start> <end>', self.makeMovie),
+            ('findstar', '[<time>] [<bin>]', self.ecam_findstar),
+            ('setFittingAlgorithm', '<algorithm>', self.setFittingAlgorithm)
         ]
 
-    #
     # Define commands' callbacks
-    #
 
     def disableFibersImpl(self, cmd, enable=True):
         """Disable a set of fibers"""
 
-        if "fibers" in cmd.cmd.keywords:
-            for f in cmd.cmd.keywords["fibers"].values:
+        if 'fibers' in cmd.cmd.keywords:
+            for f in cmd.cmd.keywords['fibers'].values:
                 myGlobals.actorState.queues[guiderActor.MASTER].put(
                     Msg(Msg.ENABLE_FIBER, cmd=cmd, fiber=f, enable=enable))
-        elif "gprobes" in cmd.cmd.keywords:
-            gprobeType = cmd.cmd.keywords["gprobes"].values[0].upper()
+        elif 'gprobes' in cmd.cmd.keywords:
+            gprobeType = cmd.cmd.keywords['gprobes'].values[0].upper()
             myGlobals.actorState.queues[guiderActor.MASTER].put(
                 Msg(Msg.ENABLE_FIBER, cmd=cmd, fiber=gprobeType,
                     enable=enable))
@@ -215,9 +249,9 @@ class GuiderCmd(object):
     def setExpTime(self, cmd):
         """Set the exposure time"""
 
-        expTime = cmd.cmd.keywords["time"].values[0]
-        stack = cmd.cmd.keywords["stack"].values[
-            0] if "stack" in cmd.cmd.keywords else 1
+        expTime = cmd.cmd.keywords['time'].values[0]
+        stack = cmd.cmd.keywords['stack'].values[
+            0] if 'stack' in cmd.cmd.keywords else 1
         myGlobals.actorState.queues[guiderActor.MASTER].put(
             Msg(Msg.SET_TIME, cmd=cmd, expTime=expTime, stack=stack))
 
@@ -427,9 +461,10 @@ class GuiderCmd(object):
             0] if "cartridge" in cmd.cmd.keywords else -1
         pointing = cmd.cmd.keywords["pointing"].values[
             0] if "pointing" in cmd.cmd.keywords else "A"
-        #
-        # If they specify a plate explicitly, we'll bypass the active table and give them what they want
-        #
+
+        # If they specify a plate explicitly,
+        # we'll bypass the active table and give them what they want
+
         plate = str(cmd.cmd.keywords["plate"].values[
             0]) if "plate" in cmd.cmd.keywords else None
         mjd = cmd.cmd.keywords["mjd"].values[

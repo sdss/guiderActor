@@ -10,6 +10,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+from guiderActor.Commands import GuiderCmd
+
 
 class GuiderCmd_APO(GuiderCmd.GuiderCmd):
 
