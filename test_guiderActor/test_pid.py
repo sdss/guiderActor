@@ -12,11 +12,14 @@ where p_corr is the expected correction for only Kp, and pi_corr is with Kp and 
 """
 
 import unittest
+
 import numpy as np
 
 from guiderActor import PID
 
+
 class TestPID(unittest.TestCase):
+
     def setUp(self):
         self.dt = 1
         self.Kp = 0.6
@@ -24,8 +27,8 @@ class TestPID(unittest.TestCase):
         self.Td = 0
         self.Imax = -1
         self.nfilt = 1
-        self.names = ('dt','value','p_corr','pi_corr')
-        self.dtype = np.dtype(zip(self.names,['f8' for x in self.names]))
+        self.names = ('dt', 'value', 'p_corr', 'pi_corr')
+        self.dtype = np.dtype(zip(self.names, ['f8' for x in self.names]))
         self.linear_uniform_dt = 'data/linear_uniform_dt.txt'
         self.quadratic_uniform_dt = 'data/quadratic_uniform_dt.txt'
         self.linear_uniform_dt_noise = 'data/linear_uniform_dt_noise.txt'
@@ -37,9 +40,11 @@ class TestPID(unittest.TestCase):
         for line in data:
             correction = pid.update(line['value'])
             self.assertAlmostEqual(correction, line['p_corr'])
+
     def test_pi_linear_uniform_dt(self):
         """Test with both P and I terms active, linear data, uniform dt."""
-        pid = PID.PID(self.dt, self.Kp, self.Ti, self.Td, self.Imax, self.nfilt)
+        pid = PID.PID(self.dt, self.Kp, self.Ti, self.Td, self.Imax,
+                      self.nfilt)
         data = np.loadtxt(self.linear_uniform_dt, dtype=self.dtype)
         for line in data:
             correction = pid.update(line['value'])
@@ -52,9 +57,11 @@ class TestPID(unittest.TestCase):
         for line in data:
             correction = pid.update(line['value'])
             self.assertAlmostEqual(correction, line['p_corr'])
+
     def test_pi_quadratic_uniform_dt(self):
         """Test with only P term active, linear data, uniform dt."""
-        pid = PID.PID(self.dt, self.Kp, self.Ti, self.Td, self.Imax, self.nfilt)
+        pid = PID.PID(self.dt, self.Kp, self.Ti, self.Td, self.Imax,
+                      self.nfilt)
         data = np.loadtxt(self.quadratic_uniform_dt, dtype=self.dtype)
         for line in data:
             correction = pid.update(line['value'])
@@ -67,9 +74,11 @@ class TestPID(unittest.TestCase):
         for line in data:
             correction = pid.update(line['value'])
             self.assertAlmostEqual(correction, line['p_corr'])
+
     def test_pi_linear_uniform_dt_noise(self):
         """Test with both P and I terms active, linear data, uniform dt."""
-        pid = PID.PID(self.dt, self.Kp, self.Ti, self.Td, self.Imax, self.nfilt)
+        pid = PID.PID(self.dt, self.Kp, self.Ti, self.Td, self.Imax,
+                      self.nfilt)
         data = np.loadtxt(self.linear_uniform_dt_noise, dtype=self.dtype)
         for line in data:
             correction = pid.update(line['value'])

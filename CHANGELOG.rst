@@ -6,6 +6,20 @@ Change Log
 
 This document records the main changes to the guiderActor code.
 
+.. _changelog-3.9.0:
+
+3.9.0 (unreleased)
+------------------
+
+[View commits](https://github.com/sdss/guiderActor/compare/3.9.0...3.8.1)
+
+Refactored
+^^^^^^^^^^
+* Applied recursive autoformatting and isort.
+* Removed references to LCO in files and functions.
+* Rewritten ``setup.py``. Now it does not use ``sdss3tools`` and the link to ``build/lib.XXX`` is created when building.
+
+
 .. _changelog-3.8.1:
 
 3.8.1 (2018-05-03)
@@ -13,7 +27,7 @@ This document records the main changes to the guiderActor code.
 
 Modified
 ^^^^^^^^
-* ticket `#2325 <https://trac.sdss.org/ticket/2325>`_: if the number of valid stars is <= 2 (e.g., during centre-up), does not apply the fitting algorithm. Instead, uses the mean of the dRA and dDec offsets.
+* Ticket `#2325 <https://trac.sdss.org/ticket/2325>`_: if the number of valid stars is <= 2 (e.g., during centre-up), does not apply the fitting algorithm. Instead, uses the mean of the dRA and dDec offsets.
 
 Fixed
 ^^^^^
@@ -49,6 +63,7 @@ Removed
 
 
 .. _changelog-v3_7:
+
 v3_7 (2017-06-11)
 -----------------
 
