@@ -1004,8 +1004,7 @@ def guideStep(actor,
 
             # Last chance to bailout.
             if offsetScale < 0.9995 or offsetScale > 1.0005:
-                cmd.warn('text="NOT setting scarily large scale=%0.8f"' %
-                         (offsetScale))
+                cmd.warn('text="NOT setting scarily large scale=%0.8f"' % offsetScale)
                 offsetScale = 0.0  # Disables correction in scale
 
             # Not needed anymore because now we use apply_guide_offset
