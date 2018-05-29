@@ -11,7 +11,9 @@ This document records the main changes to the guiderActor code.
 3.9.0 (unreleased)
 ------------------
 
-[View commits](https://github.com/sdss/guiderActor/compare/3.9.0...3.8.1)
+Added
+^^^^^
+* When starting, guiderActor check whether ``$GUIDERACTOR_DIR/lib/libguide.so`` exists and fails if it does not. This prevents problems when observing if the guide tools have not been compiled.
 
 Refactored
 ^^^^^^^^^^
@@ -19,6 +21,7 @@ Refactored
 * Removed references to LCO in files and functions.
 * Rewritten ``setup.py``. Now it does not use ``sdss3tools`` and the link to ``build/lib.XXX`` is created when building.
 
+[View commits](https://github.com/sdss/guiderActor/compare/3.9.0...3.8.1)
 
 .. _changelog-3.8.1:
 
