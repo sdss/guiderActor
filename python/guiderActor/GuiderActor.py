@@ -2,6 +2,7 @@
 """An actor to run the guider"""
 
 import abc
+import os
 
 import actorcore.Actor
 import gcameraThread
@@ -96,6 +97,11 @@ class GuiderActor(actorcore.Actor.SDSSActor):
 
         self.logger.setLevel(debugLevel)
         self.logger.propagate = True
+
+        # Tests that lib/libguide.so exists.
+        libguide_path = os.path.expandvars('$GUIDERACTOR_DIR/lib/libguide.so')
+        assert os.path.exists(libguide_path), ('cannot find libguide.so. Was it compiled '
+                                               'and linked in $GUIDERACTOR_DIR/lib/libguide.so?')
 
         # guiderActor.myGlobals.actorState = actorcore.Actor.ActorState(self)
         # actorState = guiderActor.myGlobals.actorState
