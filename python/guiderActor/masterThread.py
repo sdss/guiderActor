@@ -1,4 +1,11 @@
-"""master thread for guiderActor."""
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# @Maintainer: José Sánchez-Gallego (gallegoj@uw.edu)
+# @Filename: masterThread.py
+# @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
+
+import datetime
 import math
 import os.path
 import Queue
@@ -583,7 +590,7 @@ def _find_focus_one_fiber(fiber, gState, frameInfo, C, A, b):
 
 def apply_guide_offset(cmd, gState, actor, actorState,
                        offsetRA=None, offsetDec=None, offsetRot=None,
-                       offsetScale=None, offsetFocus=None):
+                       offsetScale=None, offsetFocus=None, header=None):
     """Sends offset correction to the TCC.
 
     Parameters
@@ -603,6 +610,10 @@ def apply_guide_offset(cmd, gState, actor, actorState,
     offsetFocus : float, optional
         The correction in focus, in microns (the default is None, which skips
         the correction in this axis).
+    header : astropy.io.fits.Header, optional
+        The header of the input ``gimg-`` image. Used to calculate the
+        beginning of the exposure and the exposure time (the default is None,
+        which does not send exposure information to the TCC command).
 
     Returns
     -------
@@ -617,6 +628,14 @@ def apply_guide_offset(cmd, gState, actor, actorState,
         offsetFocus = None
     if not gState.guideScale:
         offsetScale = None
+
+    try:
+        dt = datetime.datetime.strptime(header['DATE-OBS'], '%Y-%m-%d %H:%M:%S.%fZ')
+        exp_start = dt.isoformat()
+        exp_time = header['EXPTIMEN']
+    except (ValueError, KeyError):
+        exp_start = None
+        exp_time = None
 
     if gState.centerUp:
         # If we are in the middle of an fk5InFiber (or other TCC track/pterr),
@@ -635,6 +654,10 @@ def apply_guide_offset(cmd, gState, actor, actorState,
         drot=-offsetRot if offsetRot is not None else 0.0,
         dfocus=offsetFocus if offsetFocus is not None else 0.0,
         dscale=offsetScale if offsetScale is not None else 0.0)
+
+    if exp_start and exp_time:
+        cmd_str += ' {exp_start} {exp_time}'.format(exp_start=exp_start,
+                                                    exp_time=exp_time)
 
     cmdVar = actor.cmdr.call(actor='tcc', forUserCmd=cmd, cmdStr=cmd_str)
     if cmdVar.didFail:
@@ -947,7 +970,7 @@ def guideStep(actor,
         # Applies corrections before returning
         apply_guide_offset(cmd, gState, actor, actorState,
                            offsetRA=offsetRa, offsetDec=offsetDec,
-                           offsetRot=offsetRot)
+                           offsetRot=offsetRot, header=h)
 
         return frameInfo
 
@@ -1092,7 +1115,8 @@ def guideStep(actor,
     # Applies all corrections
     apply_guide_offset(cmd, gState, actor, actorState,
                        offsetRA=offsetRa, offsetDec=offsetDec, offsetRot=offsetRot,
-                       offsetScale=offsetScale, offsetFocus=offsetFocus)
+                       offsetScale=offsetScale, offsetFocus=offsetFocus,
+                       header=h)
 
     return frameInfo
 
