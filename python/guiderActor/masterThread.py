@@ -970,10 +970,6 @@ def guideStep(actor,
     guideCmd.inform('text="delta percentage scale correction = %g"' %
                     (-dScale * 100.))
 
-    # There is (not terribly surprisingly) evidence of crosstalk between scale
-    # and focus adjustments. So for now defer focus changes if we apply a scale change.
-    blockFocusMove = False
-
     if gState.guideScale:
         # This should be a tiny bit bigger than one full M1 axial step.
         if abs(offsetScale) < 3.4e-7:
@@ -991,7 +987,6 @@ def guideStep(actor,
 
             # Not needed anymore because now we use apply_guide_offset
             # else:
-            #     # blockFocusMove = True
             #     cmdVar = actor.cmdr.call(
             #         actor='tcc',
             #         forUserCmd=guideCmd,
@@ -1061,11 +1056,10 @@ def guideStep(actor,
         guideCmd.respond('seeing=%g' % (rms0 * frameInfo.sigmaToFWHM))
         guideCmd.respond('focusError=%g' % (dFocus))
         guideCmd.respond(
-            'focusChange=%g, %s' %
-            (offsetFocus, 'enabled'
-             if (gState.guideFocus and not blockFocusMove) else 'disabled'))
+            'focusChange=%g, %s' % (offsetFocus, 'enabled'
+                                    if gState.guideFocus else 'disabled'))
 
-        frameInfo.guideFocus = gState.guideFocus and not blockFocusMove
+        frameInfo.guideFocus = gState.guideFocus
 
         # if gState.guideFocus and not blockFocusMove:
         #     cmdVar = actor.cmdr.call(
@@ -1081,9 +1075,7 @@ def guideStep(actor,
 
         guideCmd.respond('focusError=%g' % (numpy.nan))
         guideCmd.respond(
-            'focusChange=%g, %s' %
-            (numpy.nan, 'enabled'
-             if (gState.guideFocus and not blockFocusMove) else 'disabled'))
+            'focusChange=%g, %s' % (numpy.nan, 'enabled' if gState.guideFocus else 'disabled'))
         guideCmd.warn('text=%s' % qstr('Unable to solve for focus offset'))
         x = None
 
