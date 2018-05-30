@@ -629,6 +629,9 @@ def apply_guide_offset(cmd, gState, actor, actorState,
     if not gState.guideScale:
         offsetScale = None
 
+    if offsetScale < 1e-6:
+        offsetScale = 1
+
     # try:
     #     dt = datetime.datetime.strptime(header['DATE-OBS'], '%Y-%m-%d %H:%M:%S.%fZ')
     #     exp_start = dt.isoformat()
@@ -653,7 +656,7 @@ def apply_guide_offset(cmd, gState, actor, actorState,
         ddec=-offsetDec if offsetDec is not None else 0.0,
         drot=-offsetRot if offsetRot is not None else 0.0,
         dfocus=offsetFocus if offsetFocus is not None else 0.0,
-        dscale=offsetScale if offsetScale is not None else 0.0)
+        dscale=offsetScale if offsetScale is not None else 1.0)
 
     # if exp_start and exp_time:
     #     cmd_str += ' {exp_start} {exp_time}'.format(exp_start=exp_start,
@@ -998,6 +1001,7 @@ def guideStep(actor,
         if abs(offsetScale) < 3.4e-7:
             cmd.diag('text="skipping small scale change=%0.8f"' %
                      (offsetScale))
+            offsetScale = 0.0
         else:
             # Clip to the motion we think is too big to apply at once.
             offsetScale = 1 + max(min(offsetScale, 2e-6), -2e-6)
@@ -1015,6 +1019,12 @@ def guideStep(actor,
             #         cmdStr='set scale=%.9f /mult' % (offsetScale))
             #     if cmdVar.didFail:
             #         guideCmd.warn('text="Failed to issue scale change"')
+
+        frameInfo.offsetScale = offsetScale
+
+    else:
+
+        offsetScale = 0.0
 
     # Evaluate RMS on fit over fibers used in fits here
     # FIXME--PH not calculated yet
