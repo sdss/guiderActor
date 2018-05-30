@@ -675,15 +675,8 @@ def apply_guide_offset(cmd, gState, actor, actorState,
     return True
 
 
-def guideStep(actor,
-              queues,
-              cmd,
-              gState,
-              inFile,
-              oneExposure,
-              guiderImageAnalysis,
-              output_verify='warn',
-              camera='gcamera'):
+def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
+              guiderImageAnalysis, output_verify='warn', camera='gcamera'):
     """ One step of the guide loop, based on the given guider file.
 
     Args:
@@ -697,11 +690,12 @@ def guideStep(actor,
         output_verify: passed on to the fits writer. See the pyfits docs for more.
         camera: set to 'ecamera' to not search for fibers and skip fiber-related processing.
     """
+
     # Setup to solve for the axis and maybe scale offsets.  We work consistently
     # in mm on the focal plane, only converting to angles to command the TCC.
     guideCameraScale = gState.gcameraMagnification * gState.gcameraPixelSize * 1e-3  # mm/pixel
     arcsecPerMM = 3600. / gState.plugPlateScale  # arcsec per mm
-    frameNo = int(re.search(r"([0-9]+)\.fits.*$", inFile).group(1))
+    frameNo = int(re.search(r'([0-9]+)\.fits.*$', inFile).group(1))
 
     # Object to gather all per-frame guiding info into.
     frameInfo = GuiderState.FrameInfo(frameNo, arcsecPerMM, guideCameraScale,
@@ -716,8 +710,8 @@ def guideStep(actor,
     flatcart = h.get('FLATCART', None)
     darkfile = h.get('DARKFILE', None)
     if not flatfile:
-        guideCmd.fail(
-            'guideState="failed"; text=%s' % qstr('No flat image available'))
+        guideCmd.fail('guideState="failed"; '
+                      'text=%s' % qstr('No flat image available'))
         gState.cmd = None
         return frameInfo
 
@@ -749,24 +743,23 @@ def guideStep(actor,
             setPoint=setPoint,
             bypassDark=actorState.bypassDark,
             camera=camera)
-        guideCmd.inform("text='GuiderImageAnalysis.findStars() got %i fibers'"
-                        % len(fibers))
+        guideCmd.inform('text="GuiderImageAnalysis.findStars() got %i fibers"' % len(fibers))
     except GuiderExceptions.BadReadError as e:
         guideCmd.warn('text=%s' % qstr('Skipping badly formatted image.'))
         return frameInfo
     except GuiderExceptions.FlatError as e:
-        guideCmd.fail('guideState="failed"; text=%s' % qstr(
-            'Error reading/processing %s flat: %s' % (camera, e)))
+        guideCmd.fail('guideState="failed"; text=%s' %
+                      qstr('Error reading/processing %s flat: %s' % (camera, e)))
         gState.cmd = None
         return frameInfo
     except GuiderExceptions.GuiderError as e:
-        guideCmd.fail('guideState="failed"; text=%s' % qstr(
-            'Error processing %s image: %s' % (camera, e)))
+        guideCmd.fail('guideState="failed"; text=%s' %
+                      qstr('Error processing %s image: %s' % (camera, e)))
         gState.cmd = None
         return frameInfo
     except Exception as e:
-        guideCmd.fail('guideState="failed"; text=%s' % qstr(
-            'Unknown error in processing guide images: %s' % e))
+        guideCmd.fail('guideState="failed"; text=%s' %
+                      qstr('Unknown error in processing guide images: %s' % e))
         gState.cmd = None
         tback.tback('GuideTest', e)
         return frameInfo
@@ -790,8 +783,8 @@ def guideStep(actor,
 
     # Grab some times for refraction correction
     longitude = -105.82045
-    UTC = RO.Astro.Tm.utcFromPySec(
-        time.time() + actorState.models['tcc'].keyVarDict['utc_TAI'][0])
+    TCC_UTC_TAI = actorState.models['tcc'].keyVarDict['utc_TAI'][0]
+    UTC = RO.Astro.Tm.utcFromPySec(time.time() + TCC_UTC_TAI)
     LST = RO.Astro.Tm.lastFromUT1(UTC, longitude)
 
     try:
@@ -801,12 +794,10 @@ def guideStep(actor,
         HA = adiff(LST, RA)  # The corrections are indexed by degrees, happily.
         frameInfo.dHA = adiff(HA, gState.design_ha)
     except Exception:
-        guideCmd.error(
-            'text="Could not determine current RA from TCC objNetPos. '
-            'Please issue: tcc show object /full"')
-        guideCmd.warn(
-            'text="WARNING: refraction corrections to guiding will not '
-            'work until this is dealt with."')
+        guideCmd.error('text="Could not determine current RA from TCC '
+                       'objNetPos. Please issue: tcc show object /full"')
+        guideCmd.warn('text="WARNING: refraction corrections to guiding '
+                      'will not work until this is dealt with."')
         RA = numpy.nan
         HA = numpy.nan
         frameInfo.dHA = 0
@@ -817,8 +808,8 @@ def guideStep(actor,
     # scale the PID values to function better at high alt.
     scale_pid_with_alt(guideCmd, gState, actorState)
 
-    # Set the decenter parameters in frameInfo, so they don't get lost if decentering
-    # changes during processing.
+    # Set the decenter parameters in frameInfo, so they don't get lost if
+    # decentering changes during processing.
     if gState.decenter:
         frameInfo.setDecenter(gState)
     else:
@@ -838,11 +829,9 @@ def guideStep(actor,
     frameInfo.fittingAlgorithm = gState.fitting_algorithm
 
     if gState.fitting_algorithm == 'standard':
-        fit_status = standard_fitting_algorithm(guideCmd, actorState, gState,
-                                                fibers, frameInfo)
+        fit_status = standard_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo)
     elif gState.fitting_algorithm == 'umeyama':
-        fit_status = umeyama_fitting_algorithm(guideCmd, actorState, gState,
-                                               fibers, frameInfo)
+        fit_status = umeyama_fitting_algorithm(guideCmd, actorState, gState, fibers, frameInfo)
     else:
         raise ValueError('invalid fitting algorithm {!r}'.format(
             gState.fitting_algorithm))
@@ -870,7 +859,8 @@ def guideStep(actor,
     nStar = frameInfo.nStar
 
     # TBD: we are not applying any rotation decentering at present.
-    # PH Kludge add the decenter guiding rotation offset here for now (in degrees)
+    # PH Kludge add the decenter guiding rotation offset here for now
+    # (in degrees)
 
     # if gState.decenter:
     #     dRot += gState.decenterRot/3600.0
@@ -896,20 +886,20 @@ def guideStep(actor,
     frameInfo.filtDec = offsetDec
     frameInfo.filtRot = offsetRot
 
-    frameInfo.offsetRA = offsetRa if (gState.guideAxes or
-                                      gState.centerUp) else 0.0
-    frameInfo.offsetDec = offsetDec if (gState.guideAxes or
-                                        gState.centerUp) else 0.0
-    frameInfo.offsetRot = offsetRot if (gState.guideAxes or
-                                        gState.centerUp) else 0.0
+    frameInfo.offsetRA = offsetRa if (gState.guideAxes or gState.centerUp) else 0.0
+    frameInfo.offsetDec = offsetDec if (gState.guideAxes or gState.centerUp) else 0.0
+    frameInfo.offsetRot = offsetRot if (gState.guideAxes or gState.centerUp) else 0.0
 
     guideAxes_status = 'enabled' if gState.guideAxes else 'disabled'
     frameInfo.guideAxes = gState.guideAxes
 
-    guideCmd.respond('axisError=%g, %g, %g' % (3600 * dRA, 3600 * dDec,
+    guideCmd.respond('axisError=%g, %g, %g' % (3600 * dRA,
+                                               3600 * dDec,
                                                3600 * dRot))
     guideCmd.respond('axisChange=%g, %g, %g, %s' %
-                     (-3600 * offsetRa, -3600 * offsetDec, -3600 * offsetRot,
+                     (-3600 * offsetRa,
+                      -3600 * offsetDec,
+                      -3600 * offsetRot,
                       guideAxes_status))
 
     # calc FWHM with trimmed mean for 8 in focus fibers
@@ -937,16 +927,11 @@ def guideStep(actor,
     # RMS position error prior to this frame's correction
     try:
         nguideRMS = frameInfo.nguideRMS
-        frameInfo.guideRMS = math.sqrt(
-            frameInfo.guideRMS / nguideRMS) * arcsecPerMM
-        frameInfo.guideXRMS = math.sqrt(
-            frameInfo.guideXRMS / nguideRMS) * arcsecPerMM
-        frameInfo.guideYRMS = math.sqrt(
-            frameInfo.guideYRMS / nguideRMS) * arcsecPerMM
-        frameInfo.guideRaRMS = math.sqrt(
-            frameInfo.guideRaRMS / nguideRMS) * arcsecPerMM
-        frameInfo.guideDecRMS = math.sqrt(
-            frameInfo.guideDecRMS / nguideRMS) * arcsecPerMM
+        frameInfo.guideRMS = math.sqrt(frameInfo.guideRMS / nguideRMS) * arcsecPerMM
+        frameInfo.guideXRMS = math.sqrt(frameInfo.guideXRMS / nguideRMS) * arcsecPerMM
+        frameInfo.guideYRMS = math.sqrt(frameInfo.guideYRMS / nguideRMS) * arcsecPerMM
+        frameInfo.guideRaRMS = math.sqrt(frameInfo.guideRaRMS / nguideRMS) * arcsecPerMM
+        frameInfo.guideDecRMS = math.sqrt(frameInfo.guideDecRMS / nguideRMS) * arcsecPerMM
     except Exception:
         frameInfo.guideRMS = numpy.nan
         frameInfo.guideXRMS = numpy.nan
@@ -990,8 +975,7 @@ def guideStep(actor,
 
     guideCmd.respond('scaleError=%g' % (dScale))
     guideCmd.respond('scaleChange=%g, %s' %
-                     (offsetScale, 'enabled'
-                      if gState.guideScale else 'disabled'))
+                     (offsetScale, 'enabled' if gState.guideScale else 'disabled'))
 
     frameInfo.guideScale = gState.guideScale
 
@@ -1013,15 +997,6 @@ def guideStep(actor,
             if frameInfo.offsetScale < 0.9995 or frameInfo.offsetScale > 1.0005:
                 cmd.warn('text="NOT setting scarily large scale=%0.8f"' % offsetScale)
                 frameInfo.offsetScale = 0.0  # Disables correction in scale
-
-            # Not needed anymore because now we use apply_guide_offset
-            # else:
-            #     cmdVar = actor.cmdr.call(
-            #         actor='tcc',
-            #         forUserCmd=guideCmd,
-            #         cmdStr='set scale=%.9f /mult' % (offsetScale))
-            #     if cmdVar.didFail:
-            #         guideCmd.warn('text="Failed to issue scale change"')
 
     # Evaluate RMS on fit over fibers used in fits here
     # FIXME--PH not calculated yet
@@ -1067,8 +1042,7 @@ def guideStep(actor,
 
         Delta = x[1, 0] / (2 * C)
         try:
-            rms0 = math.sqrt(
-                x[0, 0] - C * Delta * Delta) / frameInfo.micronsPerArcsec
+            rms0 = math.sqrt(x[0, 0] - C * Delta * Delta) / frameInfo.micronsPerArcsec
         except ValueError as e:
             rms0 = float('NaN')
 
@@ -1084,9 +1058,8 @@ def guideStep(actor,
 
         guideCmd.respond('seeing=%g' % (rms0 * frameInfo.sigmaToFWHM))
         guideCmd.respond('focusError=%g' % (dFocus))
-        guideCmd.respond(
-            'focusChange=%g, %s' % (offsetFocus, 'enabled'
-                                    if gState.guideFocus else 'disabled'))
+        guideCmd.respond('focusChange=%g, %s' %
+                         (offsetFocus, 'enabled' if gState.guideFocus else 'disabled'))
 
         frameInfo.guideFocus = gState.guideFocus
 
