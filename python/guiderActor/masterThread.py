@@ -622,15 +622,16 @@ def apply_guide_offset(cmd, gState, actor, actorState,
 
     """
 
-    if not gState.guideAxes:
+    if not gState.guideAxes and not gState.centerUp:
         offsetRA = offsetDec = offsetRot = None
     if not gState.guideFocus:
         offsetFocus = None
     if not gState.guideScale:
         offsetScale = None
 
+    # If the scale offset is 0.0 or very small, we assume that means no scale change.
     if offsetScale < 1e-6:
-        offsetScale = 1
+        offsetScale = None
 
     # try:
     #     dt = datetime.datetime.strptime(header['DATE-OBS'], '%Y-%m-%d %H:%M:%S.%fZ')
@@ -650,7 +651,8 @@ def apply_guide_offset(cmd, gState, actor, actorState,
 
         offsetRot = offsetFocus = offsetScale = None
 
-    # Creates the command string. 0.0 means no correction on that axis.
+    # Creates the command string. 0.0 means no correction on that axis,
+    # with the exception of scale, for which 1.0 means no correction.
     cmd_str = 'guide {dra} {ddec} {drot} {dfocus} {dscale}'.format(
         dra=-offsetRA if offsetRA is not None else 0.0,
         ddec=-offsetDec if offsetDec is not None else 0.0,
@@ -972,8 +974,9 @@ def guideStep(actor,
 
         # Applies corrections before returning
         apply_guide_offset(cmd, gState, actor, actorState,
-                           offsetRA=offsetRa, offsetDec=offsetDec,
-                           offsetRot=offsetRot, header=h)
+                           offsetRA=frameInfo.offsetRa,
+                           offsetDec=frameInfo.offsetDec,
+                           offsetRot=frameInfo.offsetRot, header=h)
 
         return frameInfo
 
@@ -998,18 +1001,18 @@ def guideStep(actor,
 
     if gState.guideScale:
         # This should be a tiny bit bigger than one full M1 axial step.
-        if abs(offsetScale) < 3.4e-7:
+        if abs(frameInfo.offsetScale) < 3.4e-7:
             cmd.diag('text="skipping small scale change=%0.8f"' %
-                     (offsetScale))
-            offsetScale = 0.0
+                     (frameInfo.offsetScale))
+            frameInfo.offsetScale = 0.0
         else:
             # Clip to the motion we think is too big to apply at once.
-            offsetScale = 1 + max(min(offsetScale, 2e-6), -2e-6)
+            frameInfo.offsetScale = 1 + max(min(offsetScale, 2e-6), -2e-6)
 
             # Last chance to bailout.
-            if offsetScale < 0.9995 or offsetScale > 1.0005:
+            if frameInfo.offsetScale < 0.9995 or frameInfo.offsetScale > 1.0005:
                 cmd.warn('text="NOT setting scarily large scale=%0.8f"' % offsetScale)
-                offsetScale = 0.0  # Disables correction in scale
+                frameInfo.offsetScale = 0.0  # Disables correction in scale
 
             # Not needed anymore because now we use apply_guide_offset
             # else:
@@ -1019,12 +1022,6 @@ def guideStep(actor,
             #         cmdStr='set scale=%.9f /mult' % (offsetScale))
             #     if cmdVar.didFail:
             #         guideCmd.warn('text="Failed to issue scale change"')
-
-        frameInfo.offsetScale = offsetScale
-
-    else:
-
-        offsetScale = 0.0
 
     # Evaluate RMS on fit over fibers used in fits here
     # FIXME--PH not calculated yet
@@ -1111,7 +1108,7 @@ def guideStep(actor,
         guideCmd.warn('text=%s' % qstr('Unable to solve for focus offset'))
         x = None
 
-        offsetFocus = None
+        frameInfo.offsetFocus = 0.0
 
     # Write output fits file for TUI
     guiderImageAnalysis.writeFITS(
@@ -1123,8 +1120,11 @@ def guideStep(actor,
 
     # Applies all corrections
     apply_guide_offset(cmd, gState, actor, actorState,
-                       offsetRA=offsetRa, offsetDec=offsetDec, offsetRot=offsetRot,
-                       offsetScale=offsetScale, offsetFocus=offsetFocus,
+                       offsetRA=frameInfo.offsetRA,
+                       offsetDec=frameInfo.offsetDec,
+                       offsetRot=frameInfo.offsetRot,
+                       offsetScale=frameInfo.offsetScale,
+                       offsetFocus=frameInfo.offsetFocus,
                        header=h)
 
     return frameInfo
