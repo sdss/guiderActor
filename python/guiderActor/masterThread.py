@@ -5,7 +5,7 @@
 # @Filename: masterThread.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
-import datetime
+# import datetime
 import math
 import os.path
 import Queue
@@ -629,13 +629,13 @@ def apply_guide_offset(cmd, gState, actor, actorState,
     if not gState.guideScale:
         offsetScale = None
 
-    try:
-        dt = datetime.datetime.strptime(header['DATE-OBS'], '%Y-%m-%d %H:%M:%S.%fZ')
-        exp_start = dt.isoformat()
-        exp_time = header['EXPTIMEN']
-    except (ValueError, KeyError):
-        exp_start = None
-        exp_time = None
+    # try:
+    #     dt = datetime.datetime.strptime(header['DATE-OBS'], '%Y-%m-%d %H:%M:%S.%fZ')
+    #     exp_start = dt.isoformat()
+    #     exp_time = header['EXPTIMEN']
+    # except (ValueError, KeyError):
+    #     exp_start = None
+    #     exp_time = None
 
     if gState.centerUp:
         # If we are in the middle of an fk5InFiber (or other TCC track/pterr),
@@ -655,9 +655,9 @@ def apply_guide_offset(cmd, gState, actor, actorState,
         dfocus=offsetFocus if offsetFocus is not None else 0.0,
         dscale=offsetScale if offsetScale is not None else 0.0)
 
-    if exp_start and exp_time:
-        cmd_str += ' {exp_start} {exp_time}'.format(exp_start=exp_start,
-                                                    exp_time=exp_time)
+    # if exp_start and exp_time:
+    #     cmd_str += ' {exp_start} {exp_time}'.format(exp_start=exp_start,
+    #                                                 exp_time=exp_time)
 
     cmdVar = actor.cmdr.call(actor='tcc', forUserCmd=cmd, cmdStr=cmd_str)
     if cmdVar.didFail:
