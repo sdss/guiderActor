@@ -22,7 +22,7 @@ Refactored
 * Removed references to LCO in files and functions.
 * Rewritten ``setup.py``. Now it does not use ``sdss3tools`` and the link to ``build/lib.XXX`` is created when building.
 
-[View commits](https://github.com/sdss/guiderActor/compare/3.9.0...3.8.1)
+[View commits](https://github.com/sdss/guiderActor/compare/3.8.1...HEAD)
 
 
 .. _changelog-3.8.1:
