@@ -991,7 +991,7 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
             frameInfo.offsetScale = 0.0
         else:
             # Clip to the motion we think is too big to apply at once.
-            frameInfo.offsetScale = 1 + max(min(offsetScale, 2e-6), -2e-6)
+            frameInfo.offsetScale = 1 + max(min(frameInfo.offsetScale, 2e-6), -2e-6)
 
             # Last chance to bailout.
             if frameInfo.offsetScale < 0.9995 or frameInfo.offsetScale > 1.0005:
