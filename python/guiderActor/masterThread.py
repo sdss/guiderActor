@@ -986,8 +986,7 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
     if gState.guideScale:
         # This should be a tiny bit bigger than one full M1 axial step.
         if abs(frameInfo.offsetScale) < 3.4e-7:
-            cmd.diag('text="skipping small scale change=%0.8f"' %
-                     (frameInfo.offsetScale))
+            cmd.diag('text="skipping small scale change=%0.8f"' % (frameInfo.offsetScale))
             frameInfo.offsetScale = 0.0
         else:
             # Clip to the motion we think is too big to apply at once.
