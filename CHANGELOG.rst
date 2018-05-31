@@ -6,10 +6,18 @@ Change Log
 
 This document records the main changes to the guiderActor code.
 
-.. _changelog-3.9.0:
+.. _changelog-master:
 
 master
 ------
+
+[View commits](https://github.com/sdss/guiderActor/compare/3.9.0...HEAD)
+
+
+.. _changelog-3.9.0:
+
+3.9.0 (2018-05-30)
+------------------
 
 Added
 ^^^^^
@@ -22,7 +30,7 @@ Refactored
 * Removed references to LCO in files and functions.
 * Rewritten ``setup.py``. Now it does not use ``sdss3tools`` and the link to ``build/lib.XXX`` is created when building.
 
-[View commits](https://github.com/sdss/guiderActor/compare/3.8.1...HEAD)
+[View commits](https://github.com/sdss/guiderActor/compare/3.8.1...3.9.0)
 
 
 .. _changelog-3.8.1:
