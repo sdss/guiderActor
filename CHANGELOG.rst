@@ -21,12 +21,12 @@ master
 
 Added
 ^^^^^
-* When starting, guiderActor check whether ``$GUIDERACTOR_DIR/lib/libguide.so`` exists and fails if it does not. This prevents problems when observing if the guide tools have not been compiled.
-* ``guideStep`` now executes all the offsets at once making use of ``tcc guide``.
+* When starting, guiderActor check whether ``$GUIDERACTOR_DIR/lib/libguide.so`` exists and fails if it does not. This prevents problems when observing if the guide tools have not been compiled. (#8).
+* ``guideStep`` now executes all the offsets at once making use of ``tcc guide`` (#3).
 
 Refactored
 ^^^^^^^^^^
-* Applied recursive autoformatting and isort.
+* Applied recursive autoformatting and isort (#5).
 * Removed references to LCO in files and functions.
 * Rewritten ``setup.py``. Now it does not use ``sdss3tools`` and the link to ``build/lib.XXX`` is created when building.
 
