@@ -8,8 +8,8 @@ This document records the main changes to the guiderActor code.
 
 .. _changelog-3.9.0:
 
-3.9.0 (unreleased)
-------------------
+master
+------
 
 Added
 ^^^^^
