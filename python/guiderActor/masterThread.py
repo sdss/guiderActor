@@ -959,7 +959,7 @@ def guideStep(actor, queues, cmd, gState, inFile, oneExposure,
 
         # Applies corrections before returning
         apply_guide_offset(cmd, gState, actor, actorState,
-                           offsetRA=frameInfo.offsetRa,
+                           offsetRA=frameInfo.offsetRA,
                            offsetDec=frameInfo.offsetDec,
                            offsetRot=frameInfo.offsetRot, header=h)
 
