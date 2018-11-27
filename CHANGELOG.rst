@@ -11,7 +11,17 @@ This document records the main changes to the guiderActor code.
 master
 ------
 
-[View commits](https://github.com/sdss/guiderActor/compare/3.9.0...HEAD)
+[View commits](https://github.com/sdss/guiderActor/compare/3.9.1...HEAD)
+
+
+.. _changelog-3.9.1:
+
+3.9.1 (unreleased)
+------------------
+
+Fixed
+^^^^^
+* Remove non-ascii character in ``guider_movie`` (fixes `ticket #2922 <https://trac.sdss.org/ticket/2922>`__.
 
 
 .. _changelog-3.9.0:

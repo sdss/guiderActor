@@ -532,5 +532,5 @@ def main(argv=None):
     return do_work(opts, gimgdir, start, end)
 
 
-if __name__ == '__mainå__':
+if __name__ == '__main__':
     sys.exit(main())
