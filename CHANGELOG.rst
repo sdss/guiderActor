@@ -16,7 +16,7 @@ master
 
 .. _changelog-3.9.1:
 
-3.9.1 (unreleased)
+3.9.1 (2018-12-11)
 ------------------
 
 Fixed
