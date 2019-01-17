@@ -13,6 +13,15 @@ master
 
 [View commits](https://github.com/sdss/guiderActor/compare/3.9.1...HEAD)
 
+.. _changelog-3.9.2:
+
+3.9.2 (unreleased)
+------------------
+
+Fixed
+^^^^^
+* Fixed Ticket `#2920 <https://trac.sdss.org/ticket/2930>`__; disable automatic scaling of Ti in raDec if Ti has been set manually.
+
 
 .. _changelog-3.9.1:
 

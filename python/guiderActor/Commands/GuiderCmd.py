@@ -298,6 +298,11 @@ class GuiderCmd(object):
         nfilt = cmd.cmd.keywords["nfilt"].values[
             0] if "nfilt" in cmd.cmd.keywords else None
 
+        if what == 'raDec' and Ti is not None:
+            # Disable automatic scaling with alitude since we have set
+            # a custom value.
+            myGlobals.actorState.gState.diable_ti_scaling = True
+
         myGlobals.actorState.queues[guiderActor.MASTER].put(
             Msg(Msg.SET_PID,
                 cmd=cmd,

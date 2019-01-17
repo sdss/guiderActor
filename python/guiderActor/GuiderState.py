@@ -306,6 +306,10 @@ class GuiderState(object):
         self.refractionBalance = 0
         self.guideWavelength = -1
 
+        # Indicates whether the Ti PID coefficients have been set manually set.
+        # If so, disables the scaling of the Ti coefficient with altitude.
+        self.diable_ti_scaling = False
+
         # Will contain [id]:gProbe pairs
         self.gprobes = {}
 
@@ -463,6 +467,9 @@ class GuiderState(object):
         Ti as altitude increases.
         Return True if we changed the PID values.
         """
+
+        if self.diable_ti_scaling:
+            return False
 
         def twoPointForm(x0, y0, x1, y1, x):
             """Equation of a line from two points"""
