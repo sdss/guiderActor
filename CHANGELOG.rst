@@ -21,6 +21,7 @@ master
 Fixed
 ^^^^^
 * Fixed Ticket `#2920 <https://trac.sdss.org/ticket/2930>`__; disable automatic scaling of Ti in raDec if Ti has been set manually.
+* Actually call ``PID.reset`` when the ``resetPID`` command gets called.
 
 
 .. _changelog-3.9.1:

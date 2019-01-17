@@ -328,6 +328,12 @@ class GuiderCmd(object):
 
         myGlobals.actorState.gState.reset_pid_defaults(terms=terms)
 
+        if terms is None:
+            terms = myGlobals.actorState.gState.pid.keys()
+
+        for term in terms:
+            myGlobals.actorState.gState.pid[term].reset()
+
         myGlobals.actorState.queues[guiderActor.MASTER].put(
             Msg(Msg.STATUS, cmd=cmd, finish=True))
 
