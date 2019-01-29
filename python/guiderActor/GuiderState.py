@@ -454,6 +454,8 @@ class GuiderState(object):
             coeffs.pop('Ti_max')
             self.pid[term].setPID(**coeffs)
 
+        self.diable_ti_scaling = False
+
     def reset_pid_terms(self, terms=None):
         """Reset all PID terms, or just those listed."""
         if terms is None:
