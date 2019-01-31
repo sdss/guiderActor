@@ -11,11 +11,11 @@ This document records the main changes to the guiderActor code.
 master
 ------
 
-[View commits](https://github.com/sdss/guiderActor/compare/3.9.1...HEAD)
+[View commits](https://github.com/sdss/guiderActor/compare/3.9.2...HEAD)
 
 .. _changelog-3.9.2:
 
-3.9.2 (unreleased)
+3.9.2 (2019-01-31)
 ------------------
 
 Fixed
