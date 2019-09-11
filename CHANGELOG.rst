@@ -13,6 +13,11 @@ master
 
 [View commits](https://github.com/sdss/guiderActor/compare/3.9.2...HEAD)
 
+Added
+^^^^^
+* Now it's possible to use ``guider loadCartridge force cartridge=5`` to load a cartridge bypassing the MCP.
+
+
 .. _changelog-3.9.2:
 
 3.9.2 (2019-01-31)

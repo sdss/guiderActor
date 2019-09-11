@@ -510,19 +510,24 @@ class GuiderCmd(object):
         #
         actorState = guiderActor.myGlobals.actorState
 
-        instrumentNumKey = actorState.models["mcp"].keyVarDict["instrumentNum"]
-        cmdVar = actorState.actor.cmdr.call(
-            actor="mcp",
-            forUserCmd=cmd,
-            cmdStr="info",
-            keyVars=[instrumentNumKey])
-        if cmdVar.didFail:
-            cmd.fail("text=\"Failed to ask mcp for info on cartridges\"")
-            return
+        if force and cartridge != -1:
+            loadedCartridge = cartridge
+            cmd.inform('text="Assuming cartridge {} is on the telescope"'
+                       .format(loadedCartridge))
+        else:
+            instrumentNumKey = actorState.models["mcp"].keyVarDict["instrumentNum"]
+            cmdVar = actorState.actor.cmdr.call(
+                actor="mcp",
+                forUserCmd=cmd,
+                cmdStr="info",
+                keyVars=[instrumentNumKey])
+            if cmdVar.didFail:
+                cmd.fail("text=\"Failed to ask mcp for info on cartridges\"")
+                return
 
-        loadedCartridge = cmdVar.getLastKeyVarData(instrumentNumKey)[0]
-        cmd.inform(
-            "text=\"Cartridge %s is on the telescope\"" % loadedCartridge)
+            loadedCartridge = cmdVar.getLastKeyVarData(instrumentNumKey)[0]
+            cmd.inform(
+                "text=\"Cartridge %s is on the telescope\"" % loadedCartridge)
 
         # Only auto-select the cart if a plate was not specified.
         if cartridge < 0 and plate is None:
