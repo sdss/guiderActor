@@ -370,6 +370,8 @@ class GuiderState(object):
         elif (plateType == 'APOGEE&MaNGA' or plateType == 'APOGEE-2&MaNGA') and \
              (surveyMode == 'APOGEE lead'):
             self.refractionBalance = 1
+        elif plateType == 'BHM&MWM' and surveyMode == 'MWM lead':
+            self.refractionBalance = 1
         else:
             self.refractionBalance = 0
 
