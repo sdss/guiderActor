@@ -6,16 +6,18 @@ Change Log
 
 This document records the main changes to the guiderActor code.
 
-.. _changelog-master:
+.. _changelog-3.9.3:
 
-master
-------
-
-[View commits](https://github.com/sdss/guiderActor/compare/3.9.2...HEAD)
+3.9.3 (2020-11-09)
+------------------
 
 Added
 ^^^^^
 * Now it's possible to use ``guider loadCartridge force cartridge=5`` to load a cartridge bypassing the MCP.
+
+Changed
+^^^^^^^
+* Enable ``refractionBalance=1`` for ``MWM lead`` plates, and allow multiple wavelengths to try.
 
 
 .. _changelog-3.9.2:
@@ -38,15 +40,6 @@ Fixed
 ^^^^^
 * Remove non-ascii character in ``guider_movie`` (fixes `ticket #2922 <https://trac.sdss.org/ticket/2922>`__.
 
-
-.. _changelog-3.9.1:
-
-3.9.1 (unreleased)
-------------------
-
-Changed
-^^^^^^^
-* Enable ``refractionBalance=1`` for ``MWM lead`` plates, and allow multiple wavelengths to try.
 
 
 .. _changelog-3.9.0:
