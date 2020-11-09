@@ -602,6 +602,8 @@ class GuiderCmd(object):
             elif survey in ['APOGEE&MaNGA', 'APOGEE-2&MaNGA']:
                 if surveyMode == 'APOGEE lead':
                     guideWavelength = 16600
+            elif survey == 'BHM&MWM' and surveyMode == 'MWM lead':
+                guideWavelength = [16600, 16000]
 
         if design_ha < 0:
             design_ha += 360
@@ -681,8 +683,11 @@ class GuiderCmd(object):
         gState.refractionBalance = 0
         gState.guideWavelength = -1
         if guideWavelength and guideWavelength != -1:
-            offsetStatus = self.addGuideOffsets(cmd, plate, guideWavelength,
-                                                pointingID, gprobes)
+            offsetStatus, guideWavelength = self.addGuideOffsets(cmd,
+                                                                 plate,
+                                                                 guideWavelength,
+                                                                 pointingID,
+                                                                 gprobes)
             if offsetStatus:
                 gState.guideWavelength = guideWavelength
                 gState.refractionBalance = 1
@@ -708,32 +713,44 @@ class GuiderCmd(object):
                 surveyMode=surveyMode,
                 gprobes=gprobes))
 
-    def addGuideOffsets(self, cmd, plate, wavelength, pointingID, gprobes):
+    def addGuideOffsets(self, cmd, plate, wavelengths, pointingID, gprobes):
         """
         Read in the new (needed for APOGEE/MARVELS) plateGuideOffsets interpolation arrays.
         """
 
-        # Get .par file name in the platelist product.
-        # plates/0046XX/004671/plateGuideOffsets-004671-p1-l16600.par
-        path = os.path.join(os.environ['PLATELIST_DIR'], 'plates',
-                            '%04dXX' % (int(plate / 100)), '%06d' % (plate),
-                            'plateGuideOffsets-%06d-p%d-l%05d.par' %
-                            (plate, pointingID, wavelength))
-        if not os.path.exists(path):
-            failMsg = ('text="no refraction corrections for '
-                       'plate {0} at {1:d}A"'.format(plate, wavelength))
-            cmd.error(failMsg)
-            return False
+        path = None
+        wavelength = None
+
+        if not isinstance(wavelengths, (list, tuple)):
+            wavelengths = [wavelengths]
+
+        for wavelength in wavelengths:
+            # Get .par file name in the platelist product.
+            # plates/0046XX/004671/plateGuideOffsets-004671-p1-l16600.par
+            path = os.path.join(os.environ['PLATELIST_DIR'], 'plates',
+                                '%04dXX' % (int(plate / 100)), '%06d' % (plate),
+                                'plateGuideOffsets-%06d-p%d-l%05d.par' %
+                                (plate, pointingID, wavelength))
+            if not os.path.exists(path):
+                # If this is the last wavelength we test and it didn't get
+                # a match, then fail the command and return.
+                if wavelengths.index(wavelength) == len(wavelengths) - 1:
+                    failMsg = ('text="no refraction corrections for '
+                               'plate {0} at {1:d}A"'.format(plate, wavelength))
+                    cmd.error(failMsg)
+                    return False, None
+            else:
+                break
 
         try:
             ygo = yanny.yanny(path, np=True)
             guideOffsets = ygo['HAOFFSETS']
             cmd.inform('text="loaded guider coeffs for %dA from %s"' %
                        (wavelength, path))
-        except Exception, e:
+        except Exception as e:
             cmd.error('text="failed to read plateGuideOffsets file %s: %s"' %
                       (path, e))
-            return False
+            return False, None
 
         for gpID, gProbe in gprobes.items():
             if gProbe.fiber_type == 'TRITIUM':
@@ -755,7 +772,7 @@ class GuiderCmd(object):
             cmd.inform('text="applied corrections to gProbeID={0} for {1}A"'
                        .format(gpID, wavelength))
 
-        return True
+        return True, wavelength
 
     def setRefractionBalance(self, cmd):
         """Set refraction balance to a specific correction ratio."""
