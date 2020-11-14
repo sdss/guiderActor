@@ -6,6 +6,16 @@ Change Log
 
 This document records the main changes to the guiderActor code.
 
+.. _changelog-3.9.4:
+
+3.9.4 (unreleased)
+------------------
+
+Reverted
+^^^^^^^^
+* Reverted #3. Offsets are applied independently for RA/Dec, focus, and scale not using the ``guide`` command.
+
+
 .. _changelog-3.9.3:
 
 3.9.3 (2020-11-09)
