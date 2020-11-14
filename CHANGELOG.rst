@@ -41,7 +41,6 @@ Fixed
 * Remove non-ascii character in ``guider_movie`` (fixes `ticket #2922 <https://trac.sdss.org/ticket/2922>`__.
 
 
-
 .. _changelog-3.9.0:
 
 3.9.0 (2018-05-30)
