@@ -378,7 +378,7 @@ class GuiderState(object):
             else:
                 self.guideWavelength = 5400
 
-        available_wavelengths = set([wv for gp in self.gprobes.items()
+        available_wavelengths = set([wv for gp in self.gprobes.values()
                                      for wv in gp.haXOffsets])
         if self.guideWavelength not in available_wavelengths:
             if cmd:
