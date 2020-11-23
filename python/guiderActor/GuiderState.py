@@ -366,24 +366,27 @@ class GuiderState(object):
     def setRefractionBalance(self, plateType, surveyMode, cmd=None):
         """Set the refraction balance based on the survey name."""
 
+        self.refractionBalance = 1
+
         if plateType == 'APOGEE' or plateType == 'APOGEE-2':
-            self.refractionBalance = 1
+            self.guideWavelength = 5400
         elif (plateType == 'APOGEE&MaNGA' or plateType == 'APOGEE-2&MaNGA') and \
              (surveyMode == 'APOGEE lead'):
-            self.refractionBalance = 1
+            self.guideWavelength = 16600
         elif plateType == 'BHM&MWM':
-            self.refractionBalance = 1
             if surveyMode == 'MWM lead':
-                self.guideWavelength = 16000
+                self.guideWavelength = 16600
             else:
                 self.guideWavelength = 5400
 
         available_wavelengths = set([wv for gp in self.gprobes.values()
                                      for wv in gp.haXOffsets])
         if self.guideWavelength not in available_wavelengths:
+            self.refractionBalance = 0
             if cmd:
                 cmd.warn('text="no guide offsets found for {}A. '
-                         'Offsets will not be applied."'
+                         'Offsets will not be applied. '
+                         'Setting refractionBalance=0"'
                          .format(self.guideWavelength))
 
     def setDecenter(self, decenters, cmd, enable):

@@ -686,11 +686,9 @@ class GuiderCmd(object):
         # Sets the guide offsets, if the guide wavelength is defined
         gState = actorState.gState
         gState.refractionBalance = 0
-        gState.guideWavelength = -1
-        if guideWavelength and guideWavelength != -1:
-            self.addGuideOffsets(cmd, plate, pointingID, gprobes)
-            cmd.inform('text="guideWavelength set to {}."'.format(guideWavelength))
-            cmd.inform('text="refraction balance set to 1."')
+        gState.guideWavelength = guideWavelength
+
+        self.addGuideOffsets(cmd, plate, pointingID, gprobes)
 
         # Send that information off to the master thread
         queue.put(
