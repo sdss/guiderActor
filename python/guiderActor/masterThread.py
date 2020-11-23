@@ -1912,7 +1912,7 @@ def main(actor, queues):
                     cmd.respond('refractionBalance=%0.1f' %
                                 (gState.refractionBalance))
                 cmd.diag('text="design_ha=%0.1f"' % (gState.design_ha))
-                cmd.respond('text="guideWavelength={:f}"'.format(gState.guideWavelength))
+                cmd.respond('text="guideWavelength={:.0f}"'.format(gState.guideWavelength))
 
                 cmd.diag('fitting_algorithm="{}"'.format(
                     gState.fitting_algorithm))
