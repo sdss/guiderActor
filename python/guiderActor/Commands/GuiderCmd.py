@@ -602,8 +602,11 @@ class GuiderCmd(object):
             elif survey in ['APOGEE&MaNGA', 'APOGEE-2&MaNGA']:
                 if surveyMode == 'APOGEE lead':
                     guideWavelength = 16600
-            elif survey == 'BHM&MWM' and surveyMode == 'MWM lead':
-                guideWavelength = [16600, 16000]
+            elif survey == 'BHM&MWM':
+                if surveyMode == 'MWM lead':
+                    guideWavelength = [16600, 16000]
+                elif surveyMode == 'BHM lead':
+                    guideWavelength = 5400.
 
         if design_ha < 0:
             design_ha += 360
@@ -662,8 +665,8 @@ class GuiderCmd(object):
         for key in cmdVar.getKeyVarData(guideInfoKey):
             try:
                 gprobes[key[0]].from_platedb_guideInfo(key)
-            except (KeyError, ValueError), e:
-                cmd.warn('text=%s' % e)
+            except (KeyError, ValueError) as err:
+                cmd.warn('text=%s' % err)
                 cmd.warn('text="Unknown probeId %d from plugmap file. %s"' %
                          (key[0], str(key)))
                 continue
@@ -691,6 +694,7 @@ class GuiderCmd(object):
             if offsetStatus:
                 gState.guideWavelength = guideWavelength
                 gState.refractionBalance = 1
+                cmd.inform('text="guideWavelength set to {}."'.format(guideWavelength))
                 cmd.inform('text="refraction balance set to 1."')
             else:
                 cmd.fail('text="failed to load guide offsets."')
