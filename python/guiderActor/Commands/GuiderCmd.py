@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 """ Wrap top-level guider functions. """
 
+import glob
 import os
+import re
 import threading
 
 import guiderActor
@@ -608,10 +610,6 @@ class GuiderCmd(object):
                 elif surveyMode == 'BHM lead':
                     guideWavelength = 5400.
 
-        # Wavelength for which we want to try to load offsets, regardless
-        # of the guideWavelength.
-        offsetWavelengths = [16600, 16000, 5400]
-
         if design_ha < 0:
             design_ha += 360
 
@@ -690,19 +688,13 @@ class GuiderCmd(object):
         gState.refractionBalance = 0
         gState.guideWavelength = -1
         if guideWavelength and guideWavelength != -1:
-            offsetStatus = self.addGuideOffsets(cmd, plate, offsetWavelengths,
-                                                pointingID, gprobes)
-            if offsetStatus:
-                gState.guideWavelength = guideWavelength
-                gState.refractionBalance = 1
-                cmd.inform('text="guideWavelength set to {}."'.format(guideWavelength))
-                cmd.inform('text="refraction balance set to 1."')
-            else:
-                cmd.fail('text="failed to load guide offsets."')
-                return
+            self.addGuideOffsets(cmd, plate, pointingID, gprobes)
+            gState.guideWavelength = guideWavelength
+            gState.refractionBalance = 1
+            cmd.inform('text="guideWavelength set to {}."'.format(guideWavelength))
+            cmd.inform('text="refraction balance set to 1."')
 
         # Send that information off to the master thread
-        #
         queue.put(
             Msg(Msg.LOAD_CARTRIDGE,
                 cmd=cmd,
@@ -718,27 +710,26 @@ class GuiderCmd(object):
                 surveyMode=surveyMode,
                 gprobes=gprobes))
 
-    def addGuideOffsets(self, cmd, plate, wavelengths, pointingID, gprobes):
+    def addGuideOffsets(self, cmd, plate, pointingID, gprobes):
         """
         Read in the new (needed for APOGEE/MARVELS) plateGuideOffsets interpolation arrays.
         """
 
-        any_loaded = False
+        # Get .par file name in the platelist product.
+        # plates/0046XX/004671/plateGuideOffsets-004671-p1-l16600.par
+        base_path = os.path.join(os.environ['PLATELIST_DIR'], 'plates',
+                                 '{plate:04d}XX'.format(plate=int(plate / 100)),
+                                 '{plate:06d}'.format(plate=plate))
 
-        for wavelength in wavelengths:
-            # Get .par file name in the platelist product.
-            # plates/0046XX/004671/plateGuideOffsets-004671-p1-l16600.par
-            path = os.path.join(os.environ['PLATELIST_DIR'], 'plates',
-                                '%04dXX' % (int(plate / 100)), '%06d' % (plate),
-                                'plateGuideOffsets-%06d-p%d-l%05d.par' %
-                                (plate, pointingID, wavelength))
-            if not os.path.exists(path):
-                # If this is the last wavelength we test and it didn't get
-                # a match, then fail the command and return.
-                failMsg = ('text="no refraction corrections for '
-                           'plate {0} at {1:d}A"'.format(plate, wavelength))
-                cmd.warn(failMsg)
-                continue
+        paths = glob.glob(
+            os.path.join(base_path,
+                         'plateGuideOffsets-{plate:06d}-p{pointing:d}-l*.par'
+                         .format(plate=plate, pointing=pointingID)))
+
+        for path in paths:
+
+            wavelength = int(re.search('-l(?P<t>[0-9]{5})',
+                                       os.path.basename(path)).group(1))
 
             try:
                 ygo = yanny.yanny(path, np=True)
@@ -762,18 +753,13 @@ class GuiderCmd(object):
                         (len(offset), gpID))
                     continue
 
-                # Some SDSS-V still used guideWavelength 16600 for IR.
-                wv = 16000 if wavelength == 16600 and plate > 15000 else wavelength
-
-                gProbe.haOffsetTimes[wv] = offset[0]['delha']
-                gProbe.haXOffsets[wv] = offset[0]['xfoff']
-                gProbe.haYOffsets[wv] = offset[0]['yfoff']
+                gProbe.haOffsetTimes[wavelength] = offset[0]['delha']
+                gProbe.haXOffsets[wavelength] = offset[0]['xfoff']
+                gProbe.haYOffsets[wavelength] = offset[0]['yfoff']
                 cmd.inform('text="applied corrections to gProbeID={0} for {1}A"'
                            .format(gpID, wavelength))
 
-                any_loaded = True
-
-        return any_loaded
+        return
 
     def setRefractionBalance(self, cmd):
         """Set refraction balance to a specific correction ratio."""
