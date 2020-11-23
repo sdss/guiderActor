@@ -370,10 +370,12 @@ class GuiderState(object):
         elif (plateType == 'APOGEE&MaNGA' or plateType == 'APOGEE-2&MaNGA') and \
              (surveyMode == 'APOGEE lead'):
             self.refractionBalance = 1
-        elif plateType == 'BHM&MWM' and surveyMode == 'MWM lead':
+        elif plateType == 'BHM&MWM':
             self.refractionBalance = 1
-        else:
-            self.refractionBalance = 0
+            if surveyMode == 'MWM lead':
+                self.guideWavelength = 16000
+            else:
+                self.guideWavelength = 5400
 
     def setDecenter(self, decenters, cmd, enable):
         """
