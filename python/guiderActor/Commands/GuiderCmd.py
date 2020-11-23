@@ -735,11 +735,10 @@ class GuiderCmd(object):
             if not os.path.exists(path):
                 # If this is the last wavelength we test and it didn't get
                 # a match, then fail the command and return.
-                if wavelengths.index(wavelength) == len(wavelengths) - 1:
-                    failMsg = ('text="no refraction corrections for '
-                               'plate {0} at {1:d}A"'.format(plate, wavelength))
-                    cmd.warn(failMsg)
-                    continue
+                failMsg = ('text="no refraction corrections for '
+                           'plate {0} at {1:d}A"'.format(plate, wavelength))
+                cmd.warn(failMsg)
+                continue
 
             try:
                 ygo = yanny.yanny(path, np=True)
@@ -747,18 +746,16 @@ class GuiderCmd(object):
                 cmd.inform('text="loaded guider coeffs for %dA from %s"' %
                            (wavelength, path))
             except Exception as e:
-                cmd.error('text="failed to read plateGuideOffsets file %s: %s"' %
-                          (path, e))
+                cmd.warn('text="failed to read plateGuideOffsets file %s: %s"' %
+                         (path, e))
                 continue
 
             for gpID, gProbe in gprobes.items():
                 if gProbe.fiber_type == 'TRITIUM':
                     continue
 
-                offset = [
-                    o for o in guideOffsets
-                    if o['holetype'] == "GUIDE" and o['iguide'] == gpID
-                ]
+                offset = [o for o in guideOffsets
+                          if o['holetype'] == 'GUIDE' and o['iguide'] == gpID]
                 if len(offset) != 1:
                     cmd.warn(
                         'text="no or too many (%d) guideOffsets for probe %s"' %
