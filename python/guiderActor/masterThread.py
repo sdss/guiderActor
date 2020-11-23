@@ -1291,11 +1291,7 @@ def load_cartridge(msg, queues, gState, actorState):
         if test.any():  # should only be one
             gProbe.ugriz = gState.allProbes.mag[test][0]
 
-    # TBD: SDSS4: We may have to twiddle with this for coobserved plates.
-    # What to do with APOGEEMANGA? Also use the surveyMode?
-    # We don't use this anymore. The refraction balance is set in GuiderCmd
-    # depending on whether a plateGuideOffsets has been applied.
-    # gState.setRefractionBalance(gState.plateType, gState.surveyMode)
+    gState.setRefractionBalance(gState.plateType, gState.surveyMode, cmd=msg.cmd)
 
     # Report the cartridge status
     queues[MASTER].put(
@@ -1330,7 +1326,7 @@ def set_refraction(cmd,
         cmd.inform('text="refraction balance set to {0}"'.format(corrRatio))
         return True
     elif surveyMode is not None and plateType is not None:
-        gState.setRefractionBalance(plateType, surveyMode)
+        gState.setRefractionBalance(plateType, surveyMode, cmd=cmd)
         cmd.inform('text="refraction balance set to {0}"'.format(
             gState.refractionBalance))
         return True
@@ -1906,12 +1902,13 @@ def main(actor, queues):
                 gState.output_pid(cmd)
 
                 if gState.refractionBalance != 0.0:
-                    cmd.warn('refractionBalance=%0.1f' %
-                             (gState.refractionBalance))
+                    cmd.respond('refractionBalance=%0.1f' %
+                                (gState.refractionBalance))
                 else:
                     cmd.respond('refractionBalance=%0.1f' %
                                 (gState.refractionBalance))
                 cmd.diag('text="design_ha=%0.1f"' % (gState.design_ha))
+                cmd.respond('text="guideWavelength={:.0f}"'.format(gState.guideWavelength))
 
                 cmd.diag('fitting_algorithm="{}"'.format(
                     gState.fitting_algorithm))

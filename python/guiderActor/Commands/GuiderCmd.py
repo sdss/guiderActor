@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 """ Wrap top-level guider functions. """
 
+import glob
 import os
+import re
 import threading
 
 import guiderActor
@@ -602,8 +604,11 @@ class GuiderCmd(object):
             elif survey in ['APOGEE&MaNGA', 'APOGEE-2&MaNGA']:
                 if surveyMode == 'APOGEE lead':
                     guideWavelength = 16600
-            elif survey == 'BHM&MWM' and surveyMode == 'MWM lead':
-                guideWavelength = [16600, 16000]
+            elif survey == 'BHM&MWM':
+                if surveyMode == 'MWM lead':
+                    guideWavelength = 16000.
+                elif surveyMode == 'BHM lead':
+                    guideWavelength = 5400.
 
         if design_ha < 0:
             design_ha += 360
@@ -662,8 +667,8 @@ class GuiderCmd(object):
         for key in cmdVar.getKeyVarData(guideInfoKey):
             try:
                 gprobes[key[0]].from_platedb_guideInfo(key)
-            except (KeyError, ValueError), e:
-                cmd.warn('text=%s' % e)
+            except (KeyError, ValueError) as err:
+                cmd.warn('text=%s' % err)
                 cmd.warn('text="Unknown probeId %d from plugmap file. %s"' %
                          (key[0], str(key)))
                 continue
@@ -681,23 +686,11 @@ class GuiderCmd(object):
         # Sets the guide offsets, if the guide wavelength is defined
         gState = actorState.gState
         gState.refractionBalance = 0
-        gState.guideWavelength = -1
-        if guideWavelength and guideWavelength != -1:
-            offsetStatus, guideWavelength = self.addGuideOffsets(cmd,
-                                                                 plate,
-                                                                 guideWavelength,
-                                                                 pointingID,
-                                                                 gprobes)
-            if offsetStatus:
-                gState.guideWavelength = guideWavelength
-                gState.refractionBalance = 1
-                cmd.inform('text="refraction balance set to 1."')
-            else:
-                cmd.fail('text="failed to load guide offsets."')
-                return
+        gState.guideWavelength = guideWavelength
+
+        self.addGuideOffsets(cmd, plate, pointingID, gprobes)
 
         # Send that information off to the master thread
-        #
         queue.put(
             Msg(Msg.LOAD_CARTRIDGE,
                 cmd=cmd,
@@ -713,66 +706,56 @@ class GuiderCmd(object):
                 surveyMode=surveyMode,
                 gprobes=gprobes))
 
-    def addGuideOffsets(self, cmd, plate, wavelengths, pointingID, gprobes):
+    def addGuideOffsets(self, cmd, plate, pointingID, gprobes):
         """
         Read in the new (needed for APOGEE/MARVELS) plateGuideOffsets interpolation arrays.
         """
 
-        path = None
-        wavelength = None
+        # Get .par file name in the platelist product.
+        # plates/0046XX/004671/plateGuideOffsets-004671-p1-l16600.par
+        base_path = os.path.join(os.environ['PLATELIST_DIR'], 'plates',
+                                 '{plate:04d}XX'.format(plate=int(plate / 100)),
+                                 '{plate:06d}'.format(plate=plate))
 
-        if not isinstance(wavelengths, (list, tuple)):
-            wavelengths = [wavelengths]
+        paths = glob.glob(
+            os.path.join(base_path,
+                         'plateGuideOffsets-{plate:06d}-p{pointing:d}-l*.par'
+                         .format(plate=plate, pointing=pointingID)))
 
-        for wavelength in wavelengths:
-            # Get .par file name in the platelist product.
-            # plates/0046XX/004671/plateGuideOffsets-004671-p1-l16600.par
-            path = os.path.join(os.environ['PLATELIST_DIR'], 'plates',
-                                '%04dXX' % (int(plate / 100)), '%06d' % (plate),
-                                'plateGuideOffsets-%06d-p%d-l%05d.par' %
-                                (plate, pointingID, wavelength))
-            if not os.path.exists(path):
-                # If this is the last wavelength we test and it didn't get
-                # a match, then fail the command and return.
-                if wavelengths.index(wavelength) == len(wavelengths) - 1:
-                    failMsg = ('text="no refraction corrections for '
-                               'plate {0} at {1:d}A"'.format(plate, wavelength))
-                    cmd.error(failMsg)
-                    return False, None
-            else:
-                break
+        for path in paths:
 
-        try:
-            ygo = yanny.yanny(path, np=True)
-            guideOffsets = ygo['HAOFFSETS']
-            cmd.inform('text="loaded guider coeffs for %dA from %s"' %
-                       (wavelength, path))
-        except Exception as e:
-            cmd.error('text="failed to read plateGuideOffsets file %s: %s"' %
-                      (path, e))
-            return False, None
+            wavelength = int(re.search('-l(?P<t>[0-9]{5})',
+                                       os.path.basename(path)).group(1))
 
-        for gpID, gProbe in gprobes.items():
-            if gProbe.fiber_type == 'TRITIUM':
+            try:
+                ygo = yanny.yanny(path, np=True)
+                guideOffsets = ygo['HAOFFSETS']
+                cmd.inform('text="loaded guider coeffs for %dA from %s"' %
+                           (wavelength, path))
+            except Exception as e:
+                cmd.warn('text="failed to read plateGuideOffsets file %s: %s"' %
+                         (path, e))
                 continue
 
-            offset = [
-                o for o in guideOffsets
-                if o['holetype'] == "GUIDE" and o['iguide'] == gpID
-            ]
-            if len(offset) != 1:
-                cmd.warn(
-                    'text="no or too many (%d) guideOffsets for probe %s"' %
-                    (len(offset), gpID))
-                continue
+            for gpID, gProbe in gprobes.items():
+                if gProbe.fiber_type == 'TRITIUM':
+                    continue
 
-            gProbe.haOffsetTimes[wavelength] = offset[0]['delha']
-            gProbe.haXOffsets[wavelength] = offset[0]['xfoff']
-            gProbe.haYOffsets[wavelength] = offset[0]['yfoff']
-            cmd.inform('text="applied corrections to gProbeID={0} for {1}A"'
-                       .format(gpID, wavelength))
+                offset = [o for o in guideOffsets
+                          if o['holetype'] == 'GUIDE' and o['iguide'] == gpID]
+                if len(offset) != 1:
+                    cmd.warn(
+                        'text="no or too many (%d) guideOffsets for probe %s"' %
+                        (len(offset), gpID))
+                    continue
 
-        return True, wavelength
+                gProbe.haOffsetTimes[wavelength] = offset[0]['delha']
+                gProbe.haXOffsets[wavelength] = offset[0]['xfoff']
+                gProbe.haYOffsets[wavelength] = offset[0]['yfoff']
+                cmd.inform('text="applied corrections to gProbeID={0} for {1}A"'
+                           .format(gpID, wavelength))
+
+        return
 
     def setRefractionBalance(self, cmd):
         """Set refraction balance to a specific correction ratio."""

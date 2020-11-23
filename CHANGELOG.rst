@@ -15,6 +15,10 @@ Reverted
 ^^^^^^^^
 * Reverted #3. Offsets are applied independently for RA/Dec, focus, and scale not using the ``guide`` command.
 
+Changed
+^^^^^^^
+* Starting with this version the plateGuideOffset values for all available wavelengths are read and added to the gprobes when the cartridge is loaded. The refraction balance is always set to 1 and the ``guideWavelength`` is set depending on the leading survey. If offsets are not available for a desired guide wavelength, a warning is issued but guiding continues without applying corrections.
+
 
 .. _changelog-3.9.3:
 
