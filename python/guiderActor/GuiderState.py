@@ -378,7 +378,9 @@ class GuiderState(object):
             else:
                 self.guideWavelength = 5400
 
-        if self.guideWavelength not in self.gprobes[1].haXOffsets:
+        available_wavelengths = set([wv for gp in self.gprobes
+                                     for wv in gp.haXOffsets])
+        if self.guideWavelength not in available_wavelengths:
             if cmd:
                 cmd.warn('text="no guide offsets found for {}A. '
                          'Offsets will not be applied."'
