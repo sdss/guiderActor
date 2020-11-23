@@ -1330,7 +1330,7 @@ def set_refraction(cmd,
         cmd.inform('text="refraction balance set to {0}"'.format(corrRatio))
         return True
     elif surveyMode is not None and plateType is not None:
-        gState.setRefractionBalance(plateType, surveyMode)
+        gState.setRefractionBalance(plateType, surveyMode, cmd=cmd)
         cmd.inform('text="refraction balance set to {0}"'.format(
             gState.refractionBalance))
         return True

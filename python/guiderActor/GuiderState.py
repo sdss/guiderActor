@@ -363,8 +363,9 @@ class GuiderState(object):
         else:
             raise RuntimeError('Unknown guide mode %s' % mode)
 
-    def setRefractionBalance(self, plateType, surveyMode):
+    def setRefractionBalance(self, plateType, surveyMode, cmd=None):
         """Set the refraction balance based on the survey name."""
+
         if plateType == 'APOGEE' or plateType == 'APOGEE-2':
             self.refractionBalance = 1
         elif (plateType == 'APOGEE&MaNGA' or plateType == 'APOGEE-2&MaNGA') and \
@@ -376,6 +377,12 @@ class GuiderState(object):
                 self.guideWavelength = 16000
             else:
                 self.guideWavelength = 5400
+
+        if self.guideWavelength not in self.gprobes[1].haXOffsets:
+            if cmd:
+                cmd.warn('text="no guide offsets found for {}A. '
+                         'Offsets will not be applied."'
+                         .format(self.guideWavelength))
 
     def setDecenter(self, decenters, cmd, enable):
         """

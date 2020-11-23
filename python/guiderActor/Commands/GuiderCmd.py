@@ -689,9 +689,8 @@ class GuiderCmd(object):
         gState.guideWavelength = -1
         if guideWavelength and guideWavelength != -1:
             self.addGuideOffsets(cmd, plate, pointingID, gprobes)
-            gState.guideWavelength = guideWavelength
-            gState.refractionBalance = 1
-            cmd.inform('text="guideWavelength set to {}."'.format(guideWavelength))
+            gState.setRefractionBalance(survey, surveyMode, cmd=cmd)
+            cmd.inform('text="guideWavelength set to {}."'.format(gState.guideWavelength))
             cmd.inform('text="refraction balance set to 1."')
 
         # Send that information off to the master thread
