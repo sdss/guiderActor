@@ -1291,11 +1291,7 @@ def load_cartridge(msg, queues, gState, actorState):
         if test.any():  # should only be one
             gProbe.ugriz = gState.allProbes.mag[test][0]
 
-    # TBD: SDSS4: We may have to twiddle with this for coobserved plates.
-    # What to do with APOGEEMANGA? Also use the surveyMode?
-    # We don't use this anymore. The refraction balance is set in GuiderCmd
-    # depending on whether a plateGuideOffsets has been applied.
-    # gState.setRefractionBalance(gState.plateType, gState.surveyMode)
+    gState.setRefractionBalance(gState.plateType, gState.surveyMode, cmd=msg.cmd)
 
     # Report the cartridge status
     queues[MASTER].put(
