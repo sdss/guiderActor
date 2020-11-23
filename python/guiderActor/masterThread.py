@@ -1902,8 +1902,8 @@ def main(actor, queues):
                 gState.output_pid(cmd)
 
                 if gState.refractionBalance != 0.0:
-                    cmd.warn('refractionBalance=%0.1f' %
-                             (gState.refractionBalance))
+                    cmd.respond('refractionBalance=%0.1f' %
+                                (gState.refractionBalance))
                 else:
                     cmd.respond('refractionBalance=%0.1f' %
                                 (gState.refractionBalance))
