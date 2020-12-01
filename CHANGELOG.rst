@@ -8,7 +8,7 @@ This document records the main changes to the guiderActor code.
 
 .. _changelog-3.9.4:
 
-3.9.4 (unreleased)
+3.9.4 (2020-11-30)
 ------------------
 
 Reverted
