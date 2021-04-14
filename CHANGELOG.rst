@@ -6,6 +6,18 @@ Change Log
 
 This document records the main changes to the guiderActor code.
 
+
+.. _changelog-3.9.5:
+
+3.9.5 (unreleased)
+------------------
+
+Fixed
+^^^^^
+* Fixed import of ``matplotlib`` in ``guider_movie.py`` to use AGG backend.
+
+
+
 .. _changelog-3.9.4:
 
 3.9.4 (2020-11-30)

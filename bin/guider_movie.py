@@ -2,6 +2,10 @@
 """
 Generate a movie from processed guider files to show the guider behavior.
 """
+
+# isort:skip
+# flake8: noqa E402
+
 import os.path
 import shutil
 import subprocess
@@ -9,14 +13,14 @@ import sys
 import tempfile
 
 import matplotlib
+matplotlib.use('agg')
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pyfits
 from matplotlib import cm
 
 from opscore.utility import assembleImage
-
-matplotlib.use('agg')
 
 gimgbase = 'proc-gimg-%04d.fits.gz'
 tempbase = 'temp-gimg-%04d.png'
