@@ -17,7 +17,6 @@ Fixed
 * Fixed import of ``matplotlib`` in ``guider_movie.py`` to use AGG backend.
 
 
-
 .. _changelog-3.9.4:
 
 3.9.4 (2020-11-30)
