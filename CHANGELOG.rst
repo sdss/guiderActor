@@ -9,7 +9,7 @@ This document records the main changes to the guiderActor code.
 
 .. _changelog-3.9.5:
 
-3.9.5 (unreleased)
+3.9.5 (2021-05-05)
 ------------------
 
 Fixed
