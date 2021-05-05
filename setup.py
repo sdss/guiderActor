@@ -28,7 +28,7 @@ class GuiderActorBuild(build):
 
 
 setup(name='guiderActor',
-      version='3.9.5dev',
+      version='3.9.5',
       description='The SDSS guider actor',
       maintainer='Jose Sanchez-Gallego',
       maintainer_email='gallegoj@uw.edu',
