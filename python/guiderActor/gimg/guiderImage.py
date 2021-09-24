@@ -261,11 +261,12 @@ class GuiderImageAnalysis(object):
         Load C library that does the fluxing, etc.: lib/libguide.so -> self.libguide
         See src/ipGguide.c for the actual calculations.
         """
-        path = os.path.expandvars('$GUIDERACTOR_DIR/lib/libguide.so')
+        path = os.path.expandvars('$GUIDERACTOR_DIR/python/guiderActor/libguide.so')
         libguide = ctypes.CDLL(path)
         if not libguide:
             self.cmd.error('text=%s' % qstr(
-                'Failed to load "libguide.so" from %s ($GUIDERACTOR_DIR/lib/libguide.so)' % path))
+                'Failed to load "libguide.so" from %s '
+                '($GUIDERACTOR_DIR/python/guiderActor/libguide.so)' % path))
         libguide.gfindstars.argtypes = [
             ctypes.POINTER(REGION),
             ctypes.POINTER(FIBERDATA), ctypes.c_int

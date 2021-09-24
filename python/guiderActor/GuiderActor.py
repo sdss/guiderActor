@@ -91,9 +91,10 @@ class GuiderActor(actorcore.Actor.SDSSActor):
         self.logger.propagate = True
 
         # Tests that lib/libguide.so exists.
-        libguide_path = os.path.expandvars('$GUIDERACTOR_DIR/lib/libguide.so')
+        libguide_path = os.path.expandvars('$GUIDERACTOR_DIR/python/guiderActor/libguide.so')
         assert os.path.exists(libguide_path), ('cannot find libguide.so. Was it compiled '
-                                               'and linked in $GUIDERACTOR_DIR/lib/libguide.so?')
+                                               'and linked in '
+                                               '$GUIDERACTOR_DIR/python/guiderActor/libguide.so?')
 
         # guiderActor.myGlobals.actorState = actorcore.Actor.ActorState(self)
         # actorState = guiderActor.myGlobals.actorState
