@@ -112,7 +112,7 @@ class GuiderActor(actorcore.Actor.SDSSActor):
         # Load other actor's models so we can send it commands
         # And ours: we use the models to generate the FITS cards.
         self.models = {}
-        for actor in ['gcamera', 'ecamera', 'mcp', 'platedb', 'sop', 'tcc', 'guider', 'apo']:
+        for actor in ['ecamera', 'mcp', 'tcc', 'guider', 'apo']:
             self.models[actor] = opscore.actor.model.Model(actor)
 
         self.actorState = actorcore.Actor.ActorState(self, self.models)
