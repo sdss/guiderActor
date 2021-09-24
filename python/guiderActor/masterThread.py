@@ -1377,7 +1377,7 @@ def main(actor, queues):
     gState = actorState.gState
     # need to wait a couple seconds to let the models sync up.
     time.sleep(3)
-    setPoint = actorState.models['gcamera'].keyVarDict['cooler'][0]
+    setPoint = actorState.models['ecamera'].keyVarDict['cooler'][0]
     print 'Initial gcamera setPoint:', setPoint
     guiderImageAnalysis = GuiderImageAnalysis(setPoint)
 
