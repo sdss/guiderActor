@@ -5,10 +5,11 @@ Test the behavior of the various guider master thread commands.
 import unittest
 from Queue import Queue
 
-import guiderActor
-import guiderActor.myGlobals as myGlobals
 import guiderTester
 from actorcore import TestHelper
+
+import guiderActor
+import guiderActor.myGlobals as myGlobals
 from guiderActor import masterThread
 
 
@@ -39,11 +40,10 @@ class TestGuiderStep(guiderTester.GuiderTester, unittest.TestCase):
 
     def test_check_fiber_guiding(self):
         self.gState.centerUp = False
-        self.fibers = self.gi(
-            self.cmd,
-            self.guidingIn,
-            self.gState.gprobes,
-            setPoint=self.setPoint_good)
+        self.fibers = self.gi(self.cmd,
+                              self.guidingIn,
+                              self.gState.gprobes,
+                              setPoint=self.setPoint_good)
         for name, i in self.probeNames.items():
             probe = self.gState.gprobes[i]
             fiber = self.fibers[i - 1]
@@ -56,11 +56,10 @@ class TestGuiderStep(guiderTester.GuiderTester, unittest.TestCase):
 
     def test_check_fiber_centerUp(self):
         self.gState.centerUp = True
-        self.fibers = self.gi(
-            self.cmd,
-            self.centerUpIn,
-            self.gState.gprobes,
-            setPoint=self.setPoint_good)
+        self.fibers = self.gi(self.cmd,
+                              self.centerUpIn,
+                              self.gState.gprobes,
+                              setPoint=self.setPoint_good)
         for name, i in self.probeNames.items():
             probe = self.gState.gprobes[i]
             fiber = self.fibers[i - 1]
@@ -91,12 +90,9 @@ class TestDecenter(guiderTester.GuiderTester, unittest.TestCase):
     def _set_decenter_ok(self, decenters):
         masterThread.set_decenter(self.cmd, {}, self.gState, True)
         masterThread.set_decenter(self.cmd, decenters, self.gState, None)
-        self.assertEqual(self.gState.decenterRA, decenters.get(
-            'decenterRA', 0))
-        self.assertEqual(self.gState.decenterDec,
-                         decenters.get('decenterDec', 0))
-        self.assertEqual(self.gState.mangaDither,
-                         decenters.get('mangaDither', '?'))
+        self.assertEqual(self.gState.decenterRA, decenters.get('decenterRA', 0))
+        self.assertEqual(self.gState.decenterDec, decenters.get('decenterDec', 0))
+        self.assertEqual(self.gState.mangaDither, decenters.get('mangaDither', '?'))
         self.assertIn(self.cmd, self.gState.decenterCmd)
 
     def test_set_decenter_new(self):
@@ -141,8 +137,7 @@ class TestSetRefraction(guiderTester.GuiderTester, unittest.TestCase):
 class TestGuidingIsOK(guiderTester.GuiderTester, unittest.TestCase):
 
     def _guidingIsOK(self, expect, nWarn=0, force=False):
-        result = masterThread.guidingIsOK(
-            self.cmd, self.actorState, force=force)
+        result = masterThread.guidingIsOK(self.cmd, self.actorState, force=force)
         self.assertEqual(result, expect)
         self._check_levels(0, 0, nWarn, 0)
 
@@ -172,8 +167,7 @@ class TestGuidingIsOK(guiderTester.GuiderTester, unittest.TestCase):
 
     def test_fflamp_on_bypassed(self):
         guiderTester.updateModel('mcp', TestHelper.mcpState['flats'])
-        self.actorState.models['sop'].keyVarDict['bypassedNames'].set(
-            ['ffs', 'lamp_ff'])
+        self.actorState.models['sop'].keyVarDict['bypassedNames'].set(['ffs', 'lamp_ff'])
         guiderTester.updateModel('tcc', TestHelper.tccState['tracking'])
         self._guidingIsOK(True, 1)
 
@@ -214,11 +208,10 @@ class TestStartStopGuider(guiderTester.GuiderTester, unittest.TestCase):
     def _start_guider(self, nWarn=0, **kwargs):
         guiderTester.updateModel('mcp', TestHelper.mcpState['boss_science'])
         guiderTester.updateModel('tcc', TestHelper.tccState['tracking'])
-        self.gState.cartridge = self.actorState.models['guider'].keyVarDict[
-            'cartridgeLoaded'][0]
+        self.gState.cartridge = self.actorState.models['guider'].keyVarDict['cartridgeLoaded'][0]
 
-        masterThread.start_guider(self.cmd, self.gState, self.actorState,
-                                  self.actorState.queues, **kwargs)
+        masterThread.start_guider(self.cmd, self.gState, self.actorState, self.actorState.queues,
+                                  **kwargs)
 
         msg = self.queues[guiderActor.MASTER].get(False)
         self.assertEqual(msg.type, guiderActor.Msg.STATUS)
@@ -254,8 +247,7 @@ class TestStartStopGuider(guiderTester.GuiderTester, unittest.TestCase):
 
     def test_start_guider_no_plate(self):
         self.gState.cartridge = -1
-        masterThread.start_guider(self.cmd, self.gState, self.actorState,
-                                  self.actorState.queues)
+        masterThread.start_guider(self.cmd, self.gState, self.actorState, self.actorState.queues)
         self.assertTrue(self.queues[guiderActor.GCAMERA].empty())
         self.assertTrue(self.queues[guiderActor.MASTER].empty())
         self.assertIsNone(self.gState.cmd)
@@ -264,10 +256,8 @@ class TestStartStopGuider(guiderTester.GuiderTester, unittest.TestCase):
     def test_start_guider_not_ok_to_guide(self):
         guiderTester.updateModel('mcp', TestHelper.mcpState['boss_science'])
         guiderTester.updateModel('tcc', TestHelper.tccState['stopped'])
-        self.gState.cartridge = self.actorState.models['guider'].keyVarDict[
-            'cartridgeLoaded'][0]
-        masterThread.start_guider(self.cmd, self.gState, self.actorState,
-                                  self.actorState.queues)
+        self.gState.cartridge = self.actorState.models['guider'].keyVarDict['cartridgeLoaded'][0]
+        masterThread.start_guider(self.cmd, self.gState, self.actorState, self.actorState.queues)
         self.assertTrue(self.queues[guiderActor.GCAMERA].empty())
         self.assertTrue(self.queues[guiderActor.MASTER].empty())
         self.assertIsNone(self.gState.cmd)
@@ -276,8 +266,7 @@ class TestStartStopGuider(guiderTester.GuiderTester, unittest.TestCase):
     def test_start_guider_already_running(self):
         oldCmd = TestHelper.Cmd()
         self.gState.cmd = oldCmd
-        masterThread.start_guider(self.cmd, self.gState, self.actorState,
-                                  self.actorState.queues)
+        masterThread.start_guider(self.cmd, self.gState, self.actorState, self.actorState.queues)
         self.assertTrue(self.queues[guiderActor.GCAMERA].empty())
         self.assertTrue(self.queues[guiderActor.MASTER].empty())
         self.assertEqual(self.gState.cmd, oldCmd)
@@ -285,8 +274,8 @@ class TestStartStopGuider(guiderTester.GuiderTester, unittest.TestCase):
 
     def _stop_guider(self, success=True):
         self.gState.cmd = self.cmd
-        masterThread.stop_guider(self.cmd, self.gState, self.actorState,
-                                 self.actorState.queues, 1234, success)
+        masterThread.stop_guider(self.cmd, self.gState, self.actorState, self.actorState.queues,
+                                 1234, success)
         msg = self.queues[guiderActor.GCAMERA].get(False)
         self.assertEqual(msg.type, guiderActor.Msg.ABORT_EXPOSURE)
         self.assertEqual(msg.quiet, True)
@@ -307,8 +296,8 @@ class TestStartStopGuider(guiderTester.GuiderTester, unittest.TestCase):
         self._check_cmd(0, 0, 0, 0, True, didFail=True)
 
     def test_stop_guider_already_off(self):
-        masterThread.stop_guider(self.cmd, self.gState, self.actorState,
-                                 self.actorState.queues, 1234, True)
+        masterThread.stop_guider(self.cmd, self.gState, self.actorState, self.actorState.queues,
+                                 1234, True)
         self._check_cmd(0, 0, 0, 0, True, didFail=True)
 
 

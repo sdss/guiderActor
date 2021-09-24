@@ -3,9 +3,10 @@
 import cProfile
 import os
 
-import guiderActor.myGlobals as myGlobals
 import guiderTester
 from actorcore import TestHelper
+
+import guiderActor.myGlobals as myGlobals
 from guiderActor import GuiderState, masterThread
 from guiderActor.gimg import guiderImage
 
@@ -32,8 +33,7 @@ helper.gState.guideCmd = helper.cmd
 
 
 def timeit_helper():
-    masterThread.guideStep(actor, None, helper.cmd, helper.gState, dataFile,
-                           False, helper.gi)
+    masterThread.guideStep(actor, None, helper.cmd, helper.gState, dataFile, False, helper.gi)
     os.remove('data/proc-gimg-0040.fits.gz')
 
 
@@ -42,6 +42,6 @@ def timeit_helper():
 
 prof = cProfile.Profile()
 #result = prof.runcall(helper.gi,helper.cmd,dataFile,helper.gState.gprobes,-40)
-result = prof.runcall(masterThread.guideStep, actor, None, helper.cmd,
-                      helper.gState, dataFile, False, helper.gi)
+result = prof.runcall(masterThread.guideStep, actor, None, helper.cmd, helper.gState, dataFile,
+                      False, helper.gi)
 prof.dump_stats('guideStep.profile')

@@ -10,10 +10,11 @@ correctly when called via a GuiderCmd (assuming test_masterThread clears).
 import unittest
 from Queue import Queue
 
-import guiderActor
-import guiderActor.myGlobals as myGlobals
 import guiderTester
 from actorcore import TestHelper
+
+import guiderActor
+import guiderActor.myGlobals as myGlobals
 from guiderActor import masterThread
 from guiderActor.Commands import GuiderCmd
 
@@ -38,8 +39,7 @@ class GuiderAPOCmdTester(GuiderCmdTester):
     def setUp(self):
         self.name = 'guider'
         super(GuiderAPOCmdTester, self).setUp()
-        self.actor = TestHelper.FakeActor(
-            self.name, self.name + 'Actor', location='APO')
+        self.actor = TestHelper.FakeActor(self.name, self.name + 'Actor', location='APO')
         self.guidercmd = self.actor.commandSets['GuiderCmd_APO']
 
     def test_ping(self):
@@ -53,8 +53,7 @@ class GuiderLCOCmdTester(GuiderCmdTester):
     def setUp(self):
         self.name = 'guider'
         super(GuiderLCOCmdTester, self).setUp()
-        self.actor = TestHelper.FakeActor(
-            self.name, self.name + 'Actor', location='LCO')
+        self.actor = TestHelper.FakeActor(self.name, self.name + 'Actor', location='LCO')
         self.guidercmd = self.actor.commandSets['GuiderCmd_LCO']
 
     def test_ping(self):
@@ -68,8 +67,7 @@ class GuiderLocalCmdTester(GuiderCmdTester):
     def setUp(self):
         self.name = 'guider'
         super(GuiderLocalCmdTester, self).setUp()
-        self.actor = TestHelper.FakeActor(
-            self.name, self.name + 'Actor', location='LOCAL')
+        self.actor = TestHelper.FakeActor(self.name, self.name + 'Actor', location='LOCAL')
         self.guidercmd = self.actor.commandSets['GuiderCmd_LOCAL']
 
     def test_ping(self):
@@ -91,21 +89,11 @@ class TestDecentering(GuiderCmdTester, unittest.TestCase):
         self.assertEqual(msg.decenters['mangaDither'], expect['mangaDither'])
 
     def test_mangaDither_C(self):
-        expect = {
-            'decenterRA': 0,
-            'decenterDec': 0,
-            'decenterRot': 0,
-            'mangaDither': 'C'
-        }
+        expect = {'decenterRA': 0, 'decenterDec': 0, 'decenterRot': 0, 'mangaDither': 'C'}
         self._mangaDither(expect, 'ditherPos=C')
 
     def test_mangaDither_N(self):
-        expect = {
-            'decenterRA': -0.417,
-            'decenterDec': 0.721,
-            'decenterRot': 0,
-            'mangaDither': 'N'
-        }
+        expect = {'decenterRA': -0.417, 'decenterDec': 0.721, 'decenterRot': 0, 'mangaDither': 'N'}
         self._mangaDither(expect, 'ditherPos=N')
 
     def test_mangaDither_S(self):
@@ -118,12 +106,7 @@ class TestDecentering(GuiderCmdTester, unittest.TestCase):
         self._mangaDither(expect, 'ditherPos=S')
 
     def test_mangaDither_E(self):
-        expect = {
-            'decenterRA': 0.833,
-            'decenterDec': 0,
-            'decenterRot': 0,
-            'mangaDither': 'E'
-        }
+        expect = {'decenterRA': 0.833, 'decenterDec': 0, 'decenterRot': 0, 'mangaDither': 'E'}
         self._mangaDither(expect, 'ditherPos=E')
 
     def _decenter(self, expect, args):
@@ -145,8 +128,7 @@ class TestDecentering(GuiderCmdTester, unittest.TestCase):
         queue = self.queues[guiderActor.MASTER]
         if didFail:
             with self.assertRaises(AttributeError):
-                msg = self._run_cmd(
-                    'setDecenter %s' % (args), None, empty=True)
+                msg = self._run_cmd('setDecenter %s' % (args), None, empty=True)
                 self.assertEquals(msg, None)
                 self._check_cmd(0, 0, 0, 0, True, True)
                 self.assertTrue(msg.finish)
@@ -154,10 +136,8 @@ class TestDecentering(GuiderCmdTester, unittest.TestCase):
             msg = self._run_cmd('setDecenter %s' % (args), queue)
             self.assertEqual(msg.type, guiderActor.Msg.DECENTER)
             self.assertIsNone(getattr(msg, 'finish', None))
-            self.assertEqual(msg.decenters['decenterRA'],
-                             expect.get('decenterRA', 0))
-            self.assertEqual(msg.decenters['decenterDec'],
-                             expect.get('decenterDec', 0))
+            self.assertEqual(msg.decenters['decenterRA'], expect.get('decenterRA', 0))
+            self.assertEqual(msg.decenters['decenterDec'], expect.get('decenterDec', 0))
 
     def test_setDecenter_ra(self):
         expect = {'decenterRA': 10}
@@ -178,15 +158,13 @@ class TestSetRefractionBalance(GuiderCmdTester, unittest.TestCase):
         msg = self._run_cmd('setRefractionBalance %s' % (args), queue)
         self.assertEqual(msg.type, guiderActor.Msg.SET_REFRACTION)
 
-        result = masterThread.set_refraction(
-            self.cmd,
-            self.gState,
-            corrRatio=msg.corrRatio,
-            plateType=msg.plateType,
-            surveyMode=msg.surveyMode)
+        result = masterThread.set_refraction(self.cmd,
+                                             self.gState,
+                                             corrRatio=msg.corrRatio,
+                                             plateType=msg.plateType,
+                                             surveyMode=msg.surveyMode)
 
-        self.assertEqual(self.gState.refractionBalance,
-                         expect.get('corrRatio', None))
+        self.assertEqual(self.gState.refractionBalance, expect.get('corrRatio', None))
         self.assertEqual(result, not didFail)
 
     def test_corrRatio_1(self):

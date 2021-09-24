@@ -1,7 +1,4 @@
-__all__ = [
-    'GuiderError', 'BadDarkError', 'FlatError', 'NoFibersFoundError',
-    'BadReadError'
-]
+__all__ = ['GuiderError', 'BadDarkError', 'FlatError', 'NoFibersFoundError', 'BadReadError']
 
 
 # for guider-related exception handling

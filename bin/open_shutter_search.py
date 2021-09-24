@@ -18,8 +18,7 @@ import pyfits
 
 
 def prnLine(m, mjd, ndirs='-', nfiles='-', nflats='-', nbad='-', proc='  -'):
-    ss = "%4s  %5s  %1s  %4s  %4s   %4s   %3s" % (m, mjd, ndirs, nfiles,
-                                                  nflats, nbad, proc)
+    ss = "%4s  %5s  %1s  %4s  %4s   %4s   %3s" % (m, mjd, ndirs, nfiles, nflats, nbad, proc)
     print ss
 
 
@@ -97,8 +96,7 @@ def do_one_dir(m, mjd, outfile, listfiles=False, cutoff=10000):
             nbad = nbad + 1
             nbadList.append([f, Qmean, Qstd, Qt, qq])
             ss = "  %s  %8.2f %5.2f %7.2f %s " % (f, Qmean, Qstd, Qt, qq)
-            outfile.write("%s  %8.2f %5.2f %8.2f  %s \n" % (f, Qmean, Qstd, Qt,
-                                                            qq))
+            outfile.write("%s  %8.2f %5.2f %8.2f  %s \n" % (f, Qmean, Qstd, Qt, qq))
             outfile.flush()
 #   ------- end for
 
@@ -107,21 +105,13 @@ def do_one_dir(m, mjd, outfile, listfiles=False, cutoff=10000):
         prnLine(m, mjd, ndirs=ndirs, nfiles=nfiles, nflats=0)
     else:
         proc = nbad * 100.0 / nflats
-        prnLine(
-            m,
-            mjd,
-            ndirs=ndirs,
-            nfiles=nfiles,
-            nflats=nflats,
-            nbad=nbad,
-            proc="%3i" % proc)
+        prnLine(m, mjd, ndirs=ndirs, nfiles=nfiles, nflats=nflats, nbad=nbad, proc="%3i" % proc)
 
 
 # and print bad files if option -l selected
     if listfiles:
         for fbad in nbadList:
-            ss = "  %s  %8.2f %5.2f %7.2f %s " % (fbad[0], fbad[1], fbad[2],
-                                                  fbad[3], fbad[4])
+            ss = "  %s  %8.2f %5.2f %7.2f %s " % (fbad[0], fbad[1], fbad[2], fbad[3], fbad[4])
             print "      ", ss
     return nflats, nbad
 
@@ -131,24 +121,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=desc, usage=usage)
     parser.add_argument("mjd1", help="mjd to start", type=int)
     parser.add_argument("mjd2", help="mjd to end", type=int)
-    parser.add_argument(
-        '-l',
-        '--list',
-        help='print the list of bad files',
-        action='store_true')
-    parser.add_argument(
-        '-c',
-        '--cutoff',
-        help="dark sigmas up to classify frame as bad, default 3",
-        default=3,
-        type=float)
-    parser.add_argument(
-        '-o',
-        '--outfile',
-        default="bad_gimg.txt",
-        help='file to save bad frame names')
-    parser.add_argument(
-        '-i', '--imtype', default="flat", help='flat or object, default flat ')
+    parser.add_argument('-l', '--list', help='print the list of bad files', action='store_true')
+    parser.add_argument('-c',
+                        '--cutoff',
+                        help="dark sigmas up to classify frame as bad, default 3",
+                        default=3,
+                        type=float)
+    parser.add_argument('-o',
+                        '--outfile',
+                        default="bad_gimg.txt",
+                        help='file to save bad frame names')
+    parser.add_argument('-i', '--imtype', default="flat", help='flat or object, default flat ')
 
     args = parser.parse_args()
 
@@ -167,8 +150,7 @@ if __name__ == "__main__":
     print ss, "% "
     print line
     for m, mjd in enumerate(mjds):
-        nflats, nbad = do_one_dir(
-            m, mjd, outfile, listfiles=listfiles, cutoff=args.cutoff)
+        nflats, nbad = do_one_dir(m, mjd, outfile, listfiles=listfiles, cutoff=args.cutoff)
         nflatsTot = nflatsTot + nflats
         nbadTot = nbadTot + nbad
     print line
@@ -179,7 +161,6 @@ if __name__ == "__main__":
         pers = "%s" % int(nbadTot * 100.0 / nflatsTot) + '%'
     print "Image type:  %s" % args.imtype
     print "MJDs : %s - %s,  cutoff=%s" % (args.mjd1, args.mjd2, args.cutoff)
-    print "Sum:  %s = %s,   bad = %s,  percent = %s" % (args.imtype, nflatsTot,
-                                                        nbadTot, pers)
+    print "Sum:  %s = %s,   bad = %s,  percent = %s" % (args.imtype, nflatsTot, nbadTot, pers)
     print line
     print ""

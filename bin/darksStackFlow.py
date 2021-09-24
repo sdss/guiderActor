@@ -17,10 +17,9 @@ import glob
 import os
 import sys
 
+import Image
 import numpy
 import pyfits
-
-import Image
 
 
 def getDatList(mjds):
@@ -81,8 +80,7 @@ def do_one_stack(mjds):
             stack = dat
         else:
             stack = numpy.dstack([stack, dat])
-        hdu1.header.add_comment(
-            "added %s" % dd)  # add dark name to header comment
+        hdu1.header.add_comment("added %s" % dd)  # add dark name to header comment
         if args.list:
             print "      %4i  %s  median=%s " % (i, dd, numpy.median(dat))
 
@@ -115,18 +113,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=desc, usage=usage)
     parser.add_argument("mjd1", help="mjd1 to start", type=int)
     parser.add_argument("mjd2", help="mjd2 to end", type=int)
-    parser.add_argument(
-        '-n',
-        '--nfiles',
-        help="number of nights to stack (def=7)",
-        default=7,
-        type=int)
-    parser.add_argument(
-        '-f', '--fits', help="save as fits ", action='store_true')
-    parser.add_argument(
-        '-i', '--image', help="save as png image", action='store_true')
-    parser.add_argument(
-        '-l', '--list', help="list files for stack", action='store_true')
+    parser.add_argument('-n',
+                        '--nfiles',
+                        help="number of nights to stack (def=7)",
+                        default=7,
+                        type=int)
+    parser.add_argument('-f', '--fits', help="save as fits ", action='store_true')
+    parser.add_argument('-i', '--image', help="save as png image", action='store_true')
+    parser.add_argument('-l', '--list', help="list files for stack", action='store_true')
     args = parser.parse_args()
 
     line = "-" * 60

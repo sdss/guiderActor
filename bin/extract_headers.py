@@ -94,24 +94,20 @@ class Headers(object):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(
-        description=__doc__, prog=os.path.basename(sys.argv[0]))
-    parser.add_argument(
-        'FILEGLOB',
-        metavar='FILEGLOB',
-        type=str,
-        help='A quoted glob regex for the files to process.')
-    parser.add_argument(
-        'OUTFILE',
-        metavar='OUTFILE',
-        type=str,
-        help='The output fits filename to write to.')
-    parser.add_argument(
-        '-v',
-        '--verbose',
-        action='store_true',
-        dest='verbose',
-        help='Print lots of extra output.')
+    parser = argparse.ArgumentParser(description=__doc__, prog=os.path.basename(sys.argv[0]))
+    parser.add_argument('FILEGLOB',
+                        metavar='FILEGLOB',
+                        type=str,
+                        help='A quoted glob regex for the files to process.')
+    parser.add_argument('OUTFILE',
+                        metavar='OUTFILE',
+                        type=str,
+                        help='The output fits filename to write to.')
+    parser.add_argument('-v',
+                        '--verbose',
+                        action='store_true',
+                        dest='verbose',
+                        help='Print lots of extra output.')
 
     args = parser.parse_args()
 

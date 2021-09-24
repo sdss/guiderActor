@@ -5,10 +5,10 @@ Test the behavior of guider flats, including finding fibers..
 import os
 import unittest
 
-import pyfits
-
 import guiderTester
+import pyfits
 from actorcore import TestHelper
+
 from guiderActor import GuiderState
 from guiderActor.gimg import GuiderExceptions
 
@@ -70,8 +70,7 @@ class TestGuiderImage(guiderTester.GuiderTester, unittest.TestCase):
         for name, i in self.probeNames.items():
             #    #self.assertEqual(i,self.gi.flatFibers[i].fiberid)
             print i, self.gi.flatFibers[i].fiberid
-        self._check_overwriting(inFile, outFile, self.gi.analyzeFlat,
-                                [self.gState.gprobes])
+        self._check_overwriting(inFile, outFile, self.gi.analyzeFlat, [self.gState.gprobes])
 
     def test_analyzeFlat_ecam(self):
         """Test GuiderImageAnalysis.analyzeFlat()"""
@@ -82,8 +81,7 @@ class TestGuiderImage(guiderTester.GuiderTester, unittest.TestCase):
         self.assertTrue(os.path.exists(outFile), 'analyzeFlat file write')
         # TBD: best test is probably to check that the flat is median ~1.
         self.assertFail('Need to create a test for this!')
-        self._check_overwriting(inFile, outFile, self.gi.analyzeFlat,
-                                [self.gState.gprobes])
+        self._check_overwriting(inFile, outFile, self.gi.analyzeFlat, [self.gState.gprobes])
 
     def test_call(self):
         """Test GuiderImageAnalysis.__call__()"""
@@ -110,8 +108,7 @@ class TestGuiderImage(guiderTester.GuiderTester, unittest.TestCase):
         self.gi.setPoint = self.setPoint_bad
         self._temp_run(
             self.path(self.inDarkFile),
-            'CCD temp signifcantly different (>3.0) from setPoint: -40.1, expected -35.0'
-        )
+            'CCD temp signifcantly different (>3.0) from setPoint: -40.1, expected -35.0')
 
     def test_badSetPoint_image(self):
         """Test what happens when the ccdtemp is outside the setPoint spec for an image."""
@@ -119,16 +116,14 @@ class TestGuiderImage(guiderTester.GuiderTester, unittest.TestCase):
         self.gi.darkTemperature = self.setPoint_good
         self._temp_run(
             self.path(self.inDataFile),
-            'CCD temp signifcantly different (>3.0) from setPoint: -40.1, expected -35.0'
-        )
+            'CCD temp signifcantly different (>3.0) from setPoint: -40.1, expected -35.0')
 
     def test_badSetPoint_dark_temp(self):
         """Test what happens when the ccdtemp is outside the dark temp spec for an image."""
         self.gi.darkTemperature = self.setPoint_bad
         self._temp_run(
             self.path(self.inDataFile),
-            'CCD temp signifcantly different (>3.0) from dark temp: -40.1, expected -35.0'
-        )
+            'CCD temp signifcantly different (>3.0) from dark temp: -40.1, expected -35.0')
 
     def test_no_setPoint(self):
         """Test what happens when the setPoint `is None."""
@@ -149,16 +144,14 @@ class TestGuiderImage(guiderTester.GuiderTester, unittest.TestCase):
     def test_badRead(self):
         """Confirm that bad gcamera reads are rejected immediately."""
         self.gi.cmd = self.cmd
-        self.assertRaises(
-            GuiderExceptions.BadReadError,
-            self.gi._pre_process,
-            self.path(self.badReadFile1),
-            binning=2)
-        self.assertRaises(
-            GuiderExceptions.BadReadError,
-            self.gi._pre_process,
-            self.path(self.badReadFile2),
-            binning=2)
+        self.assertRaises(GuiderExceptions.BadReadError,
+                          self.gi._pre_process,
+                          self.path(self.badReadFile1),
+                          binning=2)
+        self.assertRaises(GuiderExceptions.BadReadError,
+                          self.gi._pre_process,
+                          self.path(self.badReadFile2),
+                          binning=2)
 
     def test_dither_headers(self):
         """check that the dither keywords get into the header."""
@@ -168,8 +161,7 @@ class TestGuiderImage(guiderTester.GuiderTester, unittest.TestCase):
         objectname = 'somename'
         hdu = pyfits.open(self.path(self.inDataFile))[0]
         frameInfo = GuiderState.FrameInfo(-1, 1, 2, 3)
-        self.gi.fillPrimaryHDU(self.cmd, self.actorState.models, hdu,
-                               frameInfo, objectname)
+        self.gi.fillPrimaryHDU(self.cmd, self.actorState.models, hdu, frameInfo, objectname)
         self.assertEqual(hdu.header['MGDPOS'], 'N')
 
 

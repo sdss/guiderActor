@@ -6,12 +6,13 @@ import os
 
 import actorcore.Actor
 import gcameraThread
-import guiderActor
 import GuiderState
 import masterThread
 import movieThread
 import opscore.actor.keyvar
 import opscore.actor.model
+
+import guiderActor
 from guiderActor import myGlobals
 
 
@@ -21,19 +22,15 @@ def set_default_pids(config, gState):
     axes = dict(RADEC='raDec', ROT='rot', FOCUS='focus', SCALE='scale')
     for axis in config.options('PID'):
         axis = axes[axis.upper()]
-        Kp, Ti_min, Ti_max, Td, Imax, nfilt = [
-            float(v) for v in config.get('PID', axis).split()
-        ]
-        gState.set_pid_defaults(
-            axis,
-            Kp=Kp,
-            Ti_min=Ti_min,
-            Ti_max=Ti_max,
-            Td=Td,
-            Imax=Imax,
-            nfilt=int(nfilt))
-        gState.pid[axis].setPID(
-            Kp=Kp, Ti=Ti_min, Td=Td, Imax=Imax, nfilt=nfilt)
+        Kp, Ti_min, Ti_max, Td, Imax, nfilt = [float(v) for v in config.get('PID', axis).split()]
+        gState.set_pid_defaults(axis,
+                                Kp=Kp,
+                                Ti_min=Ti_min,
+                                Ti_max=Ti_max,
+                                Td=Td,
+                                Imax=Imax,
+                                nfilt=int(nfilt))
+        gState.pid[axis].setPID(Kp=Kp, Ti=Ti_min, Td=Td, Imax=Imax, nfilt=nfilt)
 
 
 def set_pid_scaling(config, gState):
@@ -81,17 +78,12 @@ class GuiderActor(actorcore.Actor.SDSSActor):
         else:
             raise KeyError('Don\'t know my location: cannot return a working Actor!')
 
-    def __init__(self,
-                 name,
-                 debugLevel=30,
-                 productName=None,
-                 makeCmdrConnection=True):
+    def __init__(self, name, debugLevel=30, productName=None, makeCmdrConnection=True):
 
-        actorcore.Actor.Actor.__init__(
-            self,
-            name,
-            productName=productName,
-            makeCmdrConnection=makeCmdrConnection)
+        actorcore.Actor.Actor.__init__(self,
+                                       name,
+                                       productName=productName,
+                                       makeCmdrConnection=makeCmdrConnection)
 
         self.version = guiderActor.__version__
 
@@ -131,10 +123,7 @@ class GuiderActor(actorcore.Actor.SDSSActor):
         gState = self.actorState.gState
 
         for what in self.config.options('enable'):
-            enable = {
-                'True': True,
-                'False': False
-            }[self.config.get('enable', what)]
+            enable = {'True': True, 'False': False}[self.config.get('enable', what)]
             gState.setGuideMode(what, enable)
 
         set_default_pids(self.config, gState)

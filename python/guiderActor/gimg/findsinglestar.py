@@ -103,8 +103,7 @@ def find_single_star(img,
         (labels, nobjs) = label(detected)
         slices = find_objects(labels, nobjs)
         # Count number of pixels above threshold in each connected component
-        npix = array(
-            [sum((labels[s] == i + 1).ravel()) for i, s in enumerate(slices)])
+        npix = array([sum((labels[s] == i + 1).ravel()) for i, s in enumerate(slices)])
         # Find components with more than min_npix pixels above threshold
         II = (npix >= min_npix)
         print(

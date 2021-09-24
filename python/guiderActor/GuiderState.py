@@ -5,9 +5,10 @@ Classes related to the current state of the guider.
 import math
 
 import numpy
-
 import PID
+
 from guiderActor import myGlobals
+
 
 # gprobebits
 # To help manage the guide probe status bits.
@@ -111,8 +112,7 @@ class GProbe(object):
         if self.id == -9999:
             self.id = id
         elif id != self.id:
-            raise ValueError(
-                '%s id does not match current probe id!' % fromName)
+            raise ValueError('%s id does not match current probe id!' % fromName)
         else:
             # otherwise, everything's fine.
             pass
@@ -379,15 +379,13 @@ class GuiderState(object):
             else:
                 self.guideWavelength = 5400
 
-        available_wavelengths = set([wv for gp in self.gprobes.values()
-                                     for wv in gp.haXOffsets])
+        available_wavelengths = set([wv for gp in self.gprobes.values() for wv in gp.haXOffsets])
         if self.guideWavelength not in available_wavelengths:
             self.refractionBalance = 0
             if cmd:
                 cmd.warn('text="no guide offsets found for {}A. '
                          'Offsets will not be applied. '
-                         'Setting refractionBalance=0"'
-                         .format(self.guideWavelength))
+                         'Setting refractionBalance=0"'.format(self.guideWavelength))
 
     def setDecenter(self, decenters, cmd, enable):
         """
@@ -402,8 +400,8 @@ class GuiderState(object):
         newRot = decenters.get('decenterRot', 0)
         # Store the cmd, if we'll have to actually apply a new location,
         # or just finish if the decenter is identical to the current one.
-        if (self.decenterRA != newRA or self.decenterDec != newDec or
-                self.decenterRot != newRot or enable is not None):
+        if (self.decenterRA != newRA or self.decenterDec != newDec or self.decenterRot != newRot or
+                enable is not None):
             self.decenterCmd.append(cmd)
         else:
             cmd.finish()
@@ -525,9 +523,8 @@ class GuiderState(object):
             cmd = self.cmd
         for axis in self.pid.keys():
             cmd.respond('pid=%s,%g,%g,%g,%g,%d' %
-                        (axis, self.pid[axis].Kp, self.pid[axis].Ti,
-                         self.pid[axis].Td, self.pid[axis].Imax,
-                         self.pid[axis].nfilt))
+                        (axis, self.pid[axis].Kp, self.pid[axis].Ti, self.pid[axis].Td,
+                         self.pid[axis].Imax, self.pid[axis].nfilt))
 
 
 class FrameInfo(object):

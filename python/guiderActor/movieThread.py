@@ -10,8 +10,9 @@ import Queue
 import subprocess
 import threading
 
-import guiderActor.myGlobals
 import opscore.utility.tback as tback
+
+import guiderActor.myGlobals
 from guiderActor import MOVIE, Msg
 
 
@@ -29,10 +30,8 @@ class MovieMaker(object):
         """
         mjd = msg.mjd
         if mjd is None:
-            filedir = self.actorState.models['gcamera'].keyVarDict['dataDir'][
-                0]
-            simulating = self.actorState.models['gcamera'].keyVarDict[
-                'simulating']
+            filedir = self.actorState.models['gcamera'].keyVarDict['dataDir'][0]
+            simulating = self.actorState.models['gcamera'].keyVarDict['simulating']
             if simulating[0]:
                 filedir = simulating[1]
             mjd = os.path.split(filedir)[-1]
@@ -47,8 +46,7 @@ class MovieMaker(object):
 
         # jkp TBD: how to get the real output filename?
         # filename = # parse from stdout of subprocess?
-        self.filename = os.path.join(filedir, '%s-%04d-%04d.mp4' % (mjd, start,
-                                                                    end))
+        self.filename = os.path.join(filedir, '%s-%04d-%04d.mp4' % (mjd, start, end))
         # Takes about 1 second per frame to make the images, plus a bit more per
         # frame to make the movie from them.
         # timeLim = (end - start) * 2 + 30
@@ -60,11 +58,10 @@ class MovieMaker(object):
             # Using preexec_fn=os.setsid to allow:
             #    os.killpg(popen.pid,signal.SIGTERM)
             # to kill the whole process.
-            self.popenMovie = subprocess.Popen(
-                cmdParts,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                preexec_fn=os.setsid)
+            self.popenMovie = subprocess.Popen(cmdParts,
+                                               stdout=subprocess.PIPE,
+                                               stderr=subprocess.PIPE,
+                                               preexec_fn=os.setsid)
             msg.cmd.inform('moviePID=%d' % (self.popenMovie.pid, ))
             stdout, stderr = self.popenMovie.communicate()
         except subprocess.CalledProcessError as e:
@@ -74,8 +71,8 @@ class MovieMaker(object):
             msg.cmd.inform('movieFile=%s' % (self.filename, ))
             return self.filename
         finally:
-            dbg_output = '\n'.join(('guider_movie.py STDOUT WAS:', stdout,
-                                    'guider_movie.py STDERR WAS:', stderr))
+            dbg_output = '\n'.join(
+                ('guider_movie.py STDOUT WAS:', stdout, 'guider_movie.py STDERR WAS:', stderr))
             print dbg_output
 
     def check_movie(self, msg):
@@ -96,13 +93,11 @@ def main(actor, queues):
             msg = queues[MOVIE].get(timeout=timeout)
             qlen = queues[MOVIE].qsize()
             if qlen > 0 and msg.cmd:
-                msg.cmd.diag('movie thread has %d items after a .get()' %
-                             (qlen))
+                msg.cmd.diag('movie thread has %d items after a .get()' % (qlen))
 
             if msg.type == Msg.EXIT:
                 if msg.cmd:
-                    msg.cmd.inform('text="Exiting thread %s"' %
-                                   (threading.current_thread().name))
+                    msg.cmd.inform('text="Exiting thread %s"' % (threading.current_thread().name))
                 return
 
             elif msg.type == Msg.MAKE_MOVIE:
@@ -131,8 +126,6 @@ def main(actor, queues):
         except Queue.Empty:
             actor.bcast.diag('text="guider movie alive"')
         except Exception as e:
-            actor.bcast.diag(
-                'text="movie thread got unexpected exception: %s"' % (e))
-            errMsg = 'Unexpected exception %s in guider %s thread' % (
-                e, threadName)
+            actor.bcast.diag('text="movie thread got unexpected exception: %s"' % (e))
+            errMsg = 'Unexpected exception %s in guider %s thread' % (e, threadName)
             tback.tback(errMsg, e)

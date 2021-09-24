@@ -43,8 +43,7 @@ class TestPID(unittest.TestCase):
 
     def test_pi_linear_uniform_dt(self):
         """Test with both P and I terms active, linear data, uniform dt."""
-        pid = PID.PID(self.dt, self.Kp, self.Ti, self.Td, self.Imax,
-                      self.nfilt)
+        pid = PID.PID(self.dt, self.Kp, self.Ti, self.Td, self.Imax, self.nfilt)
         data = np.loadtxt(self.linear_uniform_dt, dtype=self.dtype)
         for line in data:
             correction = pid.update(line['value'])
@@ -60,8 +59,7 @@ class TestPID(unittest.TestCase):
 
     def test_pi_quadratic_uniform_dt(self):
         """Test with only P term active, linear data, uniform dt."""
-        pid = PID.PID(self.dt, self.Kp, self.Ti, self.Td, self.Imax,
-                      self.nfilt)
+        pid = PID.PID(self.dt, self.Kp, self.Ti, self.Td, self.Imax, self.nfilt)
         data = np.loadtxt(self.quadratic_uniform_dt, dtype=self.dtype)
         for line in data:
             correction = pid.update(line['value'])
@@ -77,8 +75,7 @@ class TestPID(unittest.TestCase):
 
     def test_pi_linear_uniform_dt_noise(self):
         """Test with both P and I terms active, linear data, uniform dt."""
-        pid = PID.PID(self.dt, self.Kp, self.Ti, self.Td, self.Imax,
-                      self.nfilt)
+        pid = PID.PID(self.dt, self.Kp, self.Ti, self.Td, self.Imax, self.nfilt)
         data = np.loadtxt(self.linear_uniform_dt_noise, dtype=self.dtype)
         for line in data:
             correction = pid.update(line['value'])

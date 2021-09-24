@@ -29,8 +29,7 @@ class PID(object):
         self._x = None  # previous value of the error, x
 
     def __str__(self):
-        return 'K_P=%g T_i=%g T_d=%g tfilt=%s nfilt=%d' % (self.Kp, self.Ti,
-                                                           self.Td, self.tfilt,
+        return 'K_P=%g T_i=%g T_d=%g tfilt=%s nfilt=%d' % (self.Kp, self.Ti, self.Td, self.tfilt,
                                                            self.nfilt)
 
     def filterX(self, x):
@@ -100,17 +99,9 @@ class PID(object):
             self.Ti = Pc / 2
             self.Td = Pc / 8
         else:
-            raise RuntimeError(
-                "I don't know how to tune a %s loop" % loopType)
+            raise RuntimeError("I don't know how to tune a %s loop" % loopType)
 
-    def setPID(self,
-               dt=None,
-               Kp=None,
-               Ti=None,
-               Td=None,
-               Imax=None,
-               nfilt=None,
-               tfilt=None):
+    def setPID(self, dt=None, Kp=None, Ti=None, Td=None, Imax=None, nfilt=None, tfilt=None):
 
         needReset = dt is not None or Imax is not None or nfilt is not None or tfilt is not None
 

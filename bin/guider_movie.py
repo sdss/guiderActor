@@ -13,14 +13,16 @@ import sys
 import tempfile
 
 import matplotlib
-matplotlib.use('agg')
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pyfits
 from matplotlib import cm
-
 from opscore.utility import assembleImage
+
+
+matplotlib.use('agg')
+
+
 
 gimgbase = 'proc-gimg-%04d.fits.gz'
 tempbase = 'temp-gimg-%04d.png'
@@ -44,8 +46,7 @@ def asinh(inputArray, scale_min=None, scale_max=None, non_linear=2.0):
     indices2 = np.where(imageData > scale_max)
     imageData[indices0] = 0.0
     imageData[indices2] = 1.0
-    imageData[indices1] = np.arcsinh(
-        (imageData[indices1] - scale_min) / non_linear) / factor
+    imageData[indices1] = np.arcsinh((imageData[indices1] - scale_min) / non_linear) / factor
 
     return imageData
 
@@ -94,25 +95,21 @@ class ImageMaker(object):
         self.plate = data[0].header.get('PLATEID')
         self.cart = data[0].header.get('CARTID')
 
-        self.guiderView = asinh(
-            data[0].data, scale_min=5., scale_max=scale_max, non_linear=10.)
+        self.guiderView = asinh(data[0].data, scale_min=5., scale_max=scale_max, non_linear=10.)
         self.guiderSat = np.nonzero(data[1].data == 1)
         self.guiderBad = np.nonzero(data[1].data == 2)
 
         self.plateInfo = self.assembler(data)
         plateView = self.plateInfo.plateImageArr
         zeros = plateView == 0
-        self.plateView = asinh(
-            plateView, scale_min=-5., scale_max=scale_max, non_linear=10.)
+        self.plateView = asinh(plateView, scale_min=-5., scale_max=scale_max, non_linear=10.)
         self.plateView[zeros] = -999
         mask = self.plateInfo.plateMaskArr
         self.plateView = np.ma.masked_array(self.plateView, mask == 4)
 
         hdr = data[0].header
         self.seeing = hdr.get('seeing')
-        self.offset = tuple(
-            np.array((hdr.get('dra'), hdr.get('ddec'),
-                      hdr.get('drot'))) * 3600.)
+        self.offset = tuple(np.array((hdr.get('dra'), hdr.get('ddec'), hdr.get('drot'))) * 3600.)
         self.focus = hdr.get('dfocus')
         self.scale = hdr.get('filtscle')
         self.rms = hdr.get('gdrms')
@@ -138,8 +135,7 @@ class ImageMaker(object):
             self.plateLabels[stamp.gpNumber] = self._plate_labels(stamp)
             center = stamp.decImCtrPos
             error = stamp.starRADecErrArcSec
-            vectors.append(
-                np.array([center[0], center[1], error[0], error[1]]))
+            vectors.append(np.array([center[0], center[1], error[0], error[1]]))
         self.vectors = np.array(vectors).T
 
     def _plate_labels(self, stamp):
@@ -152,14 +148,8 @@ class ImageMaker(object):
         fwhm = stamp.fwhmArcSec
         if not stamp.gpEnabled:
             disabled = [
-                np.array([
-                    center + (boxWidth, boxWidth),
-                    center - (boxWidth, boxWidth)
-                ]).T,
-                np.array([
-                    center + (boxWidth, -boxWidth),
-                    center - (boxWidth, -boxWidth)
-                ]).T
+                np.array([center + (boxWidth, boxWidth), center - (boxWidth, boxWidth)]).T,
+                np.array([center + (boxWidth, -boxWidth), center - (boxWidth, -boxWidth)]).T
             ]
         else:
             disabled = None
@@ -175,14 +165,8 @@ class ImageMaker(object):
         loc2 = center - (0, boxWidth + 17)
         if not stamp.gpEnabled:
             disabled = [
-                np.array([
-                    center + (boxWidth, boxWidth),
-                    center - (boxWidth, boxWidth)
-                ]).T,
-                np.array([
-                    center + (boxWidth, -boxWidth),
-                    center - (boxWidth, -boxWidth)
-                ]).T
+                np.array([center + (boxWidth, boxWidth), center - (boxWidth, boxWidth)]).T,
+                np.array([center + (boxWidth, -boxWidth), center - (boxWidth, -boxWidth)]).T
             ]
         else:
             disabled = None
@@ -222,74 +206,56 @@ class ImageMaker(object):
         cmap2 = cm.cmap_d[cmap_name]
         cmap2._init()
         cmap2._lut[0, :] = (0, 0, 0, 1)
-        cmap2.set_bad(
-            (0, 0.15,
-             0))  # mark the masked pixels (not fibers) with dark green
-        cmap2.set_under(
-            (0.05, 0.05,
-             0.05))  # mark everything outside the fibers as dull-gray
+        cmap2.set_bad((0, 0.15, 0))  # mark the masked pixels (not fibers) with dark green
+        cmap2.set_under((0.05, 0.05, 0.05))  # mark everything outside the fibers as dull-gray
 
-        fig = plt.figure(
-            figsize=(self.width / self.dpi, self.height / self.dpi),
-            dpi=self.dpi,
-            frameon=False)
+        fig = plt.figure(figsize=(self.width / self.dpi, self.height / self.dpi),
+                         dpi=self.dpi,
+                         frameon=False)
 
         ax1 = plt.Axes(fig, (0, 0, .5, 1), frame_on=False)
         ax1.set_axis_off()
         fig.add_axes(ax1)
-        ax1.imshow(
-            self.guiderView,
-            aspect=self.aspect,
-            origin='lower',
-            cmap=cmap,
-            interpolation='nearest',
-            vmin=0,
-            vmax=1)
+        ax1.imshow(self.guiderView,
+                   aspect=self.aspect,
+                   origin='lower',
+                   cmap=cmap,
+                   interpolation='nearest',
+                   vmin=0,
+                   vmax=1)
         # jkp TBD: scatter doesn't work right for single pixels in matplotlib < 1.1.1
         # see: https://github.com/matplotlib/matplotlib/pull/695
         if self.guiderSat[0].shape > 0:
-            ax1.scatter(
-                self.guiderSat[1] + 0.5,
-                self.guiderSat[0] + 0.5,
-                s=1,
-                marker=',',
-                color='magenta',
-                edgecolor='none',
-                antialiased=False)
+            ax1.scatter(self.guiderSat[1] + 0.5,
+                        self.guiderSat[0] + 0.5,
+                        s=1,
+                        marker=',',
+                        color='magenta',
+                        edgecolor='none',
+                        antialiased=False)
         if self.guiderBad[0].shape > 0:
-            ax1.scatter(
-                self.guiderBad[1],
-                self.guiderBad[0],
-                s=1,
-                marker=',',
-                color='red')
+            ax1.scatter(self.guiderBad[1], self.guiderBad[0], s=1, marker=',', color='red')
         ax1.axis((0, 512, 0, 512))
         ax1.text(10, 490, 'TAI=%s' % self.time, color='white')
         ax1.text(10, 470, 'frameNo=%s' % self.index, color='white')
         ax1.text(10, 450, 'seeing=%4.2f' % self.seeing, color='white')
-        ax1.text(
-            10,
-            10,
-            'cart=%2d, plate=%d' % (self.cart, self.plate),
-            color='white')
+        ax1.text(10, 10, 'cart=%2d, plate=%d' % (self.cart, self.plate), color='white')
         ax1.autoscale(False)
         for i, label in self.guideLabels.items():
             loc = label[0]
-            ax1.text(
-                loc[0],
-                loc[1],
-                label[1],
-                color='white',
-                horizontalalignment='right',
-                fontsize=10)
+            ax1.text(loc[0],
+                     loc[1],
+                     label[1],
+                     color='white',
+                     horizontalalignment='right',
+                     fontsize=10)
             loc = label[2]
-            ax1.text(
-                loc[0],
-                loc[1],
-                label[3],
-                color='green',
-                horizontalalignment='center',
-                fontsize=10)
+            ax1.text(loc[0],
+                     loc[1],
+                     label[3],
+                     color='green',
+                     horizontalalignment='center',
+                     fontsize=10)
             if label[4] is not None:
                 ax1.plot(label[4][0][0], label[4][0][1], color='red')
                 ax1.plot(label[4][1][0], label[4][1][1], color='red')
@@ -299,30 +265,24 @@ class ImageMaker(object):
         ax2 = plt.Axes(fig, (.5, 0, .5, 1), frame_on=False)
         ax2.set_axis_off()
         fig.add_axes(ax2)
-        ax2.imshow(
-            self.plateView,
-            aspect=self.aspect,
-            origin='lower',
-            cmap=cmap2,
-            interpolation='nearest',
-            vmin=0,
-            vmax=1)
-        ax2.quiver(
-            self.vectors[0],
-            self.vectors[1],
-            self.vectors[2],
-            self.vectors[3],
-            color=(0, 1, 0),
-            width=0.003,
-            edgecolor='none',
-            headwidth=0,
-            units='width',
-            scale=self.qscale)
-        ax2.text(
-            10,
-            490,
-            'offset=%4.3f", %4.3f", %4.3f"' % self.offset,
-            color='white')
+        ax2.imshow(self.plateView,
+                   aspect=self.aspect,
+                   origin='lower',
+                   cmap=cmap2,
+                   interpolation='nearest',
+                   vmin=0,
+                   vmax=1)
+        ax2.quiver(self.vectors[0],
+                   self.vectors[1],
+                   self.vectors[2],
+                   self.vectors[3],
+                   color=(0, 1, 0),
+                   width=0.003,
+                   edgecolor='none',
+                   headwidth=0,
+                   units='width',
+                   scale=self.qscale)
+        ax2.text(10, 490, 'offset=%4.3f", %4.3f", %4.3f"' % self.offset, color='white')
         ax2.text(10, 470, 'focus=%4.2f$\mu$m' % self.focus, color='white')
         # jkp TBD: Do I need to multiply this by 100? Schlegel says yes,
         # but the fits header says its in %...
@@ -334,36 +294,19 @@ class ImageMaker(object):
             '1"',
             color=(0, 1, 0),
         )
-        ax2.quiver(
-            10,
-            390,
-            1,
-            0,
-            color=(0, 1, 0),
-            width=0.003,
-            edgecolor='none',
-            headwidth=0,
-            units='width',
-            scale=self.qscale)
+        ax2.quiver(10,
+                   390,
+                   1,
+                   0,
+                   color=(0, 1, 0),
+                   width=0.003,
+                   edgecolor='none',
+                   headwidth=0,
+                   units='width',
+                   scale=self.qscale)
         # orientation
-        ax2.arrow(
-            470,
-            450,
-            0,
-            30,
-            facecolor='gray',
-            edgecolor='gray',
-            head_width=5,
-            head_length=5)
-        ax2.arrow(
-            470,
-            450,
-            30,
-            0,
-            facecolor='gray',
-            edgecolor='gray',
-            head_width=5,
-            head_length=5)
+        ax2.arrow(470, 450, 0, 30, facecolor='gray', edgecolor='gray', head_width=5, head_length=5)
+        ax2.arrow(470, 450, 30, 0, facecolor='gray', edgecolor='gray', head_width=5, head_length=5)
         ax2.text(470, 490, 'N', color='gray')
         ax2.text(508, 450, 'E', color='gray')
         ax2.autoscale(False)
@@ -421,10 +364,9 @@ def make_movie(indir, outfile, framerate, verbose=False):
     else:
         ffmpeg_verbose = 'error'
     cmd = [
-        'ffmpeg', '-v', ffmpeg_verbose, '-f', 'image2', '-y', '-framerate',
-        framerate, '-i', inpath, '-vcodec', 'libx264', '-b:v', '10000k',
-        '-profile:v', 'main', '-pix_fmt', 'yuv420p', '-threads', '1', '-r',
-        framerate,
+        'ffmpeg', '-v', ffmpeg_verbose, '-f', 'image2', '-y', '-framerate', framerate, '-i',
+        inpath, '-vcodec', 'libx264', '-b:v', '10000k', '-profile:v', 'main', '-pix_fmt',
+        'yuv420p', '-threads', '1', '-r', framerate,
         os.path.join(outfile)
     ]
     print 'Running:', r' '.join(cmd)
@@ -453,8 +395,12 @@ def do_work(opts, gimgdir, start, end):
         # prof = cProfile.Profile()
         # count,files = prof.runcall(make_images,gimgdir,start,end,tempdir,cmap=opts.cmap)
         # prof.dump_stats('images.profile')
-        count, files = make_images(
-            gimgdir, start, end, tempdir, cmap=opts.cmap, verbose=opts.verbose)
+        count, files = make_images(gimgdir,
+                                   start,
+                                   end,
+                                   tempdir,
+                                   cmap=opts.cmap,
+                                   verbose=opts.verbose)
         time1 = time.time()
         if opts.verbose:
             print 'Seconds to make %d pngs: %5.1f' % (count, time1 - time0)
@@ -494,31 +440,27 @@ def main(argv=None):
     usage += '\n\nDIR example: /data/gcam/56233'
     usage += '\nSTARNUM ENDNUM example: 19 303'
     parser = OptionParser(usage)
-    parser.add_option(
-        '-r',
-        '--framerate',
-        dest='framerate',
-        default='10',
-        help='Frame rate of output video (%default).')
+    parser.add_option('-r',
+                      '--framerate',
+                      dest='framerate',
+                      default='10',
+                      help='Frame rate of output video (%default).')
     # parser.add_option('--raw',dest='raw',default='""',
     #                  help='Raw commands to pass on to ffmpeg directly (%default)')
     parser.add_option(
         '--cmap',
         dest='cmap',
         default='hsv',
-        help='Colormap used to make the images (log10 scaled) from the fits data (%default).'
-    )
-    parser.add_option(
-        '--outdir',
-        dest='outdir',
-        default=None,
-        help='Directory to write resulting movie to (default to DIR).')
-    parser.add_option(
-        '-v',
-        '--verbose',
-        dest='verbose',
-        action='store_true',
-        help='Be verbose with progress (%default).')
+        help='Colormap used to make the images (log10 scaled) from the fits data (%default).')
+    parser.add_option('--outdir',
+                      dest='outdir',
+                      default=None,
+                      help='Directory to write resulting movie to (default to DIR).')
+    parser.add_option('-v',
+                      '--verbose',
+                      dest='verbose',
+                      action='store_true',
+                      help='Be verbose with progress (%default).')
 
     # need options?
     (opts, args) = parser.parse_args(args=argv)
@@ -528,9 +470,7 @@ def main(argv=None):
         start = int(args[1])
         end = int(args[2])
     except (IndexError, ValueError):
-        parser.error(
-            'Need DIR STARTNUM ENDNUM. Pass -h or --help for more information.'
-        )
+        parser.error('Need DIR STARTNUM ENDNUM. Pass -h or --help for more information.')
         return -1
 
     return do_work(opts, gimgdir, start, end)

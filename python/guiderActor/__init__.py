@@ -1,5 +1,6 @@
 import Queue
 
+
 # Queue names
 MASTER = 0
 GCAMERA = 1

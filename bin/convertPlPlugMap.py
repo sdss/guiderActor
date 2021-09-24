@@ -5,8 +5,9 @@ import os
 import sys
 
 import numpy
-
 import opscore.utility.YPF as YPF
+
+
 """
 typedef struct {
    int objId[5];
@@ -58,8 +59,7 @@ def writeGProbe(cartInfo, probeInfo):
     print "    %0.1f %0.1f" % (pcen[0], pcen[1])
     print "    %0.1f %0.1f" % (pcen[0] - prad, pcen[1] - prad)
     print "    %0.1f %0.1f" % (pcen[0] + prad, pcen[1] + prad)
-    print "    %0.9f %0.9f" % (-probeInfo['yFocal'] * mmToDeg,
-                               probeInfo['xFocal'] * mmToDeg)
+    print "    %0.9f %0.9f" % (-probeInfo['yFocal'] * mmToDeg, probeInfo['xFocal'] * mmToDeg)
     print "    0.0 ! the 25m guider code handles the fiber rotation"
     print ""
 
@@ -110,9 +110,7 @@ def cvtPlugMap(plugFile):
 def getCartInfo(cartID):
     """ Return the per-cartidge guider probe info. """
 
-    yci = YPF.YPF(
-        os.path.join(os.environ['GUIDERACTOR_DIR'], 'etc',
-                     'gcamFiberInfo.par'))
+    yci = YPF.YPF(os.path.join(os.environ['GUIDERACTOR_DIR'], 'etc', 'gcamFiberInfo.par'))
     allCartInfo = yci.structs['GPROBE'].asArray()
 
     cartInfo = allCartInfo[numpy.where(allCartInfo.cartridgeId == cartID)]
