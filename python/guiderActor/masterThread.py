@@ -658,7 +658,7 @@ def guideStep(actor,
                                      inFile,
                                      gState.gprobes,
                                      setPoint=setPoint,
-                                     bypassDark=actorState.bypassDark,
+                                     bypassDark=True,
                                      camera=camera)
         guideCmd.inform("text='GuiderImageAnalysis.findStars() got %i fibers'" % len(fibers))
     except GuiderExceptions.BadReadError as e:
@@ -1290,7 +1290,7 @@ def start_guider(cmd,
 
     # if a start frame was already defined, don't re-define it
     # e.g., make_movie hadn't run successfully.
-    if not gState.startFrame:
+    if camera != 'ecamera' and not gState.startFrame:
         # Keep track of the first exposure number for generating movies.
         # Take nextSeqNo+1 because the current value may still be the one
         # issued from the gcamera flat command, which we don't want for this.

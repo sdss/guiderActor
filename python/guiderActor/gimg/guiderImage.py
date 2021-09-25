@@ -756,7 +756,7 @@ class GuiderImageAnalysis(object):
         image = self.applyDark(image, darkFileName, exptime)
 
         # Check after we've loaded the dark, to ensure the dark temperature was set.
-        self._check_ccd_temp(hdr)
+        # self._check_ccd_temp(hdr)
         self.cmd.diag('text=%s' % qstr('Using flat image: %s' % flatFileName))
         if flatFileName != self.currentFlatName:
             try:
